@@ -1,5 +1,5 @@
 # satisfoptimizer
-A production optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
+A production calculator and optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
 
 
 ## How to use
@@ -11,19 +11,21 @@ Minimize resource usage to produce something. Finds an optimal production chain 
 
 **Usage:**
 ```
-  !min [{objective} where] {constraints}
+  !min [<objective> "where"] <constraints>
   
-  {objective} = {item|built-in-objective}
-  {built-in-objective} = 'unweighted-resources' or 'weighted-resources' or 'mean-weighted-resources'
-  {constraints} = {constraint} [and {constraints}]
-  {constraint} = {item-var} {operator} {number}
-  {operator} = '=' or '<=' or '>='
-  {item-var} = {input|output}:{item}
+  <objective>          ::= <item> | <built-in-objective>
+  <built-in-objective> ::= "unweighted-resources" | "weighted-resources" | "mean-weighted-resources"
+  <constraints>        ::= <constraint> ["and" <constraints>]
+  <constraint>         ::= <item-var> <operator> <number>
+  <operator>           ::= "=" | "<=" | ">="
+  <item-var>           ::= [<prefix> ":"] <item>
+  <prefix>             ::= <input> | <output>
 ```
 
 **Notes:**
- - If the {objective} is ommitted, the weighted-resources objective is used by default.
- - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
+ - If the <objective> is ommitted, the weighted-resources objective is used by default.
+ - An <item-var> such as "input:iron-rod" is used to express an input or iron rods that should be used in the production chain. Similary, "output:iron-rod" is used to express the desired output of a product.
+ - An <item> can be used in place of an <item-var>. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 **Examples:**
  
@@ -61,16 +63,18 @@ Maximize production of something. Finds an optimal production chain that maximiz
 
 **Usage:**
 ```
-  !max {objective} where {constraints}
+  !max <objective> "where" <constraints>
   
-  {objective} = {item}
-  {constraints} = {constraint} [and {constraints}]
-  {constraint} = {item-var} {operator} {number}
-  {operator} = '=' or '<=' or '>='
-  {item-var} = {input|output}:{item}
+  <objective>          ::= <item>
+  <constraints>        ::= <constraint> ["and" <constraints>]
+  <constraint>         ::= <item-var> <operator> <number>
+  <operator>           ::= "=" | "<=" | ">="
+  <item-var>           ::= [<prefix> ":"] <item>
+  <prefix>             ::= <input> | <output>
 ```
 
 **Notes:**
+ - An <item-var> such as "input:iron-rod" is used to express an input or iron rods that should be used in the production chain. Similary, "output:iron-rod" is used to express the desired output of a product.
  - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 **Examples:**
