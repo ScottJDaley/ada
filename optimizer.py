@@ -24,7 +24,8 @@ class Optimizer:
 		for item in data["items"].values():
 			item_name = item["slug"]
 			self.item_class_names[item["className"]] = item_name
-			self.variable_names.append(item_name)
+			self.variable_names.append("input:" + item_name)
+			self.variable_names.append("output:" + item_name)
 			self.items.append(item_name)
 
 		# Create a list of resources
@@ -59,51 +60,53 @@ class Optimizer:
 		# Create problem variables
 		self.variables = {}
 		for variable_name in self.variable_names:
-			if variable_name in self.resources:
-				self.variables[variable_name] = pulp.LpVariable(variable_name, upBound = 0)
-			else:
-				self.variables[variable_name] = pulp.LpVariable(variable_name, lowBound = 0)
+			self.variables[variable_name] = pulp.LpVariable(variable_name, lowBound = 0)
 
-		self.unweighted_resources = {
-			self.variables["water"]: 0,
-			self.variables["iron-ore"]: 1,
-			self.variables["copper-ore"]: 1,
-			self.variables["limestone"]: 1,
-			self.variables["coal"]: 1,
-			self.variables["crude-oil"]: 1,
-			self.variables["bauxite"]: 1,
-			self.variables["caterium-ore"]: 1,
-			self.variables["uranium"]: 1,
-			self.variables["raw-quartz"]: 1,
-			self.variables["sulfur"]: 1,
+		unweighted_resources = {
+			"input:water": 0,
+			"input:iron-ore": 1,
+			"input:copper-ore": 1,
+			"input:limestone": 1,
+			"input:coal": 1,
+			"input:crude-oil": 1,
+			"input:bauxite": 1,
+			"input:caterium-ore": 1,
+			"input:uranium": 1,
+			"input:raw-quartz": 1,
+			"input:sulfur": 1,
 		}
 		# Proportional to amount of resource on map
-		self.weighted_resources = {
-			self.variables["water"]: 0,
-			self.variables["iron-ore"]: 1,
-			self.variables["copper-ore"]: 3.29,
-			self.variables["limestone"]: 1.47,
-			self.variables["coal"]: 2.95,
-			self.variables["crude-oil"]: 4.31,
-			self.variables["bauxite"]: 8.48,
-			self.variables["caterium-ore"]: 6.36,
-			self.variables["uranium"]: 46.67,
-			self.variables["raw-quartz"]: 6.36,
-			self.variables["sulfur"]: 13.33,
+		weighted_resources = {
+			"input:water": 0,
+			"input:iron-ore": 1,
+			"input:copper-ore": 3.29,
+			"input:limestone": 1.47,
+			"input:coal": 2.95,
+			"input:crude-oil": 4.31,
+			"input:bauxite": 8.48,
+			"input:caterium-ore": 6.36,
+			"input:uranium": 46.67,
+			"input:raw-quartz": 6.36,
+			"input:sulfur": 13.33,
 		}
 		# Square root of weighted amounts above
-		self.mean_weighted_resources = {
-			self.variables["water"]: 0,
-			self.variables["iron-ore"]: 1,
-			self.variables["copper-ore"]: 1.81,
-			self.variables["limestone"]: 1.21,
-			self.variables["coal"]: 1.72,
-			self.variables["crude-oil"]: 2.08,
-			self.variables["bauxite"]: 2.91,
-			self.variables["caterium-ore"]: 2.52,
-			self.variables["uranium"]: 6.83,
-			self.variables["raw-quartz"]: 2.52,
-			self.variables["sulfur"]: 3.65,
+		mean_weighted_resources = {
+			"input:water": 0,
+			"input:iron-ore": 1,
+			"input:copper-ore": 1.81,
+			"input:limestone": 1.21,
+			"input:coal": 1.72,
+			"input:crude-oil": 2.08,
+			"input:bauxite": 2.91,
+			"input:caterium-ore": 2.52,
+			"input:uranium": 6.83,
+			"input:raw-quartz": 2.52,
+			"input:sulfur": 3.65,
+		}
+		self.built_in_objectives = {
+			"unweighted-resources": unweighted_resources,
+			"weighted-resources": weighted_resources,
+			"mean-weighted-resources": mean_weighted_resources,
 		}
 
 		self.recipe_expressions = []
@@ -116,10 +119,22 @@ class Optimizer:
 			if item in self.recipes_for_ingredient:
 				for recipe, amount in self.recipes_for_ingredient[item].items():
 					recipe_amounts[self.variables[recipe]] = -amount 
-			recipe_amounts[self.variables[item]] = -1
+			recipe_amounts[self.variables["input:" + item]] = 1
+			recipe_amounts[self.variables["output:" + item]] = -1
 			self.recipe_expressions.append(pulp.LpAffineExpression(recipe_amounts) == 0)
 
 		print("Finished creating optimizer")
+
+	def parse_item(self, item):
+		normalized_item = item
+		if not str.startswith(item, "input:") and not str.startswith(item, "output:"):
+			if item in self.resources:
+				normalized_item = "input:" + item
+			else:
+				normalized_item = "output:" + item
+		if normalized_item not in self.variables:
+			raise ParseException("Unknown item variable: " + item)
+		return normalized_item
 
 	def parse_constraints(self, *args):
 		# First separate constraints by 'and'
@@ -138,9 +153,7 @@ class Optimizer:
 		for constraint in constraints_raw:
 			if len(constraint) != 3:
 				raise ParseException("Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-			item = constraint[0]
-			if item not in self.items:
-				raise ParseException("Constraint is for unknown item: " + item)
+			item = self.parse_item(constraint[0])
 			operator = constraint[1]
 			try: 
 				bound = int(constraint[2])
@@ -150,32 +163,57 @@ class Optimizer:
 				raise ParseException("Constraint operator must be one of {{=|<=|>=}}")
 			constraints[item] = (operator, bound)
 		return constraints
+	
+	def parse_objective(self, *args):
+		# TODO: Support expression objectives
+		if len(args) > 1:
+			raise ParseException("Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
+		arg0 = args[0]
+		objective = {}
+		objective_vars = []
+		if arg0 in self.built_in_objectives:
+			for var_name, coefficient in self.built_in_objectives[arg0].items():
+				objective[self.variables[var_name]] = coefficient
+				objective_vars.append(var_name)
+		else:
+			objective_item = self.parse_item(arg0)
+			objective[self.variables[objective_item]] = 1
+			objective_vars.append(objective_item)
+		return objective, objective_vars
 
-	def parse_max_expression(self, *args):
+	def parse_input(self, *args):
 		# First separate out the {item} where clause
 		if len(args) < 2:
 			raise ParseException("Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
-		item = args[0]
-		if item not in self.items:
-			raise ParseException("Unknown item:" + item)
-		if args[1] != "where":
-			raise ParseException("Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
-		return item, self.parse_constraints(*args[2:])
+		where_index = -1
+		for i in range(len(args)):
+			arg = args[i]
+			if arg == "where":
+				where_index = i
+		if where_index <= 0:
+			objective, objective_vars = self.parse_objective("weighted-resources")
+		else:
+			objective, objective_vars = self.parse_objective(*args[:where_index])
+		constraints = self.parse_constraints(*args[where_index+1:])
+		query_vars = objective_vars
+		for var in constraints:
+			query_vars.append(var)
+		return objective, constraints, query_vars
 
 	def print_solution(self):
 		print("INPUT")
 		for variable_name, variable in self.variables.items():
-			if str.startswith(variable_name, "Recipe:"):
+			if not str.startswith(variable_name, "input:"):
 				continue
-			if pulp.value(variable) and pulp.value(variable) < 0:
-				print(variable_name + ":", -pulp.value(variable))
+			if pulp.value(variable) and pulp.value(variable) > 0:
+				print(variable_name[6:] + ":", pulp.value(variable))
 		print()
 		print("OUTPUT")
 		for variable_name, variable in self.variables.items():
-			if str.startswith(variable_name, "Recipe:"):
+			if not str.startswith(variable_name, "output:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
-				print(variable_name + ":", pulp.value(variable))
+				print(variable_name[7:] + ":", pulp.value(variable))
 		print()
 		print("RECIPES")
 		for variable_name, variable in self.variables.items():
@@ -183,15 +221,12 @@ class Optimizer:
 				continue
 			if pulp.value(variable):
 				print(variable_name + ":", pulp.value(variable))
-		
-	
-	def max(self, *args):
-		print("calling max with", len(args), "arguments:", ', '.join(args))
 
+	def optimize(self, max, *args):
 		# Parse input
 		# {item} where {item} {=|<=|>=} {number} and ...
 		try:
-			max_item, constraints = self.parse_max_expression(*args)
+			objective, constraints, query_vars = self.parse_input(*args)
 		except ParseException as err:
 			print(err)
 			return
@@ -199,10 +234,18 @@ class Optimizer:
 		for item, expr in constraints.items():
 			print("constraint:", item, expr[0], expr[1])
 
-		# Ojective: to maximize the production on an item given the constraints.
-		prob = pulp.LpProblem('Problem', pulp.LpMaximize)
+		# Ojective: to maximize the production of on an item given the constraints.
+		if max:
+			prob = pulp.LpProblem('Maximize Problem', pulp.LpMaximize)
+		else:
+			prob = pulp.LpProblem('Minimize Problem', pulp.LpMinimize)
 
-		prob += self.variables[max_item]
+		if objective:
+			# TODO: Support more flexible objective
+			prob += pulp.LpAffineExpression(objective)
+		else:
+			print("Must have objective")
+			return
 
 		# Add recipe constraints
 		for exp in self.recipe_expressions:
@@ -210,14 +253,14 @@ class Optimizer:
 
 		# Add item constraints
 		for item in self.items:
+			# Don't require any other inputs
+			item_input = "input:" + item
+			if item_input not in query_vars:
+				prob += self.variables[item_input] == 0
 			# Eliminate byproducts
-			if item != max_item and item not in constraints and item not in self.resources:
-				prob += self.variables[item] == 0
-
-		# Add resource constraints for any unspecified
-		for resource in self.resources:
-			if resource != max_item and resource not in constraints:
-				prob += self.variables[resource] == 0
+			item_output = "output:" + item
+			if item_output not in query_vars:
+				prob += self.variables[item_output] == 0
 
 		# Add flexible constraint for resources
 		# for resource_var, multiplier in self.weighted_resources.items():
@@ -251,65 +294,17 @@ class Optimizer:
 		# Printing the final solution 
 		self.print_solution()
 
-		print()
-		print("OBJECTIVE VALUE")
-		print(pulp.value(prob.objective))
+		# print()
+		# print("OBJECTIVE VALUE")
+		# print(pulp.value(prob.objective))
+		
+	def max(self, *args):
+		print("calling max with", len(args), "arguments:", ', '.join(args))
+		self.optimize(True, *args)
 
 	def min(self, *args):
 		print("calling min with", len(args), "arguments:", ', '.join(args))
-
-		# Parse input
-		# {item} {=|<=|>=} {number} and ...
-		try:
-			constraints = self.parse_constraints(*args)
-		except ParseException as err:
-			print(err)
-			return
-		
-		for item, expr in constraints.items():
-			print("constraint:", item, expr[0], expr[1])
-		
-		# Objective: to minimize raw resource usage to achieve the constraints.
-		# This is represented as a maximize problem since resource variables are negative 
-		prob = pulp.LpProblem('Problem', pulp.LpMaximize)
-		# TODO: Let users change this?
-		prob += pulp.LpAffineExpression(self.mean_weighted_resources)
-
-		# Add recipe constraints
-		for exp in self.recipe_expressions:
-			prob += exp
-
-		# Add item constraints
-		for item in self.items:
-			# Eliminate byproducts
-			if item not in constraints and item not in self.resources:
-				prob += self.variables[item] == 0
-
-		# Add provided contraints
-		for item, expr in constraints.items():
-			op = expr[0]
-			bound = expr[1]
-			if op == "=":
-				prob += self.variables[item] == bound
-			elif op == ">=":
-				prob += self.variables[item] >= bound
-			else: # op == "<="
-				prob += self.variables[item] <= bound
-		
-		# Display the problem 
-		# print(prob) 
-
-		# Solve
-		status = prob.solve()
-		print("Solver status:", pulp.LpStatus[status])
-		print()
-		
-		# Printing the final solution 
-		self.print_solution()
-
-		print()
-		print("OBJECTIVE VALUE")
-		print(pulp.value(prob.objective))
+		self.optimize(False, *args)
 		
 			
 

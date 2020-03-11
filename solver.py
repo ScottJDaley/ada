@@ -107,8 +107,8 @@ prob = pulp.LpProblem('Problem', pulp.LpMaximize)
 # Minimize raw resource usage.
 # prob += pulp.LpAffineExpression(unweighted)
 # prob += pulp.LpAffineExpression(mean_weighted)
-# prob += pulp.LpAffineExpression(weighted) + 1000*variables["Heavy Modular Frame"]
-prob += variables["Fuel"]
+prob += pulp.LpAffineExpression(weighted)
+# prob += variables["Fuel"]
 
 # Input
 # prob += variables["Iron Ore"] >= -60
@@ -117,14 +117,14 @@ prob += variables["Fuel"]
 # Output
 
 # We want exactly 35 iron ingots per minute
-# prob += variables["Iron Ingot"] == 35
+prob += variables["Iron Plate"] == 60
 # prob += variables["Water"] == 0
-prob += variables["Crude Oil"] == -240
+# prob += variables["Crude Oil"] == -240
 
 # Eliminate byproducts
 # prob += variables["Rubber"] == 0
 # prob += variables["Fabric"] == 0
-prob += variables["Packaged Water"] == 0
+# prob += variables["Packaged Water"] == 0
 # prob += variables["Polymer Resin"] == 0
 # prob += variables["Empty Canister"] == 0
 # prob += variables["Plastic"] == 0
@@ -135,7 +135,7 @@ prob += variables["Packaged Water"] == 0
 # prob += variables["Modular Frame"]
 # prob += variables["Iron Ore"] == -60
 
-prob += variables["Copper Ore"] == 0
+# prob += variables["Copper Ore"] == 0
 
 # Constraints: 
 
