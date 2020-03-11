@@ -2,10 +2,10 @@
 A production optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
 
 
-# How to use
+## How to use
 Currently supports two commands:
 
-## !min
+### !min
 
 Minimize resource usage to produce something. Finds an optimal production chain that minimizes an objective while satisfying all constraints
 
@@ -55,7 +55,7 @@ Change the objective function:
 !min rubber where fuel = 600 and crude-oil <= 240 and water >= 0
 ```
 
-## !max
+### !max
 
 Maximize production of something. Finds an optimal production chain that maximizes an objective while satisfying all constraints.
 
