@@ -5,13 +5,14 @@ import pulp
 class ParseException(Exception):
 	def __init__(self, msg):
 		self.msg = msg
+
 	def __str__(self):
 		return self.msg
 
 
 class Optimizer:
-	#TODO: Let users specify alternate recipes and building unlocks
-	def __init__(self, skip_alternates = False):
+	# TODO: Let users specify alternate recipes and building unlocks
+	def __init__(self, skip_alternates=False):
 		# Parse data file
 		with open("data.json") as f:
 			data = json.load(f)
@@ -50,17 +51,19 @@ class Optimizer:
 				ingredient_name = self.item_class_names[ingredient["item"]]
 				if ingredient_name not in self.recipes_for_ingredient:
 					self.recipes_for_ingredient[ingredient_name] = {}
-				self.recipes_for_ingredient[ingredient_name][recipe_name] = 60 * ingredient["amount"]  / recipe["time"]
+				self.recipes_for_ingredient[ingredient_name][recipe_name] = 60 * \
+				    ingredient["amount"] / recipe["time"]
 			for product in recipe["products"]:
 				product_name = self.item_class_names[product["item"]]
 				if product_name not in self.recipes_for_product:
 					self.recipes_for_product[product_name] = {}
-				self.recipes_for_product[product_name][recipe_name] = 60 * product["amount"] / recipe["time"]
+				self.recipes_for_product[product_name][recipe_name] = 60 * \
+				    product["amount"] / recipe["time"]
 
 		# Create problem variables
 		self.variables = {}
 		for variable_name in self.variable_names:
-			self.variables[variable_name] = pulp.LpVariable(variable_name, lowBound = 0)
+			self.variables[variable_name] = pulp.LpVariable(variable_name, lowBound=0)
 
 		unweighted_resources = {
 			"input:water": 0,
@@ -112,13 +115,13 @@ class Optimizer:
 		self.recipe_expressions = []
 
 		for item in self.items:
-			recipe_amounts = {} # variable => coefficient
+			recipe_amounts = {}  # variable => coefficient
 			if item in self.recipes_for_product:
 				for recipe, amount in self.recipes_for_product[item].items():
 					recipe_amounts[self.variables[recipe]] = amount
 			if item in self.recipes_for_ingredient:
 				for recipe, amount in self.recipes_for_ingredient[item].items():
-					recipe_amounts[self.variables[recipe]] = -amount 
+					recipe_amounts[self.variables[recipe]] = -amount
 			recipe_amounts[self.variables["input:" + item]] = 1
 			recipe_amounts[self.variables["output:" + item]] = -1
 			self.recipe_expressions.append(pulp.LpAffineExpression(recipe_amounts) == 0)
@@ -146,16 +149,17 @@ class Optimizer:
 				constraints_raw.append(args[start_index:index])
 				start_index = index + 1
 			index += 1
-		
+
 		# Then parse the constraints
 		# 	item => (op, bound)
 		constraints = {}
 		for constraint in constraints_raw:
 			if len(constraint) != 3:
-				raise ParseException("Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
+				raise ParseException(
+				    "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
 			item = self.parse_item(constraint[0])
 			operator = constraint[1]
-			try: 
+			try:
 				bound = int(constraint[2])
 			except ValueError:
 				raise ParseException("Constraint bound must be an number.")
@@ -163,11 +167,12 @@ class Optimizer:
 				raise ParseException("Constraint operator must be one of {{=|<=|>=}}")
 			constraints[item] = (operator, bound)
 		return constraints
-	
+
 	def parse_objective(self, *args):
 		# TODO: Support expression objectives
 		if len(args) > 1:
-			raise ParseException("Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
+			raise ParseException(
+			    "Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
 		arg0 = args[0]
 		objective = {}
 		objective_vars = []
@@ -184,7 +189,8 @@ class Optimizer:
 	def parse_input(self, *args):
 		# First separate out the {item} where clause
 		if len(args) < 2:
-			raise ParseException("Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
+			raise ParseException(
+			    "Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
 		where_index = -1
 		for i in range(len(args)):
 			arg = args[i]
@@ -200,27 +206,28 @@ class Optimizer:
 			query_vars.append(var)
 		return objective, constraints, query_vars
 
-	def print_solution(self):
-		print("INPUT")
+	def get_solution(self):		
+		out = ["INPUT"]
 		for variable_name, variable in self.variables.items():
 			if not str.startswith(variable_name, "input:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
-				print(variable_name[6:] + ":", pulp.value(variable))
-		print()
-		print("OUTPUT")
+				out.append(variable_name[6:] + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("OUTPUT")
 		for variable_name, variable in self.variables.items():
 			if not str.startswith(variable_name, "output:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
-				print(variable_name[7:] + ":", pulp.value(variable))
-		print()
-		print("RECIPES")
+				out.append(variable_name[7:] + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("RECIPES")
 		for variable_name, variable in self.variables.items():
 			if not str.startswith(variable_name, "Recipe:"):
 				continue
 			if pulp.value(variable):
-				print(variable_name + ":", pulp.value(variable))
+				out.append(variable_name + ": " + str(pulp.value(variable)))
+		return '\n'.join(out)
 
 	def optimize(self, max, *args):
 		# Parse input
@@ -228,8 +235,7 @@ class Optimizer:
 		try:
 			objective, constraints, query_vars = self.parse_input(*args)
 		except ParseException as err:
-			print(err)
-			return
+			return err
 
 		for item, expr in constraints.items():
 			print("constraint:", item, expr[0], expr[1])
@@ -242,10 +248,10 @@ class Optimizer:
 
 		if objective:
 			# TODO: Support more flexible objective
+			print("OBJECTIVE:", objective)
 			prob += pulp.LpAffineExpression(objective)
 		else:
-			print("Must have objective")
-			return
+			return "Must have objective"
 
 		# Add recipe constraints
 		for exp in self.recipe_expressions:
@@ -288,23 +294,22 @@ class Optimizer:
 
 		# Solve
 		status = prob.solve()
-		print("Solver status:", pulp.LpStatus[status])
-		print()
-		
-		# Printing the final solution 
-		self.print_solution()
+		solution = self.get_solution() + "\n\nSolver status: " + pulp.LpStatus[status]
+			
+		# print(solution)
 
 		# print()
 		# print("OBJECTIVE VALUE")
 		# print(pulp.value(prob.objective))
+		return solution
 		
 	def max(self, *args):
 		print("calling max with", len(args), "arguments:", ', '.join(args))
-		self.optimize(True, *args)
+		return self.optimize(True, *args)
 
 	def min(self, *args):
 		print("calling min with", len(args), "arguments:", ', '.join(args))
-		self.optimize(False, *args)
+		return self.optimize(False, *args)
 		
 			
 
