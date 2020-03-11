@@ -90,3 +90,6 @@ Maximize production of ...
 !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
 ```
 
+## Acknowledgements
+The JSON data used by this program comes from Greeny's SatisfactoryTools
+https://github.com/greeny/SatisfactoryTools
