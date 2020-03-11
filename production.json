@@ -1,0 +1,14 @@
+{
+	"inputs": {
+		"Iron Ore": 60,
+		"Iron Rod": 200
+	},
+	"outputs": {
+	},
+	"constraints": {
+		"Iron Ore": ">= -60"
+	},
+	"objective": {
+		"Modular Frame": ""
+	}
+}
