@@ -1,31 +1,34 @@
 # satisfoptimizer
 A production calculator and optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
 
-
 ## How to use
 Currently supports two commands:
 
 ### !min
 
-Minimize resource usage to produce something. Finds an optimal production chain that minimizes an objective while satisfying all constraints
+Finds an optimal production chain that minimizes an objective while satisfying all constraints.
 
-**Usage:**
+**Basic Usage:**
 ```
-  !min [<objective> "where"] <constraints>
-  
-  <objective>          ::= <item> | <built-in-objective>
-  <built-in-objective> ::= "unweighted-resources" | "weighted-resources" | "mean-weighted-resources"
+  !min iron-rod = 60
+```
+
+**Advanced Usage:**
+```ebnf
+  <syntax>             ::= "!min" [<objective> "where"] <constraints>
+  <objective>          ::= <item> | <built_in_objective>
+  <built_in_objective> ::= "unweighted-resources" | "weighted-resources" | "mean-weighted-resources"
   <constraints>        ::= <constraint> ["and" <constraints>]
-  <constraint>         ::= <item-var> <operator> <number>
+  <constraint>         ::= <item_var> <operator> <number>
   <operator>           ::= "=" | "<=" | ">="
-  <item-var>           ::= [<prefix> ":"] <item>
+  <item_var>           ::= [<prefix> ":"] <item>
   <prefix>             ::= <input> | <output>
 ```
 
 **Notes:**
- - If the <objective> is ommitted, the weighted-resources objective is used by default.
- - An <item-var> such as "input:iron-rod" is used to express an input or iron rods that should be used in the production chain. Similary, "output:iron-rod" is used to express the desired output of a product.
- - An <item> can be used in place of an <item-var>. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
+ - If the `<objective>` is ommitted, the `weighted-resources` objective is used by default.
+ - An `<item_var>` such as `input:iron-rod` is used to express an input or iron rods that should be used in the production chain. Similary, `output:iron-rod` is used to express the desired output of a product.
+ - An `<item>` can be used in place of an `<item_var>`. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 **Examples:**
  
@@ -59,23 +62,27 @@ Change the objective function:
 
 ### !max
 
-Maximize production of something. Finds an optimal production chain that maximizes an objective while satisfying all constraints.
+Finds an optimal production chain that maximizes an objective while satisfying all constraints.
 
-**Usage:**
+**Basic Usage:**
 ```
-  !max <objective> "where" <constraints>
-  
+  !max iron-rod where iron-ore <= 60
+```
+
+**Advanced Usage:**
+```ebnf
+  <syntax>             ::= "!max" <objective> "where" <constraints>
   <objective>          ::= <item>
   <constraints>        ::= <constraint> ["and" <constraints>]
-  <constraint>         ::= <item-var> <operator> <number>
+  <constraint>         ::= <item_var> <operator> <number>
   <operator>           ::= "=" | "<=" | ">="
-  <item-var>           ::= [<prefix> ":"] <item>
+  <item_var>           ::= [<prefix> ":"] <item>
   <prefix>             ::= <input> | <output>
 ```
 
 **Notes:**
- - An <item-var> such as "input:iron-rod" is used to express an input or iron rods that should be used in the production chain. Similary, "output:iron-rod" is used to express the desired output of a product.
- - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
+ - An `<item_var>` such as `input:iron-rod` is used to express an input or iron rods that should be used in the production chain. Similary, `output:iron-rod` is used to express the desired output of a product.
+ - An `<item>` can be used in place of an `<item_var>`. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 **Examples:**
  
