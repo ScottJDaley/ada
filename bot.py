@@ -123,3 +123,5 @@ class Optimization(commands.Cog):
 bot.add_cog(Optimization())
 
 bot.run(token)
+
+input("Enter")
