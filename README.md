@@ -3,12 +3,15 @@ A production calculator and optimizer for the video game Satisfactory. Available
 
 ## Installation
 
+1. Install python modules
 ```console
 $ pip install pulp
 $ pip install discord
 $ pip install python-dotenv
 $ pip install graphviz
 ```
+
+2. Download GraphViz: https://www.graphviz.org/download/
 
 ## How to use
 Currently supports two commands:
