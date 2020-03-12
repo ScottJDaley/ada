@@ -19,12 +19,15 @@ class Optimizer:
 
 		self.variable_names = []
 
+		# Create dictionaries of item slug names => human readable names
+		self.friendly_item_names = {}
 		# Create a dictionary of items, item class name => item slug name
 		self.item_class_names = {}
 		self.items = []
 		for item in data["items"].values():
 			item_name = item["slug"]
 			self.item_class_names[item["className"]] = item_name
+			self.friendly_item_names[item_name] = item["name"]
 			self.variable_names.append("input:" + item_name)
 			self.variable_names.append("output:" + item_name)
 			self.items.append(item_name)
@@ -34,18 +37,20 @@ class Optimizer:
 		for resource in data["resources"].values():
 			self.resources.append(self.item_class_names[resource["item"]])
 
+		# Create dictionaries of recipe slug names => human readable names
+		self.friendly_recipe_names = {}
 		# Create a dictionary from product => [recipe => product amount]
 		self.recipes_for_product = {}
 		# Create a dictionary from ingredient => [recipe => ingredient amount]
 		self.recipes_for_ingredient = {}
-
 		for recipe in data["recipes"].values():
 			if not recipe["inMachine"]:
 				continue
+			recipe_name = "recipe:" + recipe["slug"]
 			if skip_alternates and recipe["alternate"]:
-				print("Skipping ", recipe["name"])
+				print("Skipping ", recipe_name)
 				continue
-			recipe_name = "Recipe: " + recipe["name"]
+			self.friendly_recipe_names[recipe_name] = "Recipe: " + recipe["name"]
 			self.variable_names.append(recipe_name)
 			for ingredient in recipe["ingredients"]:
 				ingredient_name = self.item_class_names[ingredient["item"]]
@@ -128,16 +133,16 @@ class Optimizer:
 
 		print("Finished creating optimizer")
 
-	def parse_item(self, item):
-		normalized_item = item
-		if not str.startswith(item, "input:") and not str.startswith(item, "output:"):
-			if item in self.resources:
-				normalized_item = "input:" + item
+	def parse_variable(self, var):
+		normalized_var = var
+		if not str.startswith(var, "input:") and not str.startswith(var, "output:") and not str.startswith(var, "recipe:"):
+			if var in self.resources:
+				normalized_var = "input:" + var
 			else:
-				normalized_item = "output:" + item
-		if normalized_item not in self.variables:
-			raise ParseException("Unknown item variable: " + item)
-		return normalized_item
+				normalized_var = "output:" + var
+		if normalized_var not in self.variables:
+			raise ParseException("Unknown variable: " + var)
+		return normalized_var
 
 	def parse_constraints(self, *args):
 		# First separate constraints by 'and'
@@ -151,13 +156,13 @@ class Optimizer:
 			index += 1
 
 		# Then parse the constraints
-		# 	item => (op, bound)
+		# 	var => (op, bound)
 		constraints = {}
 		for constraint in constraints_raw:
 			if len(constraint) != 3:
 				raise ParseException(
 				    "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-			item = self.parse_item(constraint[0])
+			var = self.parse_variable(constraint[0])
 			operator = constraint[1]
 			try:
 				bound = int(constraint[2])
@@ -165,7 +170,7 @@ class Optimizer:
 				raise ParseException("Constraint bound must be an number.")
 			if operator != "=" and operator != ">=" and operator != "<=":
 				raise ParseException("Constraint operator must be one of {{=|<=|>=}}")
-			constraints[item] = (operator, bound)
+			constraints[var] = (operator, bound)
 		return constraints
 
 	def parse_objective(self, *args):
@@ -181,7 +186,7 @@ class Optimizer:
 				objective[self.variables[var_name]] = coefficient
 				objective_vars.append(var_name)
 		else:
-			objective_item = self.parse_item(arg0)
+			objective_item = self.parse_variable(arg0)
 			objective[self.variables[objective_item]] = 1
 			objective_vars.append(objective_item)
 		return objective, objective_vars
@@ -212,21 +217,24 @@ class Optimizer:
 			if not str.startswith(variable_name, "input:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
-				out.append(variable_name[6:] + ": " + str(pulp.value(variable)))
+				friendly_name = self.friendly_item_names[variable_name[6:]]
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
 		out.append("OUTPUT")
 		for variable_name, variable in self.variables.items():
 			if not str.startswith(variable_name, "output:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
-				out.append(variable_name[7:] + ": " + str(pulp.value(variable)))
+				friendly_name = self.friendly_item_names[variable_name[7:]]
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
 		out.append("RECIPES")
 		for variable_name, variable in self.variables.items():
-			if not str.startswith(variable_name, "Recipe:"):
+			if not str.startswith(variable_name, "recipe:"):
 				continue
 			if pulp.value(variable):
-				out.append(variable_name + ": " + str(pulp.value(variable)))
+				friendly_name = self.friendly_recipe_names[variable_name]
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		return '\n'.join(out)
 
 	def optimize(self, max, *args):
@@ -242,9 +250,9 @@ class Optimizer:
 
 		# Ojective: to maximize the production of on an item given the constraints.
 		if max:
-			prob = pulp.LpProblem('Maximize Problem', pulp.LpMaximize)
+			prob = pulp.LpProblem('max-problem', pulp.LpMaximize)
 		else:
-			prob = pulp.LpProblem('Minimize Problem', pulp.LpMinimize)
+			prob = pulp.LpProblem('min-problem', pulp.LpMinimize)
 
 		if objective:
 			# TODO: Support more flexible objective
