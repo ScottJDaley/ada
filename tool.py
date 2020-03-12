@@ -4,7 +4,7 @@ import optimizer
 
 
 def print_help():
-    print("Please enter a supported command ('min', 'max', 'exit').")
+    print("Please enter a supported command ('!min', '!max', '!exit').")
 
 
 def main():
@@ -18,11 +18,11 @@ def main():
         command = inputs[0]
         args = inputs[1:]
 
-        if command == "exit":
+        if command == "!exit":
             return
-        elif command == "min":
+        elif command == "!min":
             print(opt.min(*args))
-        elif command == "max":
+        elif command == "!max":
             print(opt.max(*args))
         else:
             print_help()
@@ -31,4 +31,5 @@ def main():
 if __name__ == "__main__":
     print("Welcome to the Satisfoptimizer!")
     main()
+    input("Enter")
     print("Goodbye")
