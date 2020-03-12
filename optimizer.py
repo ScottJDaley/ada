@@ -23,14 +23,14 @@ class Optimizer:
 		self.friendly_item_names = {}
 		# Create a dictionary of items, item class name => item slug name
 		self.item_class_names = {}
-		self.items = []
+		self.items = {}
 		for item in data["items"].values():
 			item_name = item["slug"]
 			self.item_class_names[item["className"]] = item_name
 			self.friendly_item_names[item_name] = item["name"]
 			self.variable_names.append("input:" + item_name)
 			self.variable_names.append("output:" + item_name)
-			self.items.append(item_name)
+			self.items[item_name] = item
 
 		# Create a list of resources
 		self.resources = []
@@ -311,13 +311,37 @@ class Optimizer:
 		# print(pulp.value(prob.objective))
 		return solution
 		
-	def max(self, *args):
-		print("calling max with", len(args), "arguments:", ', '.join(args))
+	def cmd_max(self, *args):
+		print("calling !max with", len(args), "arguments:", ', '.join(args))
 		return self.optimize(True, *args)
 
-	def min(self, *args):
-		print("calling min with", len(args), "arguments:", ', '.join(args))
+	def cmd_min(self, *args):
+		print("calling !min with", len(args), "arguments:", ', '.join(args))
 		return self.optimize(False, *args)
+
+	def get_item_details(self, item):
+		item_details = self.items[item]
+		out = [item_details["name"]]
+		out.append("  slug: " + item_details["slug"])
+		out.append("  stack size: " + str(item_details["stackSize"]))
+		out.append(item_details["description"])
+		out.append("")
+		return '\n'.join(out)
+
+	def cmd_items(self, *args):
+		print("calling !items with", len(args), "arguments:", ', '.join(args))
+
+		if len(args) == 0:
+			out = []
+			for item in sorted(self.items):
+				out.append(item)
+			return '\n'.join(out)
+		if len(args) == 1:
+			item_name = args[0]
+			if item_name not in self.items:
+				return "Unknown item: " + item_name
+			return self.get_item_details(item_name)
+
 		
 			
 

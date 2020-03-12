@@ -4,7 +4,7 @@ import optimizer
 
 
 def print_help():
-    print("Please enter a supported command ('!min', '!max', 'exit', '!exit').")
+    print("Please enter a supported command ('!min', '!max', !items, 'exit', '!exit').")
 
 
 def main():
@@ -21,9 +21,11 @@ def main():
         if command == "exit" or command == '!exit':
             return
         elif command == "!min":
-            print(opt.min(*args))
+            print(opt.cmd_min(*args))
         elif command == "!max":
-            print(opt.max(*args))
+            print(opt.cmd_max(*args))
+        elif command == "!items":
+            print(opt.cmd_items(*args))
         else:
             print_help()
 

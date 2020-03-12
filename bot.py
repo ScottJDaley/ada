@@ -107,17 +107,23 @@ Examples:
       !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
 """
 
+items_help = """Print item details"""
+
 
 class Optimization(commands.Cog):
     """Optimization commands"""
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await ctx.send(opt.min(*args))
+        await ctx.send(opt.cmd_min(*args))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await ctx.send(opt.max(*args))
+        await ctx.send(opt.cmd_max(*args))
+
+    @commands.command(pass_context=True, help=items_help)
+    async def items(self, ctx, *args):
+        await ctx.send(opt.cmd_items(*args))
 
 
 bot.add_cog(Optimization())
