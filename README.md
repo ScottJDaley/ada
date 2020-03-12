@@ -5,14 +5,8 @@ A production calculator and optimizer for the video game Satisfactory. Available
 
 ```console
 $ pip install pulp
-```
-```console
 $ pip install discord
-```
-```console
-$ pip install -U python-dotenv
-```
-```console
+$ pip install python-dotenv
 $ pip install graphviz
 ```
 
