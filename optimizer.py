@@ -43,6 +43,7 @@ class Optimizer:
 		self.recipes_for_product = {}
 		# Create a dictionary from ingredient => [recipe => ingredient amount]
 		self.recipes_for_ingredient = {}
+		self.recipes = {}
 		for recipe in data["recipes"].values():
 			if not recipe["inMachine"]:
 				continue
@@ -50,6 +51,7 @@ class Optimizer:
 			if skip_alternates and recipe["alternate"]:
 				print("Skipping ", recipe_name)
 				continue
+			self.recipes[recipe_name] = recipe
 			self.friendly_recipe_names[recipe_name] = "Recipe: " + recipe["name"]
 			self.variable_names.append(recipe_name)
 			for ingredient in recipe["ingredients"]:
@@ -322,7 +324,7 @@ class Optimizer:
 	def get_item_details(self, item):
 		item_details = self.items[item]
 		out = [item_details["name"]]
-		out.append("  slug: " + item_details["slug"])
+		out.append("  slug: " + item)
 		out.append("  stack size: " + str(item_details["stackSize"]))
 		out.append(item_details["description"])
 		out.append("")
@@ -341,6 +343,45 @@ class Optimizer:
 			if item_name not in self.items:
 				return "Unknown item: " + item_name
 			return self.get_item_details(item_name)
+
+	def get_recipe_details(self, recipe):
+		recipe_details = self.recipes[recipe]
+		out = ["Recipe: " + recipe_details["name"]]
+		out.append("  slug: " + recipe)
+		out.append("  time: " + str(recipe_details["time"]))
+		out.append("  ingredients:")
+		for ingredient in recipe_details["ingredients"]:
+			out.append("    " + self.item_class_names[ingredient["item"]] + ": " + str(ingredient["amount"]))
+		out.append("  products:")
+		for product in recipe_details["products"]:
+			out.append("    " + self.item_class_names[product["item"]] + ": " + str(product["amount"]))
+		out.append("")
+		return '\n'.join(out)
+
+	def cmd_recipes(self, *args):
+		print("calling !recipes with", len(args), "arguments:", ', '.join(args))
+
+		if len(args) == 0:
+			out = []
+			for recipe in sorted(self.recipes):
+				out.append(recipe)
+			return '\n'.join(out)
+		if len(args) == 1:
+			arg = args[0]
+			if arg not in self.items and arg not in self.recipes:
+				return "Unknown recipe or item: " + arg
+			if arg in self.recipes:
+				return self.get_recipe_details(arg)
+			if arg in self.items:
+				out = []
+				out.append("Recipes producing item:")
+				for recipe in self.recipes_for_product[arg]:
+					out.append(self.get_recipe_details(recipe))
+				out.append("Recipes requiring item:")
+				for recipe in self.recipes_for_ingredient[arg]:
+					out.append(self.get_recipe_details(recipe))
+				return '\n'.join(out)
+
 
 		
 			
