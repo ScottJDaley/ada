@@ -31,7 +31,7 @@ def main():
         elif command == "!items":
             print(satisfaction.items(*args))
         elif command == "!recipes":
-            print(opt.cmd_recipes(*args))
+            print(satisfaction.recipes(*args))
         else:
             print_help()
 
