@@ -11,7 +11,9 @@ $ pip install python-dotenv
 $ pip install graphviz
 ```
 
-2. Download GraphViz: https://www.graphviz.org/download/
+2. Install GraphViz:
+ - Download from: https://www.graphviz.org/download/
+ - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
 
 ## How to use
 Currently supports two commands:
