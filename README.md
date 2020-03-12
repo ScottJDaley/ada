@@ -1,6 +1,18 @@
 # satisfoptimizer
 A production calculator and optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
 
+## Installation
+
+```console
+$ pip install pulp
+```
+```console
+$ pip install discord
+```
+```console
+$ pip install -U python-dotenv
+```
+
 ## How to use
 Currently supports two commands:
 
