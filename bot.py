@@ -16,6 +16,14 @@ opt = optimizer.Optimizer()
 
 bot = commands.Bot(command_prefix='!')
 
+async def send_message(ctx, msg):
+  DISCORD_MESSAGE_LIMIT = 2000
+  while len(msg) > DISCORD_MESSAGE_LIMIT:
+    newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
+    await ctx.send(msg[:newline_index])
+    msg = msg[newline_index:]
+  await ctx.send(msg)
+
 
 @bot.event
 async def on_ready():
@@ -129,19 +137,19 @@ class Optimization(commands.Cog):
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await ctx.send(opt.cmd_min(*args))
+        await send_message(ctx, opt.cmd_min(*args))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await ctx.send(opt.cmd_max(*args))
+        await send_message(ctx, opt.cmd_max(*args))
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        await ctx.send(opt.cmd_items(*args))
+        await send_message(ctx, opt.cmd_items(*args))
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
-        await ctx.send(opt.cmd_recipes(*args))
+        await send_message(ctx, opt.cmd_recipes(*args))
 
 
 bot.add_cog(Optimization())
