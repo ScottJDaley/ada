@@ -46,8 +46,8 @@ class Satisfaction:
 
     def min(self, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))
-        return self.__opt.optimize(max=False, *args)
+        return self.__opt.optimize(False, *args)
 
     def max(self, *args):
         print("calling !max with", len(args), "arguments:", ', '.join(args))
-        return self.__opt.optimize(max=True, *args)
+        return self.__opt.optimize(True, *args)

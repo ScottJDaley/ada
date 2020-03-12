@@ -10,7 +10,6 @@ def print_help():
 
 
 def main():
-
     satisfaction = Satisfaction()
     opt = optimizer.Optimizer(DB("data.json"))
 
@@ -25,9 +24,9 @@ def main():
         if command == "exit" or command == '!exit':
             return
         elif command == "!min":
-            print(opt.cmd_min(*args))
+            print(satisfaction.min(*args))
         elif command == "!max":
-            print(opt.cmd_max(*args))
+            print(satisfaction.max(*args))
         elif command == "!items":
             print(satisfaction.items(*args))
         elif command == "!recipes":
