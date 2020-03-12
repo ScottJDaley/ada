@@ -1,4 +1,4 @@
-import json
+import json # TODO: Remove once moved to DB
 import pulp
 
 
@@ -12,7 +12,7 @@ class ParseException(Exception):
 
 class Optimizer:
 	# TODO: Let users specify alternate recipes and building unlocks
-	def __init__(self, skip_alternates=False):
+	def __init__(self, db):
 		# Parse data file
 		with open("data.json") as f:
 			data = json.load(f)
@@ -48,9 +48,6 @@ class Optimizer:
 			if not recipe["inMachine"]:
 				continue
 			recipe_name = "recipe:" + recipe["slug"]
-			if skip_alternates and recipe["alternate"]:
-				print("Skipping ", recipe_name)
-				continue
 			self.recipes[recipe_name] = recipe
 			self.friendly_recipe_names[recipe_name] = "Recipe: " + recipe["name"]
 			self.variable_names.append(recipe_name)

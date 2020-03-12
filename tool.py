@@ -1,6 +1,8 @@
 import pulp
 import json
 import optimizer
+from db import DB
+from satisfaction import Satisfaction
 
 
 def print_help():
@@ -8,7 +10,9 @@ def print_help():
 
 
 def main():
-    opt = optimizer.Optimizer()
+
+    satisfaction = Satisfaction()
+    opt = optimizer.Optimizer(DB("data.json"))
 
     print_help()
     while True:
@@ -25,7 +29,7 @@ def main():
         elif command == "!max":
             print(opt.cmd_max(*args))
         elif command == "!items":
-            print(opt.cmd_items(*args))
+            print(satisfaction.items(*args))
         elif command == "!recipes":
             print(opt.cmd_recipes(*args))
         else:
