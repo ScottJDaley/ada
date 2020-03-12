@@ -1,6 +1,6 @@
 import os
 import discord
-import optimizer
+from satisfaction import Satisfaction
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -12,7 +12,7 @@ token = os.getenv('DISCORD_TOKEN')
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
-opt = optimizer.Optimizer()
+satisfaction = Satisfaction()
 
 bot = commands.Bot(command_prefix='!')
 
@@ -137,19 +137,19 @@ class Optimization(commands.Cog):
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await send_message(ctx, opt.cmd_min(*args))
+        await send_message(ctx, satisfaction.min(*args))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await send_message(ctx, opt.cmd_max(*args))
+        await send_message(ctx, satisfaction.max(*args))
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        await send_message(ctx, opt.cmd_items(*args))
+        await send_message(ctx, satisfaction.items(*args))
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
-        await send_message(ctx, opt.cmd_recipes(*args))
+        await send_message(ctx, satisfaction.recipes(*args))
 
 
 bot.add_cog(Optimization())
