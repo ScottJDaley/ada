@@ -12,6 +12,9 @@ $ pip install discord
 ```console
 $ pip install -U python-dotenv
 ```
+```console
+$ pip install graphviz
+```
 
 ## How to use
 Currently supports two commands:
