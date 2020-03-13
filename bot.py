@@ -34,7 +34,7 @@ async def on_ready():
 async def on_error(event, *args, **kwargs):
     with open('err.log', 'a') as f:
         if event == 'on_message':
-            f.write(f'Unhandled message: {args[0]}\n')
+           print('Unhandled message', args[0])
         else:
             raise
 
@@ -137,11 +137,11 @@ class Optimization(commands.Cog):
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await send_message(ctx, satisfaction.min(*args))
+        await ctx.send(content=satisfaction.min(*args), file=discord.File("output.gv.png"))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await send_message(ctx, satisfaction.max(*args))
+        await ctx.send(content=satisfaction.max(*args), file=discord.File("output.gv.png"))
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):

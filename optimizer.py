@@ -81,9 +81,9 @@ class Optimizer:
 			recipes_for_item = self.__db.recipes_for_product(item)
 			recipes_from_item = self.__db.recipes_for_ingredient(item)
 			for recipe in recipes_for_item:
-				recipe_amounts[self.__variables[recipe.var()]] = recipe.product_amount(item)
+				recipe_amounts[self.__variables[recipe.var()]] = recipe.product_minute_rate(item)
 			for recipe in recipes_from_item:
-				recipe_amounts[self.__variables[recipe.var()]] = -recipe.ingredient_amount(item)
+				recipe_amounts[self.__variables[recipe.var()]] = -recipe.ingredient_minute_rate(item)
 			recipe_amounts[self.__variables["input:" + item]] = 1
 			recipe_amounts[self.__variables["output:" + item]] = -1
 			self.recipe_expressions.append(pulp.LpAffineExpression(recipe_amounts) == 0)
@@ -322,6 +322,8 @@ class Optimizer:
 		solution = self.string_solution() + "\n\nSolver status: " + pulp.LpStatus[status]
 
 		self.graph_viz_solution()
+
+		print("Done generating GraphViz")
 			
 		# print(solution)
 
