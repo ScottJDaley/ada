@@ -27,7 +27,7 @@ class DB:
         for recipe_data in data["recipes"].values():
             if not recipe_data["inMachine"]:
                 continue
-            recipe = Recipe(recipe_data, self.__item_from_class_name)
+            recipe = Recipe(recipe_data, self, self.__item_from_class_name)
             self.__recipes[recipe.var()] = recipe
             for ingredient in recipe_data["ingredients"]:
                 ingredient_name = self.__item_from_class_name[ingredient["item"]]

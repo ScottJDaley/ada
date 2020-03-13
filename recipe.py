@@ -1,8 +1,9 @@
 
 
 class Recipe:
-    def __init__(self, data, item_from_class_name):
+    def __init__(self, data, db, item_from_class_name):
         self.__data = data
+        self.__db = db
 
         self.__ingredients = {}
         self.__products = {}
@@ -16,11 +17,13 @@ class Recipe:
     def var(self):
         return "recipe:" + self.__data["slug"]
 
+    def viz_name(self):
+        return "recipe-" + self.__data["slug"]
+
     def human_readable_name(self):
         return "Recipe: " + self.__data["name"]
 
     def details(self):
-        print("RECIPE DETAILS")
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  time: " + str(self.__data["time"]))
@@ -32,6 +35,35 @@ class Recipe:
             out.append("    " + product + ": " + str(amount))
         out.append("")
         return '\n'.join(out)
+
+    def get_ingredient_viz(self, ingredient):
+        return self.__db.items()[ingredient].human_readable_name()
+
+    def get_product_viz(self, product):
+        return self.__db.items()[product].human_readable_name()
+    
+    def get_recipe_viz_struct(self):
+        out = '{' + self.human_readable_name()
+        ingredient_list = list(self.ingredients().keys())
+        if len(ingredient_list) > 0:
+            out += '|{'
+            for ingredient in ingredient_list[:-1]:
+                out += self.get_ingredient_viz(ingredient) + '|'
+            out += self.get_ingredient_viz(ingredient_list[-1]) + '}'
+        product_list = list(self.products().keys())
+        if len(product_list) > 0:
+            out += '|{'
+            for product in product_list[:-1]:
+                out += self.get_product_viz(product) + '|'
+            out += self.get_product_viz(product_list[-1]) + '}'
+        out += '}'
+        return out
+
+    def ingredients(self):
+        return self.__ingredients
+    
+    def products(self):
+        return self.__products
 
     def ingredient_amount(self, ingredient):
         return self.__ingredients[ingredient]

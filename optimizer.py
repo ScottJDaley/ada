@@ -1,4 +1,5 @@
 import pulp
+from graphviz import Digraph
 
 
 class ParseException(Exception):
@@ -167,7 +168,7 @@ class Optimizer:
 			query_vars.append(var)
 		return objective, constraints, query_vars
 
-	def get_solution(self):		
+	def string_solution(self):		
 		out = ["INPUT"]
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "input:"):
@@ -192,6 +193,66 @@ class Optimizer:
 				friendly_name = self.__db.recipes()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		return '\n'.join(out)
+
+	def graph_viz_solution(self):
+		s = Digraph('structs', format='png', filename='output.gv',
+				node_attr={'shape': 'record'})
+
+		# item => [source]
+		sources = {}
+		# item => [sink]
+		sinks = {}
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "recipe:"):
+				continue
+			if pulp.value(variable):
+				recipe = self.__db.recipes()[variable_name]
+				friendly_name = recipe.human_readable_name()
+				s.node(recipe.viz_name(), recipe.get_recipe_viz_struct())
+				for ingredient in recipe.ingredients():
+					if ingredient not in sinks:
+						sinks[ingredient] = []
+					sinks[ingredient].append(recipe.viz_name())
+				for product in recipe.products():
+					if product not in sources:
+						sources[product] = []
+					sources[product].append(recipe.viz_name())
+
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "input:"):
+				continue
+			if pulp.value(variable) and pulp.value(variable) > 0:
+				item = self.__db.items()[variable_name[6:]]
+				friendly_name = item.human_readable_name()
+				s.node(item.var(), '{' + friendly_name + '}')
+				if item not in sources:
+					sources[item.var()] = []
+				sources[item.var()].append(item.var())
+
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "output:"):
+				continue
+			if pulp.value(variable) and pulp.value(variable) > 0:
+				item = self.__db.items()[variable_name[7:]]
+				friendly_name = item.human_readable_name()
+				s.node(item.var(), '{' + friendly_name + '}')
+				if item not in sinks:
+					sinks[item.var()] = []
+				sinks[item.var()].append(item.var())
+
+		# Connect each source to all sinks of that item
+		print("sources:", sources)
+		print("sinks:", sinks)
+		for item, sources in sources.items():
+			for source in sources:
+				if item not in sinks:
+					print("Could not find", item, "in sinks")
+					continue
+				for sink in sinks[item]:
+					s.edge(source, sink)
+
+		# s.view() # Opens the image or pdf using default program
+		s.render() # Only creates output file
 
 	def optimize(self, max, *args):
 		# Parse input
@@ -258,7 +319,9 @@ class Optimizer:
 
 		# Solve
 		status = prob.solve()
-		solution = self.get_solution() + "\n\nSolver status: " + pulp.LpStatus[status]
+		solution = self.string_solution() + "\n\nSolver status: " + pulp.LpStatus[status]
+
+		self.graph_viz_solution()
 			
 		# print(solution)
 
