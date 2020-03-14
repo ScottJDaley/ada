@@ -22,7 +22,7 @@ The currently supported commands are:
  - `!items`: Get information about items.
  - `!recipes`: Get information about recipes.
 
-### `!min`
+### !min
 
 Finds an optimal production chain that minimizes an objective while satisfying all constraints.
 
@@ -78,7 +78,7 @@ Change the objective function:
 !min rubber where fuel = 600 and crude-oil <= 240 and water >= 0
 ```
 
-### `!max`
+### !max
 
 Finds an optimal production chain that maximizes an objective while satisfying all constraints.
 
@@ -118,7 +118,7 @@ Maximize production of ...
 !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
 ```
 
-### `!items`
+### !items
 
 Get a list of all items or information about a particular item.
 
@@ -137,8 +137,7 @@ Get a list of all items or information about a particular item.
 !items iron-rod
 ```
 
-
-### `!recipes`
+### !recipes
 
 Get a list of all recipes, information about a recipe, or recipes for/using a particular item.
 
