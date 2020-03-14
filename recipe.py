@@ -17,7 +17,7 @@ class Recipe:
             return 60 * self.amount() /  self.__time
 
         def human_readable_name(self):
-            return self.item().human_readable_name() + ": " + str(self.amount()) + " (" + str(self.minute_rate()) + ")"
+            return self.item().human_readable_name() + ": " + str(self.amount()) + " (" + str(self.minute_rate()) + "/m)"
 
 
     def __init__(self, data, db):
@@ -47,7 +47,7 @@ class Recipe:
     def details(self):
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
-        out.append("  time: " + str(self.__data["time"]))
+        out.append("  time: " + str(self.__data["time"]) + "s")
         out.append("  building: " + self.building().human_readable_name())
         out.append("  ingredients:")
         for ingredient in self.__ingredients.values():

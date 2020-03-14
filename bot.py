@@ -131,6 +131,13 @@ recipes_help = """Print recipes details
 !recipes iron-rod
 """
 
+buildings_help = """Print building details
+
+!buildings
+
+!buildings building:constructor
+"""
+
 
 class Optimization(commands.Cog):
     """Optimization commands"""
@@ -150,6 +157,10 @@ class Optimization(commands.Cog):
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
         await send_message(ctx, satisfaction.recipes(*args))
+
+    @commands.command(pass_context=True, help=buildings_help)
+    async def buildings(self, ctx, *args):
+        await send_message(ctx, satisfaction.buildings(*args))
 
 
 bot.add_cog(Optimization())

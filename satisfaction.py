@@ -29,13 +29,17 @@ class Satisfaction:
                 out.append(recipe)
         elif len(args) == 1:
             arg = args[0]
-            if arg not in self.__db.items() and arg not in self.__db.recipes():
-                return "Unknown recipe or item: " + arg
             if arg in self.__db.recipes():
                 return self.__db.recipes()[arg].details()
-            if arg in self.__db.items():
+            elif arg in self.__db.items():
                 for recipe in self.__db.recipes_for_product(arg):
                     out.append(recipe.details())
+            elif arg in self.__db.buildings():
+                for recipe in self.__db.recipes().values():
+                    if arg == recipe.building().var():
+                        out.append(recipe.details())
+            else:
+                return "Unknown recipe, item, or building: " + arg
         elif len(args) == 2:
             if args[0] != "using" and args[0] != "for":
                 return "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>"
@@ -48,6 +52,20 @@ class Satisfaction:
                 for recipe in self.__db.recipes_for_product(args[1]):
                     out.append(recipe.details())
         return '\n'.join(out)
+
+    def buildings(self, *args):
+        print("calling !buildings with", len(args), "arguments:", ', '.join(args))
+
+        if len(args) == 0:
+            out = []
+            for building in sorted(self.__db.buildings()):
+                out.append(building)
+            return '\n'.join(out)
+        if len(args) == 1:
+            building = args[0]
+            if building not in self.__db.buildings():
+                return "Unknown building: " + building
+            return self.__db.buildings()[building].details()
 
     def min(self, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))

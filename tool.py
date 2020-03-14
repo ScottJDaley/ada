@@ -4,9 +4,18 @@ import optimizer
 from db import DB
 from satisfaction import Satisfaction
 
+cmds = [
+    '!min',
+    '!max',
+    '!items',
+    '!recipes',
+    '!buildings',
+    '!exit',
+]
 
 def print_help():
-    print("Please enter a supported command ('!min', '!max', !items, '!recipes', 'exit', '!exit').")
+    print("Please enter a supported command:")
+    print("  " + ", ".join(cmds))
 
 
 def main():
@@ -31,6 +40,8 @@ def main():
             print(satisfaction.items(*args))
         elif command == "!recipes":
             print(satisfaction.recipes(*args))
+        elif command == "!buildings":
+            print(satisfaction.buildings(*args))
         else:
             print_help()
 
