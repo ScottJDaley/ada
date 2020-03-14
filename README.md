@@ -16,9 +16,13 @@ $ pip install graphviz
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
 
 ## How to use
-Currently supports two commands:
+The currently supported commands are:
+ - `!min`: Minimize the resources required to produce some items.
+ - `!max`: Maximize the production of an item.
+ - `!items`: Get information about items.
+ - `!recipes`: Get information about recipes.
 
-### !min
+### `!min`
 
 Finds an optimal production chain that minimizes an objective while satisfying all constraints.
 
@@ -74,7 +78,7 @@ Change the objective function:
 !min rubber where fuel = 600 and crude-oil <= 240 and water >= 0
 ```
 
-### !max
+### `!max`
 
 Finds an optimal production chain that maximizes an objective while satisfying all constraints.
 
@@ -109,10 +113,59 @@ Maximize production of ...
 ```
 !max modular-frame where iron-ore <= 60 and input:iron-rod = 30
 ```
-
 - fuel from a pure crude oil node, allowing for rubber as a byproduct:
 ```
 !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
+```
+
+### `!items`
+
+Get a list of all items or information about a particular item.
+
+**Usage**
+```ebnf
+  <syntax> ::= "!items" [<item>]
+```
+
+**Examples:**
+- List all items:
+```
+!items
+```
+- Get information about iron rods
+```
+!items iron-rod
+```
+
+
+### `!recipes`
+
+Get a list of all recipes, information about a recipe, or recipes for/using a particular item.
+
+**Usage**
+```ebnf
+  <syntax>    ::= "!recipes" [<target>]
+  <target>    ::= <recipe> | <for_item> | <using_item>
+  <for_item>  ::= ["for"] <item>
+  <using_item ::= "using" <item>
+```
+
+**Examples:**
+- List all recipes:
+```
+!recipes
+```
+- Get information about the alternate recipe for iron ingots:
+```
+!recipes recipe:alternate-pure-iron-ingot
+```
+- Get information about recipes producing iron rod:
+```
+!recipes iron-rod
+```
+- Get information about recipes requiring iron rods as an ingredient:
+```
+!recipes using iron-rod
 ```
 
 ## Acknowledgements
