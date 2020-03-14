@@ -1,18 +1,39 @@
 
 
 class Recipe:
-    def __init__(self, data, db, item_from_class_name):
+    class RecipeItem:
+        def __init__(self, item, amount, time):
+            self.__item = item
+            self.__amount = amount
+            self.__time = time
+            
+        def item(self):
+            return self.__item
+
+        def amount(self):
+            return self.__amount
+
+        def minute_rate(self):
+            return 60 * self.amount() /  self.__time
+
+        def human_readable_name(self):
+            return self.item().human_readable_name() + ": " + str(self.amount()) + " (" + str(self.minute_rate()) + ")"
+
+
+    def __init__(self, data, db):
         self.__data = data
         self.__db = db
 
+        # item var => recipe item
         self.__ingredients = {}
         self.__products = {}
         for ingredient in data["ingredients"]:
-            ingredient_name = item_from_class_name[ingredient["item"]]
-            self.__ingredients[ingredient_name] = ingredient["amount"]
+            item = db.item_from_class_name(ingredient["item"])
+            self.__ingredients[item.var()] = self.RecipeItem(item, ingredient["amount"], data["time"])
         for product in data["products"]:
-            product_name = item_from_class_name[product["item"]]
-            self.__products[product_name] = product["amount"]
+            item = db.item_from_class_name(product["item"])
+            self.__products[item.var()] = self.RecipeItem(item, product["amount"], data["time"])
+        self.__building = db.building_from_class_name(data["producedIn"][0])
 
     def var(self):
         return "recipe:" + self.__data["slug"]
@@ -27,20 +48,15 @@ class Recipe:
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  time: " + str(self.__data["time"]))
+        out.append("  building: " + self.building().human_readable_name())
         out.append("  ingredients:")
-        for ingredient, amount in self.__ingredients.items():
-            out.append("    " + ingredient + ": " + str(amount))
+        for ingredient in self.__ingredients.values():
+            out.append("    " + ingredient.human_readable_name())
         out.append("  products:")
-        for product, amount in self.__products.items():
-            out.append("    " + product + ": " + str(amount))
+        for product in self.__products.values():
+            out.append("    " + product.human_readable_name())
         out.append("")
         return '\n'.join(out)
-
-    def get_ingredient_name(self, ingredient):
-        return self.__db.items()[ingredient].human_readable_name()
-
-    def get_product_name(self, product):
-        return self.__db.items()[product].human_readable_name()
 
     def ingredients(self):
         return self.__ingredients
@@ -48,16 +64,11 @@ class Recipe:
     def products(self):
         return self.__products
 
-    def ingredient_amount(self, ingredient):
-        return self.__ingredients[ingredient]
-
-    def product_amount(self, product):
-        return self.__products[product]
+    def ingredient(self, var):
+        return self.__ingredients[var]
     
-    def ingredient_minute_rate(self, ingredient):
-        amount = self.ingredient_amount(ingredient)
-        return 60 * amount /  self.__data["time"]
+    def product(self, var):
+        return self.__products[var]
 
-    def product_minute_rate(self, product):
-        amount = self.product_amount(product)
-        return 60 * amount /  self.__data["time"]
+    def building(self):
+        return self.__building

@@ -7,15 +7,15 @@ def get_recipe_viz_label(recipe, amount):
     out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
     out += '<BR/>' + recipe.human_readable_name() + '</TD>'
     out += '</TR>'
-    for ingredient in recipe.ingredients():
+    for ingredient in recipe.ingredients().values():
         out += '<TR>'
         out += '<TD BGCOLOR="moccasin">Input</TD>'
-        out += '<TD>' + recipe.get_ingredient_name(ingredient) + '</TD>'
+        out += '<TD>' + ingredient.item().human_readable_name() + '</TD>'
         out += '</TR>'
-    for product in recipe.products():
+    for product in recipe.products().values():
         out += '<TR>'
         out += '<TD BGCOLOR="lightblue">Output</TD>'
-        out += '<TD>' + recipe.get_product_name(product) + '</TD>'
+        out += '<TD>' + product.item().human_readable_name() + '</TD>'
         out += '</TR>'
     out += '</TABLE>>'
     return out

@@ -27,6 +27,9 @@ class Optimizer:
 			item_output = "output:" + item
 			self.__variables[item_input] = pulp.LpVariable(item_input, lowBound=0)
 			self.__variables[item_output] = pulp.LpVariable(item_output, lowBound=0)
+		for building in self.__db.buildings():
+			print(building)
+			self.__variables[building] = pulp.LpVariable(building, lowBound=0)
 
 		unweighted_resources = {
 			"input:water": 0,
@@ -75,25 +78,38 @@ class Optimizer:
 			"mean-weighted-resources": mean_weighted_resources,
 		}
 
-		self.recipe_expressions = []
+		self.equalities = []
 
+		# For each item, create an equality for all inputs and outputs
 		for item in self.__db.items():
-			recipe_amounts = {}  # variable => coefficient
+			var_coeff = {}  # variable => coefficient
 			recipes_for_item = self.__db.recipes_for_product(item)
 			recipes_from_item = self.__db.recipes_for_ingredient(item)
 			for recipe in recipes_for_item:
-				recipe_amounts[self.__variables[recipe.var()]] = recipe.product_minute_rate(item)
+				var_coeff[self.__variables[recipe.var()]] = recipe.product(item).amount()
 			for recipe in recipes_from_item:
-				recipe_amounts[self.__variables[recipe.var()]] = -recipe.ingredient_minute_rate(item)
-			recipe_amounts[self.__variables["input:" + item]] = 1
-			recipe_amounts[self.__variables["output:" + item]] = -1
-			self.recipe_expressions.append(pulp.LpAffineExpression(recipe_amounts) == 0)
+				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item).amount()
+			var_coeff[self.__variables["input:" + item]] = 1
+			var_coeff[self.__variables["output:" + item]] = -1
+			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+
+		# For each building, create an equality for all recipes that use it
+		for building in self.__db.buildings():
+			var_coeff = {}  # variable => coefficient
+			for recipe_var, recipe in self.__db.recipes().items():
+				if recipe.building().var() == building:
+					var_coeff[self.__variables[recipe_var]] = 1
+			var_coeff[self.__variables[building]] = -1
+			print(pulp.LpAffineExpression(var_coeff))
+			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
 		print("Finished creating optimizer")
 
 	def parse_variable(self, var):
+		if var in self.__variables:
+			return var
 		normalized_var = var
-		if not str.startswith(var, "input:") and not str.startswith(var, "output:") and not str.startswith(var, "recipe:"):
+		if not str.startswith(var, "input:") and not str.startswith(var, "output:"):
 			if var in self.__db.resources():
 				normalized_var = "input:" + var
 			else:
@@ -193,6 +209,14 @@ class Optimizer:
 			if pulp.value(variable):
 				friendly_name = self.__db.recipes()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("BUILDINGS")
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "building:"):
+				continue
+			if pulp.value(variable):
+				friendly_name = self.__db.buildings()[variable_name].human_readable_name()
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		return '\n'.join(out)
 
 	def graph_viz_solution(self):
@@ -210,16 +234,16 @@ class Optimizer:
 				recipe = self.__db.recipes()[variable_name]
 				friendly_name = recipe.human_readable_name()
 				s.node(recipe.viz_name(), viz.get_recipe_viz_label(recipe, pulp.value(variable)), shape="plaintext")
-				for ingredient in recipe.ingredients():
-					if ingredient not in sinks:
-						sinks[ingredient] = {}
-					ingredient_amount = pulp.value(variable) * recipe.ingredient_minute_rate(ingredient)
-					sinks[ingredient][recipe.viz_name()] = ingredient_amount
-				for product in recipe.products():
-					if product not in sources:
-						sources[product] = {}
-					product_amount = pulp.value(variable) * recipe.product_minute_rate(product)
-					sources[product][recipe.viz_name()] = product_amount
+				for item, ingredient in recipe.ingredients().items():
+					if item not in sinks:
+						sinks[item] = {}
+					ingredient_amount = pulp.value(variable) * ingredient.minute_rate()
+					sinks[item][recipe.viz_name()] = ingredient_amount
+				for item, product in recipe.products().items():
+					if item not in sources:
+						sources[item] = {}
+					product_amount = pulp.value(variable) * product.minute_rate()
+					sources[item][recipe.viz_name()] = product_amount
 
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "input:"):
@@ -279,8 +303,8 @@ class Optimizer:
 		else:
 			return "Must have objective"
 
-		# Add recipe constraints
-		for exp in self.recipe_expressions:
+		# Add constraints for all item, building, and power equalities
+		for exp in self.equalities:
 			prob += exp
 
 		# Add item constraints
@@ -320,11 +344,12 @@ class Optimizer:
 
 		# Solve
 		status = prob.solve()
-		solution = self.string_solution() + "\n\nSolver status: " + pulp.LpStatus[status]
-
-		self.graph_viz_solution()
-
-		print("Done generating GraphViz")
+		solution = ""
+		if status is pulp.LpStatusOptimal:
+			solution += self.string_solution() + "\n\n"
+			self.graph_viz_solution()
+			print("Done generating GraphViz")
+		solution += "Solver status: " + pulp.LpStatus[status]
 			
 		# print(solution)
 
