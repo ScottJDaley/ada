@@ -16,13 +16,13 @@ satisfaction = Satisfaction()
 
 bot = commands.Bot(command_prefix='!')
 
-async def send_message(ctx, msg):
+async def send_message(ctx, msg, file=None):
   DISCORD_MESSAGE_LIMIT = 2000
   while len(msg) > DISCORD_MESSAGE_LIMIT:
     newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
     await ctx.send(msg[:newline_index])
     msg = msg[newline_index:]
-  await ctx.send(msg)
+  await ctx.send(content=msg, file=file)
 
 
 @bot.event
@@ -144,11 +144,11 @@ class Optimization(commands.Cog):
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await ctx.send(content=satisfaction.min(*args), file=discord.File("output.gv.png"))
+        await send_message(ctx, satisfaction.min(*args), discord.File("output.gv.png"))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await ctx.send(content=satisfaction.max(*args), file=discord.File("output.gv.png"))
+        await send_message(ctx, satisfaction.max(*args), discord.File("output.gv.png"))
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
