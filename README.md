@@ -165,7 +165,7 @@ Get a list of all items or information about a particular item.
 ```
 !items
 ```
-- Get information about iron rods
+- Get information about iron rods:
 ```
 !items iron-rod
 ```
@@ -177,7 +177,7 @@ Get a list of all recipes, information about a recipe, or recipes for/using a pa
 **Usage**
 ```ebnf
   <syntax>    ::= "!recipes" [<target>]
-  <target>    ::= <recipe> | <for_item> | <using_item>
+  <target>    ::= <recipe> | <for_item> | <using_item> | <building>
   <for_item>  ::= ["for"] <item>
   <using_item ::= "using" <item>
 ```
@@ -198,6 +198,29 @@ Get a list of all recipes, information about a recipe, or recipes for/using a pa
 - Get information about recipes requiring iron rods as an ingredient:
 ```
 !recipes using iron-rod
+```
+- Get information about all foundry recipes:
+```
+!recipes buildings:foundry
+```
+
+### !buildings
+
+Get a list of all buildings or information about a particular building.
+
+**Usage**
+```ebnf
+  <syntax> ::= "!buildings" [<buildings>]
+```
+
+**Examples:**
+- List all buildings:
+```
+!buildings
+```
+- Get information about the foundry:
+```
+!buildings building:foundry
 ```
 
 ## Acknowledgements
