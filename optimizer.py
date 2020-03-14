@@ -343,6 +343,9 @@ class Optimizer:
 
 		# Add item constraints
 		for item in self.__db.items():
+			if item in self.__db.resources():
+				prob += self.__variables[item_input] >= 0
+				continue
 			# Don't require any other inputs
 			item_input = "input:" + item
 			if item_input not in query_vars:
