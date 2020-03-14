@@ -110,8 +110,9 @@ class Optimizer:
 		power_coeff = {}
 		for recipe_var, recipe in self.__db.recipes().items():
 			power_coeff[self.__variables[recipe_var]] = recipe.building().power()
-		power_coeff[self.__variables["input:power"]] = 1
-		power_coeff[self.__variables["output:power"]] = -1
+		power_coeff[self.__variables["input:power"]] = -1
+		power_coeff[self.__variables["output:power"]] = 1
+		self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
 		print("Finished creating optimizer")
 
@@ -211,7 +212,7 @@ class Optimizer:
 	def string_solution(self):		
 		out = ["INPUT"]
 		for variable_name, variable in self.__variables.items():
-			if not str.startswith(variable_name, "input:"):
+			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "input:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				friendly_name = self.__db.items()[variable_name[6:]].human_readable_name()
@@ -219,7 +220,7 @@ class Optimizer:
 		out.append("")
 		out.append("OUTPUT")
 		for variable_name, variable in self.__variables.items():
-			if not str.startswith(variable_name, "output:"):
+			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "output:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				friendly_name = self.__db.items()[variable_name[7:]].human_readable_name()
@@ -240,6 +241,16 @@ class Optimizer:
 			if pulp.value(variable):
 				friendly_name = self.__db.buildings()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("POWER")
+		input_power = 0
+		if pulp.value(self.__variables["input:power"]):
+			input_power = pulp.value(self.__variables["input:power"])
+		output_power = 0
+		if pulp.value(self.__variables["output:power"]):
+			output_power = pulp.value(self.__variables["output:power"])
+		out.append("Input: " + str(input_power) + " MW")
+		out.append("Output: " + str(output_power) + " MW")
 		return '\n'.join(out)
 
 	def graph_viz_solution(self):
@@ -269,7 +280,7 @@ class Optimizer:
 					sources[item][recipe.viz_name()] = product_amount
 
 		for variable_name, variable in self.__variables.items():
-			if not str.startswith(variable_name, "input:"):
+			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "input:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				item = self.__db.items()[variable_name[6:]]
@@ -280,7 +291,7 @@ class Optimizer:
 				sources[item.var()][item.var()] = pulp.value(variable)
 
 		for variable_name, variable in self.__variables.items():
-			if not str.startswith(variable_name, "output:"):
+			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "output:"):
 				continue
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				item = self.__db.items()[variable_name[7:]]
