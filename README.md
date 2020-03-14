@@ -14,8 +14,29 @@ $ pip install graphviz
 2. Install GraphViz:
  - Download from: https://www.graphviz.org/download/
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
+ 
+## How to run
 
-## How to use
+### Command line tool
+
+1. Double click `tool.py` to run it.
+2. Enter one of the commands below
+3. Type `!exit` to quit.
+
+### Discord bot
+
+1. Create a file called .env in source folder.
+2. Add the following to the file:
+   ```
+   DISCORD_TOKEN={discord bot token}
+   ```
+   *Replace {discord bot token} with the token generated for the bot from the Discord developer portal.*
+   
+3. Double click `bot.py` to run the bot.
+4. The bot should be able to respond to commands in Discord after a few seconds.
+5. Press enter in the terminal to shut down the bot.
+
+## Commands
 The currently supported commands are:
  - `!min`: Minimize the resources required to produce some items.
  - `!max`: Maximize the production of an item.
