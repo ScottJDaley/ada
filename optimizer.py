@@ -1,4 +1,5 @@
 import pulp
+import viz
 from graphviz import Digraph
 
 
@@ -198,9 +199,9 @@ class Optimizer:
 		s = Digraph('structs', format='png', filename='output.gv',
 				node_attr={'shape': 'record'})
 
-		# item => [source]
+		# item => {source => amount}
 		sources = {}
-		# item => [sink]
+		# item => {sink => amount}
 		sinks = {}
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "recipe:"):
@@ -208,15 +209,17 @@ class Optimizer:
 			if pulp.value(variable):
 				recipe = self.__db.recipes()[variable_name]
 				friendly_name = recipe.human_readable_name()
-				s.node(recipe.viz_name(), recipe.get_recipe_viz_struct())
+				s.node(recipe.viz_name(), viz.get_recipe_viz_label(recipe, pulp.value(variable)), shape="plaintext")
 				for ingredient in recipe.ingredients():
 					if ingredient not in sinks:
-						sinks[ingredient] = []
-					sinks[ingredient].append(recipe.viz_name())
+						sinks[ingredient] = {}
+					ingredient_amount = pulp.value(variable) * recipe.ingredient_minute_rate(ingredient)
+					sinks[ingredient][recipe.viz_name()] = ingredient_amount
 				for product in recipe.products():
 					if product not in sources:
-						sources[product] = []
-					sources[product].append(recipe.viz_name())
+						sources[product] = {}
+					product_amount = pulp.value(variable) * recipe.product_minute_rate(product)
+					sources[product][recipe.viz_name()] = product_amount
 
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "input:"):
@@ -224,10 +227,10 @@ class Optimizer:
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				item = self.__db.items()[variable_name[6:]]
 				friendly_name = item.human_readable_name()
-				s.node(item.var(), '{' + friendly_name + '}')
+				s.node(item.var(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
 				if item not in sources:
-					sources[item.var()] = []
-				sources[item.var()].append(item.var())
+					sources[item.var()] = {}
+				sources[item.var()][item.var()] = pulp.value(variable)
 
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "output:"):
@@ -235,21 +238,19 @@ class Optimizer:
 			if pulp.value(variable) and pulp.value(variable) > 0:
 				item = self.__db.items()[variable_name[7:]]
 				friendly_name = item.human_readable_name()
-				s.node(item.var(), '{' + friendly_name + '}')
+				s.node(item.var(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
 				if item not in sinks:
-					sinks[item.var()] = []
-				sinks[item.var()].append(item.var())
+					sinks[item.var()] = {}
+				sinks[item.var()][item.var()] = pulp.value(variable)
 
 		# Connect each source to all sinks of that item
-		print("sources:", sources)
-		print("sinks:", sinks)
-		for item, sources in sources.items():
-			for source in sources:
+		for item, item_sources in sources.items():
+			for source, _ in item_sources.items():
 				if item not in sinks:
 					print("Could not find", item, "in sinks")
 					continue
-				for sink in sinks[item]:
-					s.edge(source, sink)
+				for sink, sink_amount in sinks[item].items():
+					s.edge(source, sink, label=viz.get_edge_label(item, sink_amount))
 
 		# s.view() # Opens the image or pdf using default program
 		s.render() # Only creates output file

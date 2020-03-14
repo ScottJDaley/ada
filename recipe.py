@@ -36,28 +36,11 @@ class Recipe:
         out.append("")
         return '\n'.join(out)
 
-    def get_ingredient_viz(self, ingredient):
+    def get_ingredient_name(self, ingredient):
         return self.__db.items()[ingredient].human_readable_name()
 
-    def get_product_viz(self, product):
+    def get_product_name(self, product):
         return self.__db.items()[product].human_readable_name()
-    
-    def get_recipe_viz_struct(self):
-        out = '{' + self.human_readable_name()
-        ingredient_list = list(self.ingredients().keys())
-        if len(ingredient_list) > 0:
-            out += '|{'
-            for ingredient in ingredient_list[:-1]:
-                out += self.get_ingredient_viz(ingredient) + '|'
-            out += self.get_ingredient_viz(ingredient_list[-1]) + '}'
-        product_list = list(self.products().keys())
-        if len(product_list) > 0:
-            out += '|{'
-            for product in product_list[:-1]:
-                out += self.get_product_viz(product) + '|'
-            out += self.get_product_viz(product_list[-1]) + '}'
-        out += '}'
-        return out
 
     def ingredients(self):
         return self.__ingredients
