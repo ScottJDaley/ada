@@ -1,5 +1,6 @@
 import pulp
 import viz
+import fnmatch
 from graphviz import Digraph
 
 
@@ -115,8 +116,20 @@ class Optimizer:
 			else:
 				normalized_var = "output:" + var
 		if normalized_var not in self.__variables:
-			raise ParseException("Unknown variable: " + var)
+			return None
 		return normalized_var
+
+	def parse_variables(self, var_expr):
+		var = self.parse_variable(var_expr)
+		matched_vars = set()
+		if var:
+			matched_vars.add(self.parse_variable(var_expr))
+		matched_vars.update(fnmatch.filter(self.__variables, var_expr))
+		for var in matched_vars:
+			print("Matched var:", var)
+		if len(matched_vars) == 0:
+			raise ParseException("Unknown variable: " + var_expr)
+		return matched_vars
 
 	def parse_constraints(self, *args):
 		# First separate constraints by 'and'
@@ -136,7 +149,7 @@ class Optimizer:
 			if len(constraint) != 3:
 				raise ParseException(
 				    "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-			var = self.parse_variable(constraint[0])
+			expanded_vars = self.parse_variables(constraint[0])
 			operator = constraint[1]
 			try:
 				bound = int(constraint[2])
@@ -144,7 +157,8 @@ class Optimizer:
 				raise ParseException("Constraint bound must be an number.")
 			if operator != "=" and operator != ">=" and operator != "<=":
 				raise ParseException("Constraint operator must be one of {{=|<=|>=}}")
-			constraints[var] = (operator, bound)
+			for var in expanded_vars:
+				constraints[var] = (operator, bound)
 		return constraints
 
 	def parse_objective(self, *args):

@@ -72,3 +72,6 @@ class Recipe:
 
     def building(self):
         return self.__building
+
+    def is_alternate(self):
+        return self.__data["alternate"]
