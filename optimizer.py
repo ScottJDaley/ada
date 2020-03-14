@@ -31,6 +31,8 @@ class Optimizer:
 		for building in self.__db.buildings():
 			print(building)
 			self.__variables[building] = pulp.LpVariable(building, lowBound=0)
+		self.__variables["input:power"] = pulp.LpVariable("input:power", lowBound=0)
+		self.__variables["output:power"] = pulp.LpVariable("output:power", lowBound=0)
 
 		unweighted_resources = {
 			"input:water": 0,
@@ -87,9 +89,9 @@ class Optimizer:
 			recipes_for_item = self.__db.recipes_for_product(item)
 			recipes_from_item = self.__db.recipes_for_ingredient(item)
 			for recipe in recipes_for_item:
-				var_coeff[self.__variables[recipe.var()]] = recipe.product(item).amount()
+				var_coeff[self.__variables[recipe.var()]] = recipe.product(item).minute_rate()
 			for recipe in recipes_from_item:
-				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item).amount()
+				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item).minute_rate()
 			var_coeff[self.__variables["input:" + item]] = 1
 			var_coeff[self.__variables["output:" + item]] = -1
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
@@ -103,6 +105,13 @@ class Optimizer:
 			var_coeff[self.__variables[building]] = -1
 			print(pulp.LpAffineExpression(var_coeff))
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+
+		# Create a single power equality for all recipes
+		power_coeff = {}
+		for recipe_var, recipe in self.__db.recipes().items():
+			power_coeff[self.__variables[recipe_var]] = recipe.building().power()
+		power_coeff[self.__variables["input:power"]] = 1
+		power_coeff[self.__variables["output:power"]] = -1
 
 		print("Finished creating optimizer")
 
