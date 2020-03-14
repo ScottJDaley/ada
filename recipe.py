@@ -33,7 +33,7 @@ class Recipe:
         for product in data["products"]:
             item = db.item_from_class_name(product["item"])
             self.__products[item.var()] = self.RecipeItem(item, product["amount"], data["time"])
-        self.__building = db.building_from_class_name(data["producedIn"][0])
+        self.__crafter = db.crafter_from_class_name(data["producedIn"][0])
 
     def var(self):
         return "recipe:" + self.__data["slug"]
@@ -48,7 +48,7 @@ class Recipe:
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  time: " + str(self.__data["time"]) + "s")
-        out.append("  building: " + self.building().human_readable_name())
+        out.append("  crafted in: " + self.crafter().human_readable_name())
         out.append("  ingredients:")
         for ingredient in self.__ingredients.values():
             out.append("    " + ingredient.human_readable_name())
@@ -70,8 +70,8 @@ class Recipe:
     def product(self, var):
         return self.__products[var]
 
-    def building(self):
-        return self.__building
+    def crafter(self):
+        return self.__crafter
 
     def is_alternate(self):
         return self.__data["alternate"]

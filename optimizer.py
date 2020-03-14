@@ -13,7 +13,7 @@ class ParseException(Exception):
 
 
 class Optimizer:
-	# TODO: Let users specify alternate recipes and building unlocks
+	# TODO: Let users specify alternate recipes and crafter unlocks
 	def __init__(self, db):
 		self.__db = db
 
@@ -28,9 +28,13 @@ class Optimizer:
 			item_output = "output:" + item
 			self.__variables[item_input] = pulp.LpVariable(item_input, lowBound=0)
 			self.__variables[item_output] = pulp.LpVariable(item_output, lowBound=0)
-		for building in self.__db.buildings():
-			print(building)
-			self.__variables[building] = pulp.LpVariable(building, lowBound=0)
+		for crafter in self.__db.crafters():
+			self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
+		for generator_var, generator in self.__db.generators().items():
+			self.__variables[generator_var] = pulp.LpVariable(generator_var, lowBound=0)
+			for fuel_item in generator.fuel_items():
+				power_recipe_var = "power-recipe:" + fuel_item.var()
+				self.__variables[power_recipe_var] = pulp.LpVariable(power_recipe_var, lowBound=0)
 		self.__variables["input:power"] = pulp.LpVariable("input:power", lowBound=0)
 		self.__variables["output:power"] = pulp.LpVariable("output:power", lowBound=0)
 
@@ -92,27 +96,53 @@ class Optimizer:
 				var_coeff[self.__variables[recipe.var()]] = recipe.product(item).minute_rate()
 			for recipe in recipes_from_item:
 				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item).minute_rate()
+			for generator in self.__db.generators().values():
+				for fuel_item in generator.fuel_items():
+					if fuel_item.var() != item:
+						continue
+					power_recipe_var = "power-recipe:" + fuel_item.var()
+					# Example:
+					# 75 MW power production from generator
+					# = 75 MJ/s
+					# = 75 * 60 = 4500 MJ/m
+					# 300 MJ energy value of coal
+					# 4500 MJ/m / 300 MJ/coal = 15 coal/m
+					fuel_per_minute = generator.power_production() * 60 / fuel_item.energy_value()
+					var_coeff[self.__variables[power_recipe_var]] = -fuel_per_minute
 			var_coeff[self.__variables["input:" + item]] = 1
 			var_coeff[self.__variables["output:" + item]] = -1
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
-		# For each building, create an equality for all recipes that use it
-		for building in self.__db.buildings():
+		# For each type of crafter, create an equality for all recipes that require it
+		for crafter in self.__db.crafters():
 			var_coeff = {}  # variable => coefficient
 			for recipe_var, recipe in self.__db.recipes().items():
-				if recipe.building().var() == building:
+				if recipe.crafter().var() == crafter:
 					var_coeff[self.__variables[recipe_var]] = 1
-			var_coeff[self.__variables[building]] = -1
-			print(pulp.LpAffineExpression(var_coeff))
+			var_coeff[self.__variables[crafter]] = -1
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
-		# Create a single power equality for all recipes
+		# For each type of generator, create an equality for power recipes that require it
+		for generator_var, generator in self.__db.generators().items():
+			var_coeff = {}  # variable => coefficient
+			for fuel_item in generator.fuel_items():
+				power_recipe_var = "power-recipe:" + fuel_item.var()
+				var_coeff[self.__variables[power_recipe_var]] = 1
+			var_coeff[self.__variables[generator_var]] = -1
+			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+
+		# Create a single power equality for all recipes and generators
 		power_coeff = {}
+		for generator_var, generator in self.__db.generators().items():
+			power_coeff[self.__variables[generator_var]] = generator.power_production()
 		for recipe_var, recipe in self.__db.recipes().items():
-			power_coeff[self.__variables[recipe_var]] = recipe.building().power()
-		power_coeff[self.__variables["input:power"]] = -1
-		power_coeff[self.__variables["output:power"]] = 1
+			power_coeff[self.__variables[recipe_var]] = -recipe.crafter().power_consumption()
+		power_coeff[self.__variables["input:power"]] = 1
+		power_coeff[self.__variables["output:power"]] = -1
 		self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
+
+		# Disable geothermal generators since they are "free" energy.
+		self.equalities.append(self.__variables["generator:geo-thermal-generator"] == 0)
 
 		print("Finished creating optimizer")
 
@@ -234,12 +264,28 @@ class Optimizer:
 				friendly_name = self.__db.recipes()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
-		out.append("BUILDINGS")
+		out.append("POWER RECIPES")
 		for variable_name, variable in self.__variables.items():
-			if not str.startswith(variable_name, "building:"):
+			if not str.startswith(variable_name, "power-recipe:"):
 				continue
 			if pulp.value(variable):
-				friendly_name = self.__db.buildings()[variable_name].human_readable_name()
+				friendly_name = self.__db.items()[variable_name[13:]].human_readable_name()
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("CRAFTERS")
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "crafter:"):
+				continue
+			if pulp.value(variable):
+				friendly_name = self.__db.crafters()[variable_name].human_readable_name()
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
+		out.append("")
+		out.append("GENERATORS")
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "generator:"):
+				continue
+			if pulp.value(variable):
+				friendly_name = self.__db.generators()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
 		out.append("POWER")
@@ -251,6 +297,9 @@ class Optimizer:
 			output_power = pulp.value(self.__variables["output:power"])
 		out.append("Input: " + str(input_power) + " MW")
 		out.append("Output: " + str(output_power) + " MW")
+		for var in self.__variables:
+			if pulp.value(self.__variables[var]) and pulp.value(self.__variables[var]) != 0:
+				print("Variable", var, pulp.value(self.__variables[var]))
 		return '\n'.join(out)
 
 	def graph_viz_solution(self):
@@ -264,42 +313,68 @@ class Optimizer:
 		for variable_name, variable in self.__variables.items():
 			if not str.startswith(variable_name, "recipe:"):
 				continue
-			if pulp.value(variable):
-				recipe = self.__db.recipes()[variable_name]
-				friendly_name = recipe.human_readable_name()
-				s.node(recipe.viz_name(), viz.get_recipe_viz_label(recipe, pulp.value(variable)), shape="plaintext")
-				for item, ingredient in recipe.ingredients().items():
-					if item not in sinks:
-						sinks[item] = {}
-					ingredient_amount = pulp.value(variable) * ingredient.minute_rate()
-					sinks[item][recipe.viz_name()] = ingredient_amount
-				for item, product in recipe.products().items():
-					if item not in sources:
-						sources[item] = {}
-					product_amount = pulp.value(variable) * product.minute_rate()
-					sources[item][recipe.viz_name()] = product_amount
+			if not pulp.value(variable) or pulp.value(variable) == 0:
+				continue
+			recipe = self.__db.recipes()[variable_name]
+			friendly_name = recipe.human_readable_name()
+			s.node(recipe.viz_name(), viz.get_recipe_viz_label(recipe, pulp.value(variable)), shape="plaintext")
+			for item, ingredient in recipe.ingredients().items():
+				if item not in sinks:
+					sinks[item] = {}
+				ingredient_amount = pulp.value(variable) * ingredient.minute_rate()
+				sinks[item][recipe.viz_name()] = ingredient_amount
+			for item, product in recipe.products().items():
+				if item not in sources:
+					sources[item] = {}
+				product_amount = pulp.value(variable) * product.minute_rate()
+				sources[item][recipe.viz_name()] = product_amount
+
+		for variable_name, variable in self.__variables.items():
+			if not str.startswith(variable_name, "power-recipe:"):
+				continue
+			if not pulp.value(variable) or pulp.value(variable) == 0:
+				continue
+			fuel_item = self.__db.items()[variable_name[13:]]
+			for generator in self.__db.generators().values():
+				if fuel_item in generator.fuel_items():
+					s.node(viz.get_power_recipe_node_name(fuel_item), viz.get_power_recipe_label(fuel_item, generator, pulp.value(variable)), shape="plaintext")
+			if fuel_item.var() not in sinks:
+				sinks[fuel_item.var()] = {}
+			fuel_per_minute = generator.power_production() * 60 / fuel_item.energy_value()
+			sinks[fuel_item.var()][viz.get_power_recipe_node_name(fuel_item)] = fuel_per_minute
 
 		for variable_name, variable in self.__variables.items():
 			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "input:"):
 				continue
-			if pulp.value(variable) and pulp.value(variable) > 0:
-				item = self.__db.items()[variable_name[6:]]
-				friendly_name = item.human_readable_name()
-				s.node(item.var(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-				if item not in sources:
-					sources[item.var()] = {}
-				sources[item.var()][item.var()] = pulp.value(variable)
+			if not pulp.value(variable) or pulp.value(variable) == 0:
+				continue
+			item = self.__db.items()[variable_name[6:]]
+			friendly_name = item.human_readable_name()
+			s.node(item.var(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
+			if item not in sources:
+				sources[item.var()] = {}
+			sources[item.var()][item.var()] = pulp.value(variable)
 
 		for variable_name, variable in self.__variables.items():
 			if str.endswith(variable_name, "power") or not str.startswith(variable_name, "output:"):
 				continue
-			if pulp.value(variable) and pulp.value(variable) > 0:
-				item = self.__db.items()[variable_name[7:]]
-				friendly_name = item.human_readable_name()
-				s.node(item.var(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-				if item not in sinks:
-					sinks[item.var()] = {}
-				sinks[item.var()][item.var()] = pulp.value(variable)
+			if not pulp.value(variable) or pulp.value(variable) == 0:
+				continue
+			item = self.__db.items()[variable_name[7:]]
+			friendly_name = item.human_readable_name()
+			s.node(item.var(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
+			if item not in sinks:
+				sinks[item.var()] = {}
+			sinks[item.var()][item.var()] = pulp.value(variable)
+		
+		input_power = 0
+		if pulp.value(self.__variables["input:power"]):
+			input_power = pulp.value(self.__variables["input:power"])
+		output_power = 0
+		if pulp.value(self.__variables["output:power"]):
+			output_power = pulp.value(self.__variables["output:power"])
+		net_power = output_power - input_power
+		s.node("power", str(net_power) + " MW Net Power")
 
 		# Connect each source to all sinks of that item
 		for item, item_sources in sources.items():
@@ -337,19 +412,19 @@ class Optimizer:
 		else:
 			return "Must have objective"
 
-		# Add constraints for all item, building, and power equalities
+		# Add constraints for all item, crafter, and power equalities
 		for exp in self.equalities:
 			prob += exp
 
 		# Add item constraints
 		for item in self.__db.items():
-			if item in self.__db.resources():
-				prob += self.__variables[item_input] >= 0
-				continue
 			# Don't require any other inputs
 			item_input = "input:" + item
 			if item_input not in query_vars:
-				prob += self.__variables[item_input] == 0
+				if item in self.__db.resources():
+					prob += self.__variables[item_input] >= 0
+				else:
+					prob += self.__variables[item_input] == 0
 			# Eliminate byproducts
 			item_output = "output:" + item
 			if item_output not in query_vars:
@@ -382,6 +457,7 @@ class Optimizer:
 		# Solve
 		status = prob.solve()
 		solution = ""
+		solution += self.string_solution() + "\n\n"
 		if status is pulp.LpStatusOptimal:
 			solution += self.string_solution() + "\n\n"
 			self.graph_viz_solution()

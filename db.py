@@ -1,5 +1,6 @@
 import json
-from building import Building
+from crafter import Crafter
+from generator import Generator
 from item import Item
 from recipe import Recipe
 
@@ -17,15 +18,23 @@ class DB:
             self.__items[item.var()] = item
             self.__item_var_from_class_name[item_data["className"]] = item.var()
 
-        # Parse buildings
-        self.__buildings = {}
-        self.__building_var_from_class_name = {}
+        # Parse crafters
+        self.__crafters = {}
+        self.__crafter_var_from_class_name = {}
         for building_data in data["buildings"].values():
             if "manufacturingSpeed" not in building_data["metadata"]:
                 continue
-            building = Building(building_data)
-            self.__buildings[building.var()] = building
-            self.__building_var_from_class_name[building_data["className"]] = building.var()
+            crafter = Crafter(building_data)
+            self.__crafters[crafter.var()] = crafter
+            self.__crafter_var_from_class_name[building_data["className"]] = crafter.var()
+
+        # Parse generators
+        self.__generators = {}
+        for generator_data in data["generators"].values():
+            # Replace the "Build_" prefix with the "Desc_" prefix to get the building class name.
+            building_class_name = "Desc_" + generator_data["className"][6:]
+            generator = Generator(data["buildings"][building_class_name], generator_data, self)
+            self.__generators[generator.var()] = generator
 
         # Parse recipes
         # Create a dictionary from product => [recipe]
@@ -77,8 +86,11 @@ class DB:
     def resources(self):
         return self.__resources
 
-    def buildings(self):
-        return self.__buildings
+    def crafters(self):
+        return self.__crafters
 
-    def building_from_class_name(self, class_name):
-        return self.buildings()[self.__building_var_from_class_name[class_name]]
+    def crafter_from_class_name(self, class_name):
+        return self.crafters()[self.__crafter_var_from_class_name[class_name]]
+
+    def generators(self):
+        return self.__generators

@@ -42,3 +42,20 @@ def get_output_viz_label(item_name, amount):
 
 def get_edge_label(item, amount):
     return str(round(amount, 2)) + '/m\n' +  item
+
+def get_power_recipe_node_name(fuel_item):
+    return "power-recipe-" + fuel_item.var()
+
+def get_power_recipe_label(fuel_item, generator, gen_amount):
+    out = '<'
+    out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+    out += '<TR>'
+    out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(gen_amount, 2)) + 'x'
+    out += '<BR/>' + generator.human_readable_name() + '</TD>'
+    out += '</TR>'
+    out += '<TR>'
+    out += '<TD BGCOLOR="moccasin">Input</TD>'
+    out += '<TD>' + fuel_item.human_readable_name() + '</TD>'
+    out += '</TR>'
+    out += '</TABLE>>'
+    return out
