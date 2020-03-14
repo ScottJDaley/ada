@@ -58,8 +58,10 @@ Finds an optimal production chain that minimizes an objective while satisfying a
   <objective>          ::= <item> | <built_in_objective>
   <built_in_objective> ::= "unweighted-resources" | "weighted-resources" | "mean-weighted-resources"
   <constraints>        ::= <constraint> ["and" <constraints>]
-  <constraint>         ::= <item_var> <operator> <number>
+  <constraint>         ::= <var_expr> <operator> <number>
   <operator>           ::= "=" | "<=" | ">="
+  <var_expr>           ::= <var_glob> | <var>
+  <var>                ::= <item_var> | <recipe> | <building>
   <item_var>           ::= [<prefix> ":"] <item>
   <prefix>             ::= <input> | <output>
 ```
@@ -88,6 +90,10 @@ Find the most resource-efficient way to ...
 ```
 !min  iron-rod = 60 and iron-plate = 120
 ```
+- produce 60/m iron rods without alternate recipes:
+```
+!min iron-rod = 60 and recipe:alternate* = 0
+```
 
 Change the objective function:
 - Minimize 60/m iron rods using unweighted resources:
@@ -115,6 +121,8 @@ Finds an optimal production chain that maximizes an objective while satisfying a
   <constraints>        ::= <constraint> ["and" <constraints>]
   <constraint>         ::= <item_var> <operator> <number>
   <operator>           ::= "=" | "<=" | ">="
+  <var_expr>           ::= <var_glob> | <var>
+  <var>                ::= <item_var> | <recipe> | <building>
   <item_var>           ::= [<prefix> ":"] <item>
   <prefix>             ::= <input> | <output>
 ```
@@ -137,6 +145,10 @@ Maximize production of ...
 - fuel from a pure crude oil node, allowing for rubber as a byproduct:
 ```
 !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
+```
+- iron rods where iron-ore <= 60 without alternate recipes:
+```
+!max iron-rod where iron-ore <= 60 and recipe:alternate* = 0
 ```
 
 ### !items
