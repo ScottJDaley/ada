@@ -3,6 +3,7 @@ from crafter import Crafter
 from generator import Generator
 from item import Item
 from recipe import Recipe
+from power_recipe import PowerRecipe
 
 class DB:
     def __init__(self, path):
@@ -57,6 +58,15 @@ class DB:
                 if product_var not in self.__recipes_for_product:
                     self.__recipes_for_product[product_var] = []
                 self.__recipes_for_product[product_var].append(recipe)
+
+        # Create power recipes
+        self.__power_recipes = {}
+        self.__power_recipes_by_fuel = {}
+        for generator in self.__generators.values():
+            for fuel_item in generator.fuel_items():
+                power_recipe = PowerRecipe(fuel_item, generator)
+                self.__power_recipes[power_recipe.var()] = power_recipe
+                self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
                 
         # Parse resources
         self.__resources = []
@@ -82,6 +92,12 @@ class DB:
         if ingredient not in self.__recipes_for_ingredient:
             return []
         return self.__recipes_for_ingredient[ingredient]
+
+    def power_recipes(self):
+        return self.__power_recipes
+        
+    def power_recipes_by_fuel(self):
+        return self.__power_recipes_by_fuel
 
     def resources(self):
         return self.__resources

@@ -46,16 +46,16 @@ def get_edge_label(item, amount):
 def get_power_recipe_node_name(fuel_item):
     return "power-recipe-" + fuel_item.var()
 
-def get_power_recipe_label(fuel_item, generator, gen_amount):
+def get_power_recipe_label(power_recipe, amount):
     out = '<'
     out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
     out += '<TR>'
-    out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(gen_amount, 2)) + 'x'
-    out += '<BR/>' + generator.human_readable_name() + '</TD>'
+    out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
+    out += '<BR/>' + power_recipe.generator().human_readable_name() + '</TD>'
     out += '</TR>'
     out += '<TR>'
     out += '<TD BGCOLOR="moccasin">Input</TD>'
-    out += '<TD>' + fuel_item.human_readable_name() + '</TD>'
+    out += '<TD>' + power_recipe.fuel_item().human_readable_name() + '</TD>'
     out += '</TR>'
     out += '</TABLE>>'
     return out
