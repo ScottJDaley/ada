@@ -138,17 +138,8 @@ buildings_help = """Print building details
 !buildings building:constructor
 """
 
-
-class Optimization(commands.Cog):
-    """Optimization commands"""
-
-    @commands.command(pass_context=True, help=min_help)
-    async def min(self, ctx, *args):
-        await send_message(ctx, satisfaction.min(*args), discord.File("output.gv.png"))
-
-    @commands.command(pass_context=True, help=max_help)
-    async def max(self, ctx, *args):
-        await send_message(ctx, satisfaction.max(*args), discord.File("output.gv.png"))
+class Information(commands.Cog):
+    """Informational commands"""
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
@@ -162,7 +153,19 @@ class Optimization(commands.Cog):
     async def buildings(self, ctx, *args):
         await send_message(ctx, satisfaction.buildings(*args))
 
+class Optimization(commands.Cog):
+    """Optimization commands"""
 
+    @commands.command(pass_context=True, help=min_help)
+    async def min(self, ctx, *args):
+        await send_message(ctx, satisfaction.min(*args), discord.File("output.gv.png"))
+
+    @commands.command(pass_context=True, help=max_help)
+    async def max(self, ctx, *args):
+        await send_message(ctx, satisfaction.max(*args), discord.File("output.gv.png"))
+
+
+bot.add_cog(Information())
 bot.add_cog(Optimization())
 
 bot.run(token)
