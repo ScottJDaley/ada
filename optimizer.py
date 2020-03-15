@@ -11,9 +11,7 @@ class ParseException(Exception):
 	def __str__(self):
 		return self.msg
 
-
 class Optimizer:
-	# TODO: Let users specify alternate recipes and crafter unlocks
 	def __init__(self, db):
 		self.__db = db
 
@@ -23,20 +21,19 @@ class Optimizer:
 		self.__variables = {}
 		for recipe in self.__db.recipes():
 			self.__variables[recipe] = pulp.LpVariable(recipe, lowBound=0)
-		for item in self.__db.items():
-			item_input = "input:" + item
-			item_output = "output:" + item
-			self.__variables[item_input] = pulp.LpVariable(item_input, lowBound=0)
-			self.__variables[item_output] = pulp.LpVariable(item_output, lowBound=0)
+		for power_recipe in self.__db.power_recipes():
+			self.__variables[power_recipe] = pulp.LpVariable(power_recipe, lowBound=0)
+		for item in self.__db.items().values():
+			self.__variables[item.input_var()] = pulp.LpVariable(item.input_var(), lowBound=0)
+			self.__variables[item.output_var()] = pulp.LpVariable(item.output_var(), lowBound=0)
 		for crafter in self.__db.crafters():
 			self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
 		for generator_var, generator in self.__db.generators().items():
 			self.__variables[generator_var] = pulp.LpVariable(generator_var, lowBound=0)
-			for fuel_item in generator.fuel_items():
-				power_recipe_var = "power-recipe:" + fuel_item.var()
-				self.__variables[power_recipe_var] = pulp.LpVariable(power_recipe_var, lowBound=0)
-		self.__variables["input:power"] = pulp.LpVariable("input:power", lowBound=0)
-		self.__variables["output:power"] = pulp.LpVariable("output:power", lowBound=0)
+		self.__variables["power"] = pulp.LpVariable("power")
+		print("VARIABLES")
+		for var in self.__variables:
+			print(var)
 
 		unweighted_resources = {
 			"input:water": 0,
@@ -88,19 +85,19 @@ class Optimizer:
 		self.equalities = []
 
 		# For each item, create an equality for all inputs and outputs
-		for item in self.__db.items():
+		for item_var, item in self.__db.items().items():
 			var_coeff = {}  # variable => coefficient
-			recipes_for_item = self.__db.recipes_for_product(item)
-			recipes_from_item = self.__db.recipes_for_ingredient(item)
+			recipes_for_item = self.__db.recipes_for_product(item_var)
+			recipes_from_item = self.__db.recipes_for_ingredient(item_var)
 			for recipe in recipes_for_item:
-				var_coeff[self.__variables[recipe.var()]] = recipe.product(item).minute_rate()
+				var_coeff[self.__variables[recipe.var()]] = recipe.product(item_var).minute_rate()
 			for recipe in recipes_from_item:
-				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item).minute_rate()
-			if item in self.__db.power_recipes_by_fuel():
-				power_recipe = self.__db.power_recipes_by_fuel()[item]
+				var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item_var).minute_rate()
+			if item_var in self.__db.power_recipes_by_fuel():
+				power_recipe = self.__db.power_recipes_by_fuel()[item_var]
 				var_coeff[self.__variables[power_recipe.var()]] = -power_recipe.fuel_minute_rate()
-			var_coeff[self.__variables["input:" + item]] = 1
-			var_coeff[self.__variables["output:" + item]] = -1
+			var_coeff[self.__variables[item.input_var()]] = 1
+			var_coeff[self.__variables[item.output_var()]] = -1
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
 		# For each type of crafter, create an equality for all recipes that require it
@@ -127,11 +124,11 @@ class Optimizer:
 			power_coeff[self.__variables[generator_var]] = generator.power_production()
 		for recipe_var, recipe in self.__db.recipes().items():
 			power_coeff[self.__variables[recipe_var]] = -recipe.crafter().power_consumption()
-		power_coeff[self.__variables["input:power"]] = 1
-		power_coeff[self.__variables["output:power"]] = -1
+		power_coeff[self.__variables["power"]] = -1
 		self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
 		# Disable geothermal generators since they are "free" energy.
+		# TODO: Remove this once there are global maximums for all resources.
 		self.equalities.append(self.__variables["generator:geo-thermal-generator"] == 0)
 
 		print("Finished creating optimizer")
@@ -278,15 +275,11 @@ class Optimizer:
 				friendly_name = self.__db.generators()[variable_name].human_readable_name()
 				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
-		out.append("POWER")
-		input_power = 0
-		if pulp.value(self.__variables["input:power"]):
-			input_power = pulp.value(self.__variables["input:power"])
-		output_power = 0
-		if pulp.value(self.__variables["output:power"]):
-			output_power = pulp.value(self.__variables["output:power"])
-		out.append("Input: " + str(input_power) + " MW")
-		out.append("Output: " + str(output_power) + " MW")
+		out.append("NET POWER")
+		net_power = 0
+		if pulp.value(self.__variables["power"]):
+			net_power = pulp.value(self.__variables["power"])
+		out.append(str(net_power) + " MW")
 		for var in self.__variables:
 			if pulp.value(self.__variables[var]) and pulp.value(self.__variables[var]) != 0:
 				print("Variable", var, pulp.value(self.__variables[var]))
@@ -356,13 +349,9 @@ class Optimizer:
 				sinks[item.var()] = {}
 			sinks[item.var()][item.var()] = pulp.value(variable)
 		
-		input_power = 0
-		if pulp.value(self.__variables["input:power"]):
-			input_power = pulp.value(self.__variables["input:power"])
-		output_power = 0
-		if pulp.value(self.__variables["output:power"]):
-			output_power = pulp.value(self.__variables["output:power"])
-		net_power = output_power - input_power
+		net_power = 0
+		if pulp.value(self.__variables["power"]):
+			net_power = pulp.value(self.__variables["power"])
 		s.node("power", str(net_power) + " MW Net Power")
 
 		# Connect each source to all sinks of that item
@@ -406,18 +395,16 @@ class Optimizer:
 			prob += exp
 
 		# Add item constraints
-		for item in self.__db.items():
+		for item_var, item in self.__db.items().items():
 			# Don't require any other inputs
-			item_input = "input:" + item
-			if item_input not in query_vars:
+			if item.input_var() not in query_vars:
 				if item in self.__db.resources():
-					prob += self.__variables[item_input] >= 0
+					prob += self.__variables[item.input_var()] >= 0
 				else:
-					prob += self.__variables[item_input] == 0
+					prob += self.__variables[item.input_var()] == 0
 			# Eliminate byproducts
-			item_output = "output:" + item
-			if item_output not in query_vars:
-				prob += self.__variables[item_output] == 0
+			if item.output_var() not in query_vars:
+				prob += self.__variables[item.output_var()] == 0
 
 		# Add flexible constraint for resources
 		# for resource_var, multiplier in self.weighted_resources.items():

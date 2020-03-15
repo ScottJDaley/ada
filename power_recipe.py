@@ -7,10 +7,10 @@ class PowerRecipe:
         self.__generator = generator
 
     def var(self):
-        return "power-recipe:" + self.__fuel_item.var()
+        return "power-recipe:" + self.__fuel_item.slug()
 
     def viz_name(self):
-        return "power-recipe-" + self.__fuel_item.var()
+        return "power-recipe-" + self.__fuel_item.slug()
 
     def human_readable_name(self):
         return "Power Recipe: " + self.__fuel_item.human_readable_name()

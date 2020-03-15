@@ -1,11 +1,21 @@
 
 
 class Item:
-    def __init__(self, data):
+    def __init__(self, data, prefix):
         self.__data = data
+        self.__prefix = prefix
+
+    def slug(self):
+        return self.__data["slug"]
 
     def var(self):
-        return self.__data["slug"]
+        return self.__prefix + ":" + self.slug()
+
+    def input_var(self):
+        return self.var() + ":input"
+    
+    def output_var(self):
+        return self.var() + ":output"
 
     def human_readable_name(self):
         return self.__data["name"]

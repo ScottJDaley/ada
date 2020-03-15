@@ -20,7 +20,6 @@ def print_help():
 
 def main():
     satisfaction = Satisfaction()
-    opt = optimizer.Optimizer(DB("data.json"))
 
     print_help()
     while True:

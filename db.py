@@ -11,13 +11,23 @@ class DB:
         with open(path) as f:
             data = json.load(f)
 
+        # Parse resources
+        self.__resource_class_names = []
+        for resource_data in data["resources"].values():
+            self.__resource_class_names.append(resource_data["item"])
+
         # Parse items
+        self.__resources = {}
         self.__items = {}
         self.__item_var_from_class_name = {}
         for item_data in data["items"].values():
-            item = Item(item_data)
+            item_class_name = item_data["className"]
+            prefix = "item"
+            if item_class_name in self.__resource_class_names:
+                prefix = "resource"
+            item = Item(item_data, prefix)
             self.__items[item.var()] = item
-            self.__item_var_from_class_name[item_data["className"]] = item.var()
+            self.__item_var_from_class_name[item_class_name] = item.var()
 
         # Parse crafters
         self.__crafters = {}
@@ -67,11 +77,6 @@ class DB:
                 power_recipe = PowerRecipe(fuel_item, generator)
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
-                
-        # Parse resources
-        self.__resources = []
-        for resource in data["resources"].values():
-            self.__resources.append(self.__item_var_from_class_name[resource["item"]])
 
 
     def items(self):
