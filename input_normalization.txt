@@ -1,0 +1,97 @@
+!max output:power where input:power = 0 and crude-oil <= 240 and uranium = 0 and generator:coal-generator = 0
+
+
+1. Assume resources are inputs:
+iron-ore => input:iron-ore
+
+2. Assume items are outputs:
+iron-rod => output:iron-rod
+
+3. Automatically do substring matching. When there are more than one choice,
+then ask/warn the user. For example, you can say "coal-gen" to refer to 
+"geneator:coal-generator" since that substring is unique.
+
+4. Assume "power" means input unless in the max objective.
+
+5. Rearrange variable names so that "input" and "output" are suffixes; This
+would allow for things like "power:in" to be an alias for "power:input". 
+
+!max output:power where input:power = 0 and crude-oil <= 240 and uranium = 0 and generator:coal-generator = 0
+
+!max power:output where power:input = 0 and crude-oil <= 240 and uranium = 0 and coal-generator:generator = 0
+
+6. If power output or power input is specified, assume the opposite is 0.
+
+7. Add "item" prefix for cases where it is needed to disambiguate or to
+target all items with a glob.
+
+8. Can input power and output power be combined into one var, "power"?
+It is essentially anyways since its all on the same power network. Makes
+matching rules a lot simpler. Also solves the problem of having to specify
+that input is 0 when you want an output, and vice versa.
+
+9. Add variables for resources:unweighted:input, resources:weighted:input
+
+10. Add variables for recipes:alternate
+
+11?. Remove glob syntax and only support substring matching for simplicity.
+Add globbing or regex back for multi-variable match only if it is requested.
+
+12?. Should regex be supported instead of globbing This is useful for
+excluding matches from an expansion. For example: generator:(?!fuel) would
+match all generators except for the fuel generator.
+
+13. Consolidate (again) item input and output into one variable. A positive
+number for a resource item refers to input resources while a position number
+for non-resource items refers to output resources. To represent an item 
+input, a negative item can be provided.
+
+
+New syntax could be:
+
+resource:iron-ore:input
+resource:iron-ore:output
+item:iron-ingot:input
+item:iron-ingot:output
+power
+recipe:alternate-pure-iron-ingot
+power-recipe:fuel
+crafter:assembler
+generator:coal-generator
+resources:mean
+resources:weighted
+
+Rules:
+1. Match by regex substring
+2. If there is more than one match following these steps:
+    1. If item and non-item matches, assume item.
+    2. If input and output matches, assume:
+        - input for resources
+        - output for items
+    3. Else, give the user all/some options and let them specify.
+
+Match order:
+[item:*:output]
+[item:*:input]
+[resource:*:input]
+[resource:*:output]
+[*]
+
+Note: Multiple variables will only be matched if the input has surrounding
+[] brackets. For example:
+
+iron-ingot => item:iron-ingot:output
+[iron-ingot] => [item:iron-ingot:output,
+                 item:iron-ingot:input,
+                 recipe:iron-ingot,
+                 recipe:alternate-pure-iron-ingot]
+[item:.*iron-ingot] => [item:iron-ingot:output,
+                        item:iron-ingot:input]
+
+With new syntax:
+
+!max power where and crude-oil <= 240 and nuclear-power-plant = 0 and coal-gen = 0
+
+Translates to
+
+!max power where resource:crude-oil:input <= 240 and generator:nuclear-power-plant = 0 and generator:coal-generator = 0

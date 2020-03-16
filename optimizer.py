@@ -1,6 +1,7 @@
 import pulp
 import viz
 import fnmatch
+import re
 from graphviz import Digraph
 
 
@@ -31,9 +32,11 @@ class Optimizer:
 		for generator_var, generator in self.__db.generators().items():
 			self.__variables[generator_var] = pulp.LpVariable(generator_var, lowBound=0)
 		self.__variables["power"] = pulp.LpVariable("power")
-		print("VARIABLES")
-		for var in self.__variables:
-			print(var)
+		self.__partitioned_variables = self.partition_variables_by_match_order()
+		print("PARTITIONED VARIABLES")
+		for var_group in self.__partitioned_variables:
+			print()
+			print(var_group)
 
 		unweighted_resources = {
 			"input:water": 0,
@@ -132,6 +135,18 @@ class Optimizer:
 		self.equalities.append(self.__variables["generator:geo-thermal-generator"] == 0)
 
 		print("Finished creating optimizer")
+
+	def partition_variables_by_match_order(self):
+		match_groups = [
+			'item:.*:output',
+			'item:.*:input',
+			'resource:.*:input',
+			'resource:.*:output',
+			'.*',
+		]
+		def matches_for(group):
+			return [var for var in self.__variables if re.match(group, var)]
+		return [matches_for(group) for group in match_groups]
 
 	def parse_variable(self, var):
 		if var in self.__variables:
