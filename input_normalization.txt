@@ -44,10 +44,12 @@ match all generators except for the fuel generator.
 13. Consolidate (again) item input and output into one variable. A positive
 number for a resource item refers to input resources while a position number
 for non-resource items refers to output resources. To represent an item 
-input, a negative item can be provided.
+input, a negative item can be provided. If necessary, an "input" prefix or
+suffix could be provided to make the command more readable. This removes them
+need for complicated logic for ordered match groups.
 
 
-New syntax could be:
+New syntax v2:
 
 resource:iron-ore:input
 resource:iron-ore:output
@@ -95,3 +97,67 @@ With new syntax:
 Translates to
 
 !max power where resource:crude-oil:input <= 240 and generator:nuclear-power-plant = 0 and generator:coal-generator = 0
+
+
+New syntax v3:
+
+               resource:iron-ore: Net resource input
+                 item:iron-ingot: Net item output
+                           power: Net power
+recipe:alternate-pure-iron-ingot: Number of recipes needed
+               power-recipe:fuel: Number of power recipes needed
+               crafter:assembler: Number of assemblers needed
+        generator:coal-generator: Number of generators needed
+              resources:weighted: The weighted resource inputs
+                  resources:mean: The mean-weighted resource inputs
+
+match groups: [
+    'item:.*',
+    'resource:.*',
+    '.*',
+]
+
+For each match group:
+1. First match by substring.
+2. If there is one match, use that.
+3. If there are multiple matches, prompt user for correct item or give warning.
+4. If there are no matches, match by regex.
+5. If there is one match, use that.
+6. If there are multiple matches, use all of them.
+7. If there are no matches, go to next group.
+
+If there are no matches, show an error.
+
+
+New syntax v4:
+
+         resource:iron-ore:input: Net resource input
+        resource:iron-ore:output: Net resource output
+           item:iron-ingot:input: Net item input
+          item:iron-ingot:output: Net item output
+                           power: Net power
+recipe:alternate-pure-iron-ingot: Number of recipes needed
+               power-recipe:fuel: Number of power recipes needed
+               crafter:assembler: Number of assemblers needed
+        generator:coal-generator: Number of generators needed
+              resources:weighted: The weighted resource inputs
+                  resources:mean: The mean-weighted resource inputs
+
+match groups: [
+    'resource:.*:input',
+    'resource:.*:output',
+    'item:.*:output',
+    'item:.*:input',
+    '.*',
+]
+
+For each match group:
+1. First match by substring.
+2. If there is one match, use that.
+3. If there are multiple matches, prompt user for correct item or give warning.
+4. If there are no matches, match by regex.
+5. If there is one match, use that.
+6. If there are multiple matches, use all of them.
+7. If there are no matches, go to next group.
+
+If there are no matches, show an error.

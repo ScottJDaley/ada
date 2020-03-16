@@ -1,21 +1,20 @@
 
 
 class Item:
-    def __init__(self, data, prefix):
+    def __init__(self, data, is_resource):
         self.__data = data
-        self.__prefix = prefix
+        self.__is_resource = is_resource
 
     def slug(self):
         return self.__data["slug"]
 
     def var(self):
-        return self.__prefix + ":" + self.slug()
+        if self.__is_resource:
+            return "resource:" + self.slug()
+        return "item:" + self.slug()
 
-    def input_var(self):
-        return self.var() + ":input"
-    
-    def output_var(self):
-        return self.var() + ":output"
+    def viz_name(self):
+        return "item-" + self.slug()
 
     def human_readable_name(self):
         return self.__data["name"]
@@ -24,6 +23,9 @@ class Item:
         if self.__data["liquid"]:
             return self.__data["energyValue"] * 1000
         return self.__data["energyValue"]
+
+    def is_resource(self):
+        return self.__is_resource
     
     def details(self):
         out = [self.human_readable_name()]

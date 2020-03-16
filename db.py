@@ -22,10 +22,8 @@ class DB:
         self.__item_var_from_class_name = {}
         for item_data in data["items"].values():
             item_class_name = item_data["className"]
-            prefix = "item"
-            if item_class_name in self.__resource_class_names:
-                prefix = "resource"
-            item = Item(item_data, prefix)
+            is_resource = item_class_name in self.__resource_class_names
+            item = Item(item_data, is_resource)
             self.__items[item.var()] = item
             self.__item_var_from_class_name[item_class_name] = item.var()
 
