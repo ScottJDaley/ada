@@ -140,8 +140,8 @@ recipe:alternate-pure-iron-ingot: Number of recipes needed
                power-recipe:fuel: Number of power recipes needed
                crafter:assembler: Number of assemblers needed
         generator:coal-generator: Number of generators needed
-              resources:weighted: The weighted resource inputs
-                  resources:mean: The mean-weighted resource inputs
+        resources:weighted:input: The weighted resource inputs
+            resources:mean:input: The mean-weighted resource inputs
 
 match groups: [
     'resource:.*:input',

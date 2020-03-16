@@ -25,7 +25,8 @@ class Optimizer:
 		for power_recipe in self.__db.power_recipes():
 			self.__variables[power_recipe] = pulp.LpVariable(power_recipe, lowBound=0)
 		for item in self.__db.items().values():
-			self.__variables[item.var()] = pulp.LpVariable(item.var())
+			self.__variables[item.input_var()] = pulp.LpVariable(item.input_var(), lowBound=0)
+			self.__variables[item.output_var()] = pulp.LpVariable(item.output_var(), lowBound=0)
 		for crafter in self.__db.crafters():
 			self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
 		for generator_var, generator in self.__db.generators().items():
@@ -41,45 +42,45 @@ class Optimizer:
 			print(var_group)
 
 		unweighted_resources = {
-			"resource:water": 0,
-			"resource:iron-ore": 1,
-			"resource:copper-ore": 1,
-			"resource:limestone": 1,
-			"resource:coal": 1,
-			"resource:crude-oil": 1,
-			"resource:bauxite": 1,
-			"resource:caterium-ore": 1,
-			"resource:uranium": 1,
-			"resource:raw-quartz": 1,
-			"resource:sulfur": 1,
+			"resource:water:input": 0,
+			"resource:iron-ore:input": 1,
+			"resource:copper-ore:input": 1,
+			"resource:limestone:input": 1,
+			"resource:coal:input": 1,
+			"resource:crude-oil:input": 1,
+			"resource:bauxite:input": 1,
+			"resource:caterium-ore:input": 1,
+			"resource:uranium:input": 1,
+			"resource:raw-quartz:input": 1,
+			"resource:sulfur:input": 1,
 		}
 		# Proportional to amount of resource on map
 		weighted_resources = {
-			"resource:water": 0,
-			"resource:iron-ore": 1,
-			"resource:copper-ore": 3.29,
-			"resource:limestone": 1.47,
-			"resource:coal": 2.95,
-			"resource:crude-oil": 4.31,
-			"resource:bauxite": 8.48,
-			"resource:caterium-ore": 6.36,
-			"resource:uranium": 46.67,
-			"resource:raw-quartz": 6.36,
-			"resource:sulfur": 13.33,
+			"resource:water:input": 0,
+			"resource:iron-ore:input": 1,
+			"resource:copper-ore:input": 3.29,
+			"resource:limestone:input": 1.47,
+			"resource:coal:input": 2.95,
+			"resource:crude-oil:input": 4.31,
+			"resource:bauxite:input": 8.48,
+			"resource:caterium-ore:input": 6.36,
+			"resource:uranium:input": 46.67,
+			"resource:raw-quartz:input": 6.36,
+			"resource:sulfur:input": 13.33,
 		}
 		# Square root of weighted amounts above
 		mean_weighted_resources = {
-			"resource:water": 0,
-			"resource:iron-ore": 1,
-			"resource:copper-ore": 1.81,
-			"resource:limestone": 1.21,
-			"resource:coal": 1.72,
-			"resource:crude-oil": 2.08,
-			"resource:bauxite": 2.91,
-			"resource:caterium-ore": 2.52,
-			"resource:uranium": 6.83,
-			"resource:raw-quartz": 2.52,
-			"resource:sulfur": 3.65,
+			"resource:water:input": 0,
+			"resource:iron-ore:input": 1,
+			"resource:copper-ore:input": 1.81,
+			"resource:limestone:input": 1.21,
+			"resource:coal:input": 1.72,
+			"resource:crude-oil:input": 2.08,
+			"resource:bauxite:input": 2.91,
+			"resource:caterium-ore:input": 2.52,
+			"resource:uranium:input": 6.83,
+			"resource:raw-quartz:input": 2.52,
+			"resource:sulfur:input": 3.65,
 		}
 		self.built_in_objectives = {
 			"unweighted-resources": unweighted_resources,
@@ -107,10 +108,8 @@ class Optimizer:
 			if item_var in self.__db.power_recipes_by_fuel():
 				power_recipe = self.__db.power_recipes_by_fuel()[item_var]
 				var_coeff[self.__variables[power_recipe.var()]] = -power_recipe.fuel_minute_rate()
-			if item.is_resource():
-				var_coeff[self.__variables[item.var()]] = 1
-			else:
-				var_coeff[self.__variables[item.var()]] = -1
+			var_coeff[self.__variables[item.input_var()]] = 1
+			var_coeff[self.__variables[item.output_var()]] = -1
 			self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
 		# For each type of crafter, create an equality for all recipes that require it
@@ -148,9 +147,12 @@ class Optimizer:
 
 	def partition_variables_by_match_order(self):
 		match_groups = [
-			'resource:.*',
-			'item:.*'
-			'.*',
+			'^power$',
+			'^resource:.*:input$',
+			'^resource:.*:output$',
+			'^item:.*:output$',
+			'^item:.*:input$',
+			'^.*$',
 		]
 		def matches_for(group):
 			return [var for var in self.__variables if re.match(group, var)]
@@ -240,33 +242,19 @@ class Optimizer:
 	def string_solution(self):		
 		out = ["INPUT"]
 		for variable_name, variable in self.__variables.items():
-			if not pulp.value(variable):
+			if not str.endswith(variable_name, ":input"):
 				continue
-			value = pulp.value(variable)
-			if variable_name not in self.__db.items():
-				continue
-			item = self.__db.items()[variable_name]
-			if item.is_resource() and value < 0:
-				continue
-			if not item.is_resource() and value > 0:
-				continue
-			friendly_name = self.__db.items()[variable_name].human_readable_name()
-			out.append(friendly_name + ": " + str(pulp.value(variable)))
+			if pulp.value(variable) and pulp.value(variable) > 0:
+				friendly_name = self.__db.items()[variable_name[:-6]].human_readable_name()
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
 		out.append("OUTPUT")
 		for variable_name, variable in self.__variables.items():
-			if not pulp.value(variable):
+			if not str.endswith(variable_name, ":output"):
 				continue
-			value = pulp.value(variable)
-			if variable_name not in self.__db.items():
-				continue
-			item = self.__db.items()[variable_name]
-			if item.is_resource() and value > 0:
-				continue
-			if not item.is_resource() and value < 0:
-				continue
-			friendly_name = self.__db.items()[variable_name].human_readable_name()
-			out.append(friendly_name + ": " + str(pulp.value(variable)))
+			if pulp.value(variable) and pulp.value(variable) > 0:
+				friendly_name = self.__db.items()[variable_name[:-7]].human_readable_name()
+				out.append(friendly_name + ": " + str(pulp.value(variable)))
 		out.append("")
 		out.append("RECIPES")
 		for variable_name, variable in self.__variables.items():
@@ -351,34 +339,24 @@ class Optimizer:
 			sinks[fuel_item.var()][power_recipe.viz_name()] = pulp.value(variable) * power_recipe.fuel_minute_rate()
 
 		for variable_name, variable in self.__variables.items():
-			if not pulp.value(variable):
+			if not str.endswith(variable_name, ":input"):
 				continue
-			value = pulp.value(variable)
-			if variable_name not in self.__db.items():
+			if not pulp.value(variable) or pulp.value(variable) == 0:
 				continue
-			item = self.__db.items()[variable_name]
-			if item.is_resource() and value < 0:
-				continue
-			if not item.is_resource() and value > 0:
-				continue
-			friendly_name = self.__db.items()[variable_name].human_readable_name()
+			item = self.__db.items()[variable_name[:-6]]
+			friendly_name = item.human_readable_name()
 			s.node(item.viz_name(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
 			if item not in sources:
 				sources[item.var()] = {}
 			sources[item.var()][item.viz_name()] = pulp.value(variable)
 
 		for variable_name, variable in self.__variables.items():
-			if not pulp.value(variable):
+			if not str.endswith(variable_name, ":output"):
 				continue
-			value = pulp.value(variable)
-			if variable_name not in self.__db.items():
+			if not pulp.value(variable) or pulp.value(variable) == 0:
 				continue
-			item = self.__db.items()[variable_name]
-			if item.is_resource() and value > 0:
-				continue
-			if not item.is_resource() and value < 0:
-				continue
-			friendly_name = self.__db.items()[variable_name].human_readable_name()
+			item = self.__db.items()[variable_name[:-7]]
+			friendly_name = item.human_readable_name()
 			s.node(item.viz_name(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
 			if item not in sinks:
 				sinks[item.var()] = {}
@@ -434,14 +412,15 @@ class Optimizer:
 
 		# Add item constraints
 		for item_var, item in self.__db.items().items():
-			if item_var in query_vars:
-				continue
-			if item.is_resource():
-				# Allow resource input
-				prob += self.__variables[item.var()] >= 0
-			else:
-				# Don't require any other inputs and eliminate byproducts
-				prob += self.__variables[item_var] == 0
+			# Don't require any other inputs
+			if item.input_var() not in query_vars:
+				if item.is_resource():
+					prob += self.__variables[item.input_var()] >= 0
+				else:
+					prob += self.__variables[item.input_var()] == 0
+			# Eliminate byproducts
+			if item.output_var() not in query_vars:
+				prob += self.__variables[item.output_var()] == 0
 
 		# Don't use power recipes unless the query specifies something about power
 		if "power" not in query_vars:

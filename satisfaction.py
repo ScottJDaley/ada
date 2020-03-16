@@ -34,9 +34,9 @@ class Satisfaction:
             elif arg in self.__db.items():
                 for recipe in self.__db.recipes_for_product(arg):
                     out.append(recipe.details())
-            elif arg in self.__db.buildings():
+            elif arg in self.__db.crafters():
                 for recipe in self.__db.recipes().values():
-                    if arg == recipe.building().var():
+                    if arg == recipe.crafter().var():
                         out.append(recipe.details())
             else:
                 return "Unknown recipe, item, or building: " + arg
@@ -58,14 +58,14 @@ class Satisfaction:
 
         if len(args) == 0:
             out = []
-            for building in sorted(self.__db.buildings()):
+            for building in sorted(self.__db.crafters()):
                 out.append(building)
             return '\n'.join(out)
         if len(args) == 1:
             building = args[0]
-            if building not in self.__db.buildings():
+            if building not in self.__db.crafters():
                 return "Unknown building: " + building
-            return self.__db.buildings()[building].details()
+            return self.__db.crafters()[building].details()
 
     def min(self, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))

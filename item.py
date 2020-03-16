@@ -13,6 +13,12 @@ class Item:
             return "resource:" + self.slug()
         return "item:" + self.slug()
 
+    def input_var(self):
+        return self.var() + ":input"
+
+    def output_var(self):
+        return self.var() + ":output"
+
     def viz_name(self):
         return "item-" + self.slug()
 
