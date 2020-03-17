@@ -139,10 +139,6 @@ class Optimizer:
 		power_coeff[self.__variables["power"]] = -1
 		self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
-		# Disable geothermal generators since they are "free" energy.
-		# TODO: Remove this once there are global maximums for all resources.
-		self.equalities.append(self.__variables["generator:geo-thermal-generator"] == 0)
-
 		print("Finished creating optimizer")
 
 	def partition_variables_by_match_order(self):
@@ -160,13 +156,18 @@ class Optimizer:
 
 	def parse_variables(self, var_expr):
 		for partition in self.partition_variables_by_match_order():
+			inner_matched = [var for var in partition if var_expr in var.split(':')]
 			substring_matched = [var for var in partition if var_expr in var]
 			re_matched = [var for var in partition if re.search(var_expr, var)]
+			if len(inner_matched) == 1:
+				return inner_matched
+			if len(inner_matched) > 1:
+				raise ParseException("Input '" + var_expr + "' matches multiple variables: " + str(inner_matched))
 			if len(substring_matched) == 1:
 				return substring_matched
 			if len(substring_matched) > 1:
 				raise ParseException("Input '" + var_expr + "' matches multiple variables: " + str(substring_matched))
-			if len(substring_matched) == 0 and len(re_matched) > 0:
+			if len(re_matched) > 0:
 				return re_matched
 		raise ParseException("Input '" + var_expr + "' does not match any variables")
 
@@ -422,10 +423,18 @@ class Optimizer:
 			if item.output_var() not in query_vars:
 				prob += self.__variables[item.output_var()] == 0
 
-		# Don't use power recipes unless the query specifies something about power
+		# Disable power recipes unless the query specifies something about power
 		if "power" not in query_vars:
 			for power_recipe_var in self.__db.power_recipes():
 				prob += self.__variables[power_recipe_var] == 0
+
+		# Disable geothermal generators since they are "free" energy.
+		if "generator:geo-thermal-generator" not in query_vars:
+			prob += self.__variables["generator:geo-thermal-generator"] == 0
+
+		# Disable biomasss burners since they cannot be automated.
+		if "generator:biomass-burner" not in query_vars:
+			prob += self.__variables["generator:biomass-burner"] == 0
 
 		# Add flexible constraint for resources
 		# for resource_var, multiplier in self.weighted_resources.items():
