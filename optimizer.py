@@ -425,9 +425,21 @@ class Optimizer:
 		if objective:
 			# TODO: Support more flexible objective
 			print("OBJECTIVE:", objective)
+			print()
 			prob += pulp.LpAffineExpression(objective)
 		else:
 			return "Must have objective"
+
+		normalized_input = ["NORMALIZED INPUT:"]
+		objective_exp = pulp.LpAffineExpression(objective)
+		if max:
+			normalized_input.append("max " + str(objective_exp) + " where:")
+		else:
+			normalized_input.append("min " + str(objective_exp))
+		for item, expr in constraints.items():
+			normalized_input.append("  " + item + " " + expr[0] + " " + str(expr[1]))
+		print('\n'.join(normalized_input))
+
 
 		# Add constraints for all item, crafter, and power equalities
 		for exp in self.equalities:
@@ -485,15 +497,13 @@ class Optimizer:
 		# Solve
 		status = prob.solve()
 		solution = ""
-		solution += self.string_solution() + "\n\n"
+		# solution += self.string_solution() + "\n\n"
 		if status is pulp.LpStatusOptimal:
 			solution += self.string_solution() + "\n\n"
 			self.graph_viz_solution()
-			print("Done generating GraphViz")
+			solution += "OBJECTIVE VALUE\n"
+			solution += str(pulp.value(prob.objective)) + "\n\n"
 		solution += "Solver status: " + pulp.LpStatus[status]
-
-		solution += "\n\nOBJECTIVE VALUE\n"
-		solution += str(pulp.value(prob.objective))
 			
 		# print(solution)
 

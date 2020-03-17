@@ -26,13 +26,13 @@ async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
 
-@bot.event
-async def on_error(event, *args, **kwargs):
-    with open('err.log', 'a') as f:
-        if event == 'on_message':
-           print('Unhandled message', args[0])
-        else:
-            raise
+# @bot.event
+# async def on_error(event, *args, **kwargs):
+#     with open('err.log', 'a') as f:
+#         if event == 'on_message':
+#            print('Unhandled message', args[0])
+#         else:
+#             raise
 
 
 @bot.event
@@ -161,7 +161,8 @@ class Optimization(commands.Cog):
           return True
         async def request_input(msg):
           await send_message(ctx, msg)
-          await self.__bot.wait_for('message', check=check, timeout=30)
+          input_message = await self.__bot.wait_for('message', check=check)
+          return input_message.content
         output = await satisfaction.min(request_input, *args)
         await send_message(ctx, output, discord.File("output.gv.png"))
 
@@ -171,7 +172,8 @@ class Optimization(commands.Cog):
           return True
         async def request_input(msg):
           await send_message(ctx, msg)
-          await self.__bot.wait_for('message', check=check, timeout=30)
+          input_message = await self.__bot.wait_for('message', check=check)
+          return input_message.content
         output = await satisfaction.max(request_input, *args)
         await send_message(ctx, output, discord.File("output.gv.png"))
 
