@@ -154,7 +154,29 @@ class Optimizer:
 			return [var for var in self.__variables if re.match(group, var)]
 		return [matches_for(group) for group in match_groups]
 
-	def parse_variables(self, var_expr):
+	async def pick_variable(self, request_input_fn, var_expr, vars):
+		out = []
+		out.append("Input '" + var_expr + "' matches multiple variables, pick one:")
+		for i, var in enumerate(vars, start=1):
+			out.append("  " + str(i) + ") " + var)
+		num_choices = len(vars) +1
+		out.append("  " + str(num_choices) + ") apply expression to all matches")
+		out.append("Enter a number between 1 and " + str(num_choices))
+		attempts = 0
+		while attempts < 3:
+			attempts += 1
+			choice = await request_input_fn('\n'.join(out))
+			if not choice.isdigit():
+				continue
+			index = int(choice)
+			if index <= 0 or index > num_choices:
+				continue
+			if index <= len(vars):
+				return [vars[index - 1]]
+			return vars
+		raise ParseException("Could not parse input '" + var_expr + "'")
+
+	async def parse_variables(self, request_input_fn, var_expr):
 		for partition in self.partition_variables_by_match_order():
 			inner_matched = [var for var in partition if var_expr in var.split(':')]
 			substring_matched = [var for var in partition if var_expr in var]
@@ -162,16 +184,16 @@ class Optimizer:
 			if len(inner_matched) == 1:
 				return inner_matched
 			if len(inner_matched) > 1:
-				raise ParseException("Input '" + var_expr + "' matches multiple variables: " + str(inner_matched))
+				return await self.pick_variable(request_input_fn, var_expr, inner_matched)
 			if len(substring_matched) == 1:
 				return substring_matched
 			if len(substring_matched) > 1:
-				raise ParseException("Input '" + var_expr + "' matches multiple variables: " + str(substring_matched))
+				return await self.pick_variable(request_input_fn, var_expr, substring_matched)
 			if len(re_matched) > 0:
 				return re_matched
 		raise ParseException("Input '" + var_expr + "' does not match any variables")
 
-	def parse_constraints(self, *args):
+	async def parse_constraints(self, request_input_fn, *args):
 		# First separate constraints by 'and'
 		constraints_raw = []
 		start_index = 0
@@ -189,7 +211,7 @@ class Optimizer:
 			if len(constraint) != 3:
 				raise ParseException(
 				    "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-			expanded_vars = self.parse_variables(constraint[0])
+			expanded_vars = await self.parse_variables(request_input_fn, constraint[0])
 			operator = constraint[1]
 			try:
 				bound = int(constraint[2])
@@ -201,7 +223,7 @@ class Optimizer:
 				constraints[var] = (operator, bound)
 		return constraints
 
-	def parse_objective(self, *args):
+	async def parse_objective(self, request_input_fn, *args):
 		# TODO: Support expression objectives
 		if len(args) > 1:
 			raise ParseException(
@@ -214,13 +236,13 @@ class Optimizer:
 				objective[self.__variables[var_name]] = coefficient
 				objective_vars.append(var_name)
 		else:
-			objective_items = self.parse_variables(arg0)
+			objective_items = await self.parse_variables(request_input_fn, arg0)
 			for objective_item in objective_items:
 				objective[self.__variables[objective_item]] = 1
 				objective_vars.append(objective_item)
 		return objective, objective_vars
 
-	def parse_input(self, *args):
+	async def parse_input(self, request_input_fn, *args):
 		# First separate out the {item} where clause
 		if len(args) < 2:
 			raise ParseException(
@@ -231,10 +253,10 @@ class Optimizer:
 			if arg == "where":
 				where_index = i
 		if where_index <= 0:
-			objective, objective_vars = self.parse_objective("weighted-resources")
+			objective, objective_vars = await self.parse_objective(request_input_fn, "weighted-resources")
 		else:
-			objective, objective_vars = self.parse_objective(*args[:where_index])
-		constraints = self.parse_constraints(*args[where_index+1:])
+			objective, objective_vars = await self.parse_objective(request_input_fn, *args[:where_index])
+		constraints = await self.parse_constraints(request_input_fn, *args[where_index+1:])
 		query_vars = objective_vars
 		for var in constraints:
 			query_vars.append(var)
@@ -381,11 +403,11 @@ class Optimizer:
 		# s.view() # Opens the image or pdf using default program
 		s.render() # Only creates output file
 
-	def optimize(self, max, *args):
+	async def optimize(self, request_input_fn, max, *args):
 		# Parse input
 		# {item} where {item} {=|<=|>=} {number} and ...
 		try:
-			objective, constraints, query_vars = self.parse_input(*args)
+			objective, constraints, query_vars = await self.parse_input(request_input_fn, *args)
 		except ParseException as err:
 			return err
 
@@ -412,7 +434,7 @@ class Optimizer:
 			prob += exp
 
 		# Add item constraints
-		for item_var, item in self.__db.items().items():
+		for item in self.__db.items().values():
 			# Don't require any other inputs
 			if item.input_var() not in query_vars:
 				if item.is_resource():

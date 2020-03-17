@@ -8,14 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
-
-load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
-
-satisfaction = Satisfaction()
-
-bot = commands.Bot(command_prefix='!')
-
 async def send_message(ctx, msg, file=None):
   DISCORD_MESSAGE_LIMIT = 2000
   while len(msg) > DISCORD_MESSAGE_LIMIT:
@@ -23,6 +15,10 @@ async def send_message(ctx, msg, file=None):
     await ctx.send(msg[:newline_index])
     msg = msg[newline_index:]
   await ctx.send(content=msg, file=file)
+
+satisfaction = Satisfaction()
+
+bot = commands.Bot(command_prefix='!')
 
 
 @bot.event
@@ -156,17 +152,32 @@ class Information(commands.Cog):
 class Optimization(commands.Cog):
     """Optimization commands"""
 
+    def __init__(self, bot):
+      self.__bot = bot
+
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
-        await send_message(ctx, satisfaction.min(*args), discord.File("output.gv.png"))
+        def check(msg):
+          return True
+        async def request_input(msg):
+          await send_message(ctx, msg)
+          await self.__bot.wait_for('message', check=check, timeout=30)
+        output = await satisfaction.min(request_input, *args)
+        await send_message(ctx, output, discord.File("output.gv.png"))
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
-        await send_message(ctx, satisfaction.max(*args), discord.File("output.gv.png"))
+        def check(msg):
+          return True
+        async def request_input(msg):
+          await send_message(ctx, msg)
+          await self.__bot.wait_for('message', check=check, timeout=30)
+        output = await satisfaction.max(request_input, *args)
+        await send_message(ctx, output, discord.File("output.gv.png"))
 
 
 bot.add_cog(Information())
-bot.add_cog(Optimization())
+bot.add_cog(Optimization(bot))
 
 bot.run(token)
 

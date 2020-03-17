@@ -67,10 +67,10 @@ class Satisfaction:
                 return "Unknown building: " + building
             return self.__db.crafters()[building].details()
 
-    def min(self, *args):
+    async def min(self, request_input, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))
-        return self.__opt.optimize(False, *args)
+        return await self.__opt.optimize(request_input, False , *args)
 
-    def max(self, *args):
+    async def max(self, request_input, *args):
         print("calling !max with", len(args), "arguments:", ', '.join(args))
-        return self.__opt.optimize(True, *args)
+        return await self.__opt.optimize(request_input, True, *args)
