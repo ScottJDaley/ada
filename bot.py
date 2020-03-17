@@ -163,8 +163,11 @@ class Optimization(commands.Cog):
           await send_message(ctx, msg)
           input_message = await self.__bot.wait_for('message', check=check)
           return input_message.content
-        output = await satisfaction.min(request_input, *args)
-        await send_message(ctx, output, discord.File("output.gv.png"))
+        output, pic = await satisfaction.min(request_input, *args)
+        file = None
+        if pic:
+          file = discord.File(pic)
+        await send_message(ctx, output, file)
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
@@ -174,8 +177,11 @@ class Optimization(commands.Cog):
           await send_message(ctx, msg)
           input_message = await self.__bot.wait_for('message', check=check)
           return input_message.content
-        output = await satisfaction.max(request_input, *args)
-        await send_message(ctx, output, discord.File("output.gv.png"))
+        output, pic = await satisfaction.max(request_input, *args)
+        file = None
+        if pic:
+          file = discord.File(pic)
+        await send_message(ctx, output, file)
 
 
 bot.add_cog(Information())

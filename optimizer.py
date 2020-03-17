@@ -88,6 +88,20 @@ class Optimizer:
 			"mean-weighted-resources": mean_weighted_resources,
 		}
 
+		self.__byproducts = [
+			"item:fuel:output",
+			"item:polymer-resin:output",
+			"item:plastic:output",
+			"item:heavy-oil-residue:output",
+			"item:rubber:output",
+			"item:aluminum-scrap:output",
+			"resource:water:output",
+			"item:alumina-solution:output",
+			"item:silica:output",
+			"item:uranium-pellet:output",
+			"item:sulfuric-acid:output",
+		]
+
 		self.equalities = []
 
 		# For each item, create an equality for all inputs and outputs
@@ -409,7 +423,7 @@ class Optimizer:
 		try:
 			objective, constraints, query_vars = await self.parse_input(request_input_fn, *args)
 		except ParseException as err:
-			return err
+			return err.msg, None
 
 		for query_var in query_vars:
 			print("query var:", query_var)
@@ -428,7 +442,7 @@ class Optimizer:
 			print()
 			prob += pulp.LpAffineExpression(objective)
 		else:
-			return "Must have objective"
+			return "Must have objective", None
 
 		normalized_input = ["NORMALIZED INPUT:"]
 		objective_exp = pulp.LpAffineExpression(objective)
@@ -453,7 +467,7 @@ class Optimizer:
 					prob += self.__variables[item.input_var()] >= 0
 				else:
 					prob += self.__variables[item.input_var()] == 0
-			# Eliminate byproducts
+			# Eliminate unneccessary byproducts
 			if item.output_var() not in query_vars:
 				prob += self.__variables[item.output_var()] == 0
 
@@ -496,6 +510,29 @@ class Optimizer:
 
 		# Solve
 		status = prob.solve()
+		
+		# found_non_zero_var = False
+		# for var in prob.variables():
+		# 	if pulp.value(var) and pulp.value(var) != 0:
+		# 		found_non_zero_var = True
+		# if not found_non_zero_var:
+		# 	return "Problem was too constrained, try allowing a byproduct (e.g. rubber >= 0)"
+
+		# TODO: This doesn't work because a constraint of x >= 0 doesn't
+		# override a previous constraint of x == 0.
+		#
+		# if not found_non_zero_var:
+		# 	print("Problem was too constrained, allowing byproducts")
+		# 	for byproduct in self.__byproducts:
+		# 		prob += self.__variables[byproduct] >= 0
+		# 	status = prob.solve()
+
+		if status is pulp.LpStatusInfeasible:
+			return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)", None
+
+		if status is pulp.LpStatusUnbounded:
+			return "Solution is unbounded, try adding a constraint", None
+
 		solution = ""
 		# solution += self.string_solution() + "\n\n"
 		if status is pulp.LpStatusOptimal:
@@ -503,11 +540,10 @@ class Optimizer:
 			self.graph_viz_solution()
 			solution += "OBJECTIVE VALUE\n"
 			solution += str(pulp.value(prob.objective)) + "\n\n"
-		solution += "Solver status: " + pulp.LpStatus[status]
 			
 		# print(solution)
 
-		return solution
+		return solution, "output.gv.png"
 
 		
 			

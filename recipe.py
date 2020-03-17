@@ -33,6 +33,9 @@ class Recipe:
         for product in data["products"]:
             item = db.item_from_class_name(product["item"])
             self.__products[item.var()] = self.RecipeItem(item, product["amount"], data["time"])
+        if len(self.__products) > 1:
+            print("Found multi-product recipe:", self.var())
+            print("  ", self.__products.keys())
         self.__crafter = db.crafter_from_class_name(data["producedIn"][0])
 
     def var(self):
