@@ -1,8 +1,6 @@
 import pulp
-import viz
 import fnmatch
 import re
-from graphviz import Digraph
 from solution import Solution
 
 
@@ -26,8 +24,8 @@ class Optimizer:
         for power_recipe in self.__db.power_recipes():
             self.__variables[power_recipe] = pulp.LpVariable(power_recipe, lowBound=0)
         for item in self.__db.items().values():
-            self.__variables[item.input_var()] = pulp.LpVariable(item.input_var(), lowBound=0)
-            self.__variables[item.output_var()] = pulp.LpVariable(item.output_var(), lowBound=0)
+            self.__variables[item.input().var()] = pulp.LpVariable(item.input().var(), lowBound=0)
+            self.__variables[item.output().var()] = pulp.LpVariable(item.output().var(), lowBound=0)
         for crafter in self.__db.crafters():
             self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
         for generator_var, generator in self.__db.generators().items():
@@ -118,8 +116,8 @@ class Optimizer:
             if item_var in self.__db.power_recipes_by_fuel():
                 power_recipe = self.__db.power_recipes_by_fuel()[item_var]
                 var_coeff[self.__variables[power_recipe.var()]] = -power_recipe.fuel_minute_rate()
-            var_coeff[self.__variables[item.input_var()]] = 1
-            var_coeff[self.__variables[item.output_var()]] = -1
+            var_coeff[self.__variables[item.input().var()]] = 1
+            var_coeff[self.__variables[item.output().var()]] = -1
             self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
         # For each type of crafter, create an equality for all recipes that require it
@@ -272,88 +270,6 @@ class Optimizer:
             query_vars.append(var)
         return objective, constraints, query_vars
 
-    def graph_viz_solution(self):
-        s = Digraph('structs', format='png', filename='output.gv',
-                node_attr={'shape': 'record'})
-
-        # item => {source => amount}
-        sources = {}
-        # item => {sink => amount}
-        sinks = {}
-        for variable_name, variable in self.__variables.items():
-            if not str.startswith(variable_name, "recipe:"):
-                continue
-            if not pulp.value(variable) or pulp.value(variable) == 0:
-                continue
-            recipe = self.__db.recipes()[variable_name]
-            friendly_name = recipe.human_readable_name()
-            s.node(recipe.viz_name(), viz.get_recipe_viz_label(recipe, pulp.value(variable)), shape="plaintext")
-            for item, ingredient in recipe.ingredients().items():
-                if item not in sinks:
-                    sinks[item] = {}
-                ingredient_amount = pulp.value(variable) * ingredient.minute_rate()
-                sinks[item][recipe.viz_name()] = ingredient_amount
-            for item, product in recipe.products().items():
-                if item not in sources:
-                    sources[item] = {}
-                product_amount = pulp.value(variable) * product.minute_rate()
-                sources[item][recipe.viz_name()] = product_amount
-
-        for variable_name, variable in self.__variables.items():
-            if not str.startswith(variable_name, "power-recipe:"):
-                continue
-            if not pulp.value(variable) or pulp.value(variable) == 0:
-                continue
-            power_recipe = self.__db.power_recipes()[variable_name]
-            friendly_name = power_recipe.human_readable_name()
-            s.node(power_recipe.viz_name(), viz.get_power_recipe_label(power_recipe, pulp.value(variable)), shape="plaintext")
-            fuel_item = power_recipe.fuel_item()
-            if fuel_item.var() not in sinks:
-                sinks[fuel_item.var()] = {}
-            sinks[fuel_item.var()][power_recipe.viz_name()] = pulp.value(variable) * power_recipe.fuel_minute_rate()
-
-        for variable_name, variable in self.__variables.items():
-            if not str.endswith(variable_name, ":input"):
-                continue
-            if not pulp.value(variable) or pulp.value(variable) == 0:
-                continue
-            item = self.__db.items()[variable_name[:-6]]
-            friendly_name = item.human_readable_name()
-            s.node(item.input_viz_name(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-            if item.var() not in sources:
-                sources[item.var()] = {}
-            sources[item.var()][item.input_viz_name()] = pulp.value(variable)
-
-        for variable_name, variable in self.__variables.items():
-            if not str.endswith(variable_name, ":output"):
-                continue
-            if not pulp.value(variable) or pulp.value(variable) == 0:
-                continue
-            item = self.__db.items()[variable_name[:-7]]
-            friendly_name = item.human_readable_name()
-            s.node(item.output_viz_name(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-            if item.var() not in sinks:
-                sinks[item.var()] = {}
-            sinks[item.var()][item.output_viz_name()] = pulp.value(variable)
-        
-        net_power = 0
-        if pulp.value(self.__variables["power"]):
-            net_power = pulp.value(self.__variables["power"])
-        s.node("power", str(net_power) + " MW Net Power")
-
-        # Connect each source to all sinks of that item
-        for item_var, item_sources in sources.items():
-            item = self.__db.items()[item_var]
-            for source, _ in item_sources.items():
-                if item_var not in sinks:
-                    print("Could not find", item_var, "in sinks")
-                    continue
-                for sink, sink_amount in sinks[item_var].items():
-                    s.edge(source, sink, label=viz.get_edge_label(item.human_readable_name(), sink_amount))
-
-        # s.view() # Opens the image or pdf using default program
-        s.render() # Only creates output file
-
     async def optimize(self, request_input_fn, max, *args):
         # Parse input
         # {item} where {item} {=|<=|>=} {number} and ...
@@ -399,18 +315,18 @@ class Optimizer:
         # Add item constraints
         for item in self.__db.items().values():
             # Don't require any other inputs
-            if item.input_var() not in query_vars:
+            if item.input().var() not in query_vars:
                 if item.is_resource():
-                    prob += self.__variables[item.input_var()] >= 0
+                    prob += self.__variables[item.input().var()] >= 0
                 else:
-                    prob += self.__variables[item.input_var()] == 0
+                    prob += self.__variables[item.input().var()] == 0
             # Eliminate unneccessary byproducts
-            if item.output_var() not in query_vars:
+            if item.output().var() not in query_vars:
                 # if item in self.__byproducts:
-                #     prob += self.__variables[item.input_var()] >= 0
+                #     prob += self.__variables[item.input().var()] >= 0
                 # else:
-                #     prob += self.__variables[item.output_var()] == 0
-                prob += self.__variables[item.output_var()] == 0
+                #     prob += self.__variables[item.output().var()] == 0
+                prob += self.__variables[item.output().var()] == 0
 
         # Disable power recipes unless the query specifies something about power
         if "power" not in query_vars:
@@ -472,7 +388,7 @@ class Optimizer:
         #     status = prob.solve()
 
         if status is pulp.LpStatusOptimal:
-            self.graph_viz_solution()
+            solution.generate_graph_viz('output.gv')
 
         return str(solution), "output.gv.png"
 
