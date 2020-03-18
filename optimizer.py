@@ -94,12 +94,7 @@ class Optimizer:
 			"item:plastic:output",
 			"item:heavy-oil-residue:output",
 			"item:rubber:output",
-			"item:aluminum-scrap:output",
-			"resource:water:output",
-			"item:alumina-solution:output",
 			"item:silica:output",
-			"item:uranium-pellet:output",
-			"item:sulfuric-acid:output",
 		]
 
 		self.equalities = []
@@ -383,7 +378,7 @@ class Optimizer:
 			item = self.__db.items()[variable_name[:-6]]
 			friendly_name = item.human_readable_name()
 			s.node(item.viz_name(), viz.get_input_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-			if item not in sources:
+			if item.var() not in sources:
 				sources[item.var()] = {}
 			sources[item.var()][item.viz_name()] = pulp.value(variable)
 
@@ -395,7 +390,7 @@ class Optimizer:
 			item = self.__db.items()[variable_name[:-7]]
 			friendly_name = item.human_readable_name()
 			s.node(item.viz_name(), viz.get_output_viz_label(friendly_name, pulp.value(variable)), shape="plaintext")
-			if item not in sinks:
+			if item.var() not in sinks:
 				sinks[item.var()] = {}
 			sinks[item.var()][item.viz_name()] = pulp.value(variable)
 		
@@ -469,6 +464,10 @@ class Optimizer:
 					prob += self.__variables[item.input_var()] == 0
 			# Eliminate unneccessary byproducts
 			if item.output_var() not in query_vars:
+				# if item in self.__byproducts:
+				# 	prob += self.__variables[item.input_var()] >= 0
+				# else:
+				# 	prob += self.__variables[item.output_var()] == 0
 				prob += self.__variables[item.output_var()] == 0
 
 		# Disable power recipes unless the query specifies something about power
@@ -491,6 +490,15 @@ class Optimizer:
 		# 		continue
 		# 	constraint = pulp.LpConstraint(e=resource_var, name=resource, sense=pulp.LpConstraintLE, rhs=0)
 		# 	penalty = multiplier
+		# 	elastic_prob = constraint.makeElasticSubProblem(penalty=penalty, proportionFreeBound=0)
+		# 	prob.extend(elastic_prob)
+
+		# Add flexible constraint for byproducts
+		# for byproduct in self.__byproducts:
+		# 	if byproduct in query_vars:
+		# 		continue
+		# 	constraint = pulp.LpConstraint(e=self.__variables[byproduct], name=byproduct, sense=pulp.LpConstraintLE, rhs=0)
+		# 	penalty = -1000
 		# 	elastic_prob = constraint.makeElasticSubProblem(penalty=penalty, proportionFreeBound=0)
 		# 	prob.extend(elastic_prob)
 

@@ -20,6 +20,8 @@ class Item:
         return self.var() + ":output"
 
     def viz_name(self):
+        if self.__is_resource:
+            return "resource-" + self.slug()
         return "item-" + self.slug()
 
     def human_readable_name(self):
