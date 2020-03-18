@@ -19,10 +19,15 @@ class Item:
     def output_var(self):
         return self.var() + ":output"
 
-    def viz_name(self):
+    def input_viz_name(self):
         if self.__is_resource:
-            return "resource-" + self.slug()
-        return "item-" + self.slug()
+            return "resource-" + self.slug() + "-input"
+        return "item-" + self.slug() + "-input"
+
+    def output_viz_name(self):
+        if self.__is_resource:
+            return "resource-" + self.slug() + "-output"
+        return "item-" + self.slug() + "-output"
 
     def human_readable_name(self):
         return self.__data["name"]
