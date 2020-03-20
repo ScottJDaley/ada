@@ -69,10 +69,8 @@ class Satisfaction:
 
     async def min(self, request_input, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))
-        output, pic = await self.__opt.optimize(request_input, False , *args)
-        return output, pic
+        return await self.__opt.optimize(request_input, False , *args)
 
     async def max(self, request_input, *args):
         print("calling !max with", len(args), "arguments:", ', '.join(args))
-        output, pic = await self.__opt.optimize(request_input, True, *args)
-        return output, pic
+        return await self.__opt.optimize(request_input, True, *args)

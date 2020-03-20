@@ -9,12 +9,12 @@ load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
 async def send_message(ctx, msg, file=None):
-  DISCORD_MESSAGE_LIMIT = 2000
-  while len(msg) > DISCORD_MESSAGE_LIMIT:
-    newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
-    await ctx.send(msg[:newline_index])
-    msg = msg[newline_index:]
-  await ctx.send(content=msg, file=file)
+    DISCORD_MESSAGE_LIMIT = 2000
+    while len(msg) > DISCORD_MESSAGE_LIMIT:
+        newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
+        await ctx.send(msg[:newline_index])
+        msg = msg[newline_index:]
+    await ctx.send(content=msg, file=file)
 
 satisfaction = Satisfaction()
 
@@ -30,7 +30,7 @@ async def on_ready():
 # async def on_error(event, *args, **kwargs):
 #     with open('err.log', 'a') as f:
 #         if event == 'on_message':
-#            print('Unhandled message', args[0])
+#             print('Unhandled message', args[0])
 #         else:
 #             raise
 
@@ -153,35 +153,39 @@ class Optimization(commands.Cog):
     """Optimization commands"""
 
     def __init__(self, bot):
-      self.__bot = bot
+        self.__bot = bot
 
     @commands.command(pass_context=True, help=min_help)
     async def min(self, ctx, *args):
         def check(msg):
-          return True
+            return True
         async def request_input(msg):
-          await send_message(ctx, msg)
-          input_message = await self.__bot.wait_for('message', check=check)
-          return input_message.content
-        output, pic = await satisfaction.min(request_input, *args)
+            await send_message(ctx, msg)
+            input_message = await self.__bot.wait_for('message', check=check)
+            return input_message.content
+        result = await satisfaction.min(request_input, *args)
         file = None
-        if pic:
-          file = discord.File(pic)
-        await send_message(ctx, output, file)
+        if result.has_solution():
+            filename = 'output.gv'
+            result.generate_graph_viz(filename)
+            file = discord.File(filename + '.png')
+        await send_message(ctx, str(result), file)
 
     @commands.command(pass_context=True, help=max_help)
     async def max(self, ctx, *args):
         def check(msg):
-          return True
+            return True
         async def request_input(msg):
-          await send_message(ctx, msg)
-          input_message = await self.__bot.wait_for('message', check=check)
-          return input_message.content
-        output, pic = await satisfaction.max(request_input, *args)
+            await send_message(ctx, msg)
+            input_message = await self.__bot.wait_for('message', check=check)
+            return input_message.content
+        result = await satisfaction.max(request_input, *args)
         file = None
-        if pic:
-          file = discord.File(pic)
-        await send_message(ctx, output, file)
+        if result.has_solution():
+            filename = 'output.gv'
+            result.generate_graph_viz(filename)
+            file = discord.File(filename + '.png')
+        await send_message(ctx, result, file)
 
 
 bot.add_cog(Information())

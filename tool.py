@@ -36,11 +36,15 @@ async def main():
         if command == "exit" or command == '!exit':
             return
         elif command == "!min":
-            msg, _ = await satisfaction.min(request_input, *args)
-            print(msg)
+            result = await satisfaction.min(request_input, *args)
+            if result.has_solution():
+                result.generate_graph_viz('output.gv')
+            print(result)
         elif command == "!max":
-            msg, _ = await satisfaction.max(request_input, *args)
-            print(msg)
+            result = await satisfaction.max(request_input, *args)
+            if result.has_solution():
+                result.generate_graph_viz('output.gv')
+            print(result)
         elif command == "!items":
             print(satisfaction.items(*args))
         elif command == "!recipes":

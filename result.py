@@ -1,7 +1,7 @@
 import pulp
 from graphviz import Digraph
 
-class Solution:
+class Result:
     def __init__(self, db, vars, prob, status):
         self.__db = db
         self.__prob = prob
@@ -63,6 +63,9 @@ class Solution:
                 continue
             amount = self.__get_value(var)
             s.node(obj.viz_name(), obj.viz_label(amount), shape="plaintext")
+
+    def has_solution(self):
+        return self.__status is pulp.LpStatusOptimal
 
     def generate_graph_viz(self, filename):
         s = Digraph('structs', format='png', filename=filename,
