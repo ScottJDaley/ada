@@ -71,13 +71,12 @@ class QueryParser:
             return [var for var in self.__variables if re.match(group, var)]
         return [matches_for(group) for group in match_groups]
 
-    async def pick_variable(self, request_input_fn, var_expr, vars):
+    async def make_choice(self, msg, request_input_fn, choices):
         out = []
-        out.append("Input '" + var_expr + "' matches multiple variables, pick one:")
-        for i, var in enumerate(vars, start=1):
-            out.append("  " + str(i) + ") " + var)
-        num_choices = len(vars) +1
-        out.append("  " + str(num_choices) + ") apply expression to all matches")
+        out.append(msg)
+        for i, choice in enumerate(choices, start=1):
+            out.append("  " + str(i) + ") " + choice)
+        num_choices = len(choices)
         out.append("Enter a number between 1 and " + str(num_choices))
         attempts = 0
         while attempts < 3:
@@ -88,10 +87,26 @@ class QueryParser:
             index = int(choice)
             if index <= 0 or index > num_choices:
                 continue
-            if index <= len(vars):
-                return [vars[index - 1]]
-            return vars
-        raise ParseException("Could not parse input '" + var_expr + "'")
+            return index - 1
+        raise ParseException("Could not determine choice.")
+
+    async def pick_variables(self, request_input_fn, var_expr, vars):
+        msg = "Input '" + var_expr + "' matches multiple variables, pick one:"
+        choices = vars.copy()
+        choices.append("apply expression to all matches")
+        choice = await self.make_choice(msg, request_input_fn, choices)
+        if choice < len(vars):
+            return [vars[choice]]
+        return vars
+
+    async def pick_byproducts(self, request_input_fn, byproducts):
+        msg = "Failed to find a solution without byproducts.\nTry picking a byproduct to allow:"
+        choices = byproducts.copy()
+        choices.append("allow all byproducts")
+        choice = await self.make_choice(msg, request_input_fn, choices)
+        if choice < len(byproducts):
+            return [byproducts[choice]]
+        return byproducts
 
     async def parse_variables(self, request_input_fn, var_expr):
         for partition in self.partition_variables_by_match_order():
@@ -101,11 +116,11 @@ class QueryParser:
             if len(inner_matched) == 1:
                 return inner_matched
             if len(inner_matched) > 1:
-                return await self.pick_variable(request_input_fn, var_expr, inner_matched)
+                return await self.pick_variables(request_input_fn, var_expr, inner_matched)
             if len(substring_matched) == 1:
                 return substring_matched
             if len(substring_matched) > 1:
-                return await self.pick_variable(request_input_fn, var_expr, substring_matched)
+                return await self.pick_variables(request_input_fn, var_expr, substring_matched)
             if len(re_matched) > 0:
                 return re_matched
         raise ParseException("Input '" + var_expr + "' does not match any variables")

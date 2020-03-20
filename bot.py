@@ -185,7 +185,7 @@ class Optimization(commands.Cog):
             filename = 'output.gv'
             result.generate_graph_viz(filename)
             file = discord.File(filename + '.png')
-        await send_message(ctx, result, file)
+        await send_message(ctx, str(result), file)
 
 
 bot.add_cog(Information())

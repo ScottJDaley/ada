@@ -1,12 +1,23 @@
 import pulp
 from graphviz import Digraph
 
+class ErrorResult:
+    def __init__(self, msg):
+        self.__msg = msg
+
+    def has_solution(self):
+        return False
+
+    def __str__(self):
+        return self.__msg
+
 class Result:
     def __init__(self, db, vars, prob, status):
         self.__db = db
         self.__prob = prob
         self.__vars = vars
         self.__status = status
+
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
 
@@ -64,8 +75,15 @@ class Result:
             amount = self.__get_value(var)
             s.node(obj.viz_name(), obj.viz_label(amount), shape="plaintext")
 
+    def __has_non_zero_var(self):
+        for var in self.__vars:
+            if self.__has_value(var):
+                print("Found non zero var:", var)
+                return True
+        return False
+
     def has_solution(self):
-        return self.__status is pulp.LpStatusOptimal
+        return self.__status is pulp.LpStatusOptimal and self.__has_non_zero_var()
 
     def generate_graph_viz(self, filename):
         s = Digraph('structs', format='png', filename=filename,

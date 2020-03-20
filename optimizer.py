@@ -1,5 +1,5 @@
 import pulp
-from result import Result
+from result import Result, ErrorResult
 from query_parser import QueryParser, ParseException
 
 class Optimizer:
@@ -92,7 +92,7 @@ class Optimizer:
             parser = QueryParser(self.__variables)
             objective, constraints, query_vars = await parser.parse_input(request_input_fn, *args)
         except ParseException as err:
-            return err.msg, None
+            return ErrorResult(err.msg)
 
         for query_var in query_vars:
             print("query var:", query_var)
@@ -111,8 +111,9 @@ class Optimizer:
             print()
             prob += pulp.LpAffineExpression(objective)
         else:
-            return "Must have objective", None
+            return ErrorResult("Must have objective")
 
+        # TODO: Remove this
         normalized_input = ["NORMALIZED INPUT:"]
         objective_exp = pulp.LpAffineExpression(objective)
         if max:
@@ -133,16 +134,16 @@ class Optimizer:
             # Don't require any other inputs
             if item.input().var() not in query_vars:
                 if item.is_resource():
-                    prob += self.__variables[item.input().var()] >= 0
+                    prob.addConstraint(self.__variables[item.input().var()] >= 0, item.input().var())
                 else:
-                    prob += self.__variables[item.input().var()] == 0
+                    prob.addConstraint(self.__variables[item.input().var()] == 0, item.input().var())
             # Eliminate unneccessary byproducts
             if item.output().var() not in query_vars:
                 # if item in self.__byproducts:
                 #     prob += self.__variables[item.input().var()] >= 0
                 # else:
                 #     prob += self.__variables[item.output().var()] == 0
-                prob += self.__variables[item.output().var()] == 0
+                prob.addConstraint(self.__variables[item.output().var()] == 0, item.output().var())
 
         # Disable power recipes unless the query specifies something about power
         if "power" not in query_vars:
@@ -191,6 +192,24 @@ class Optimizer:
         # print(prob) 
 
         # Solve
+        status = prob.solve()
+        result = Result(self.__db, self.__variables, prob, status)
+
+        if result.has_solution():
+            return result
+
+        # Try again, this time allowing byproducts
+        # print("Trying again, this time allowing byproducts")
+        prob.noOverlap = False
+        # for byproduct in self.__byproducts:
+        #     if byproduct in query_vars:
+        #         continue
+        #     print("Allowing byproduct", byproduct)
+        #     prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)
+        possible_byproducts = [byproduct for byproduct in self.__byproducts if byproduct not in query_vars]
+        allowed_byproducts = await parser.pick_byproducts(request_input_fn, possible_byproducts)
+        for byproduct in allowed_byproducts:
+            prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)
         status = prob.solve()
         result = Result(self.__db, self.__variables, prob, status)
 
