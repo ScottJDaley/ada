@@ -1,19 +1,55 @@
 # satisfoptimizer
 A production calculator and optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
 
-## Installation
+## Windows Installation
+
+*TODO*
 
 1. Install python modules
 ```console
-$ pip install pulp
-$ pip install discord
-$ pip install python-dotenv
-$ pip install graphviz
+pip install -r requirements.txt
 ```
 
 2. Install GraphViz:
  - Download from: https://www.graphviz.org/download/
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
+ 
+## Linux Installation
+
+1. Install python3
+```console
+sudo apt-get install python3
+```
+
+2. Install pip
+```console
+sudo apt-get install python3-pip
+```
+
+3. Install GraphViz
+```console
+sudo apt-get install graphviz
+```
+
+4. Install git
+```console
+sudo apt-get install git
+```
+
+5. Clone repo (in directory of you choosing)
+```console
+git clone https://github.com/ScottJDaley/satisfoptimizer.git
+```
+
+6. Move inside the repo
+```console
+cd satisfoptimizer
+```
+
+6. Install python packages
+```console
+pip3 install -r requirements.txt
+```
  
 ## How to run
 
