@@ -1,0 +1,4 @@
+pulp
+discord
+python-dotenv
+graphviz
