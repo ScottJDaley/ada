@@ -33,6 +33,9 @@ class Recipe:
         for product in data["products"]:
             item = db.item_from_class_name(product["item"])
             self.__products[item.var()] = self.RecipeItem(item, product["amount"], data["time"])
+        if len(self.__products) > 1:
+            print("Found multi-product recipe:", self.var())
+            print("  ", self.__products.keys())
         self.__crafter = db.crafter_from_class_name(data["producedIn"][0])
 
     def var(self):
@@ -40,6 +43,26 @@ class Recipe:
 
     def viz_name(self):
         return "recipe-" + self.__data["slug"]
+
+    def viz_label(self, amount):
+        out = '<'
+        out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+        out += '<TR>'
+        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
+        out += '<BR/>' + self.human_readable_name() + '</TD>'
+        out += '</TR>'
+        for ingredient in self.ingredients().values():
+            out += '<TR>'
+            out += '<TD BGCOLOR="moccasin">Input</TD>'
+            out += '<TD>' + ingredient.item().human_readable_name() + '</TD>'
+            out += '</TR>'
+        for product in self.products().values():
+            out += '<TR>'
+            out += '<TD BGCOLOR="lightblue">Output</TD>'
+            out += '<TD>' + product.item().human_readable_name() + '</TD>'
+            out += '</TR>'
+        out += '</TABLE>>'
+        return out
 
     def human_readable_name(self):
         return "Recipe: " + self.__data["name"]

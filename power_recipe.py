@@ -12,6 +12,20 @@ class PowerRecipe:
     def viz_name(self):
         return "power-recipe-" + self.__fuel_item.slug()
 
+    def viz_label(self, amount):
+        out = '<'
+        out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+        out += '<TR>'
+        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
+        out += '<BR/>' + self.generator().human_readable_name() + '</TD>'
+        out += '</TR>'
+        out += '<TR>'
+        out += '<TD BGCOLOR="moccasin">Input</TD>'
+        out += '<TD>' + self.fuel_item().human_readable_name() + '</TD>'
+        out += '</TR>'
+        out += '</TABLE>>'
+        return out
+
     def human_readable_name(self):
         return "Power Recipe: " + self.__fuel_item.human_readable_name()
 

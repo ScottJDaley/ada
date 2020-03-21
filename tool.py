@@ -1,6 +1,7 @@
 import pulp
 import json
 import optimizer
+import asyncio
 from db import DB
 from satisfaction import Satisfaction
 
@@ -17,8 +18,11 @@ def print_help():
     print("Please enter a supported command:")
     print("  " + ", ".join(cmds))
 
+async def request_input(msg):
+    print(msg)
+    return input()
 
-def main():
+async def main():
     satisfaction = Satisfaction()
 
     print_help()
@@ -32,9 +36,15 @@ def main():
         if command == "exit" or command == '!exit':
             return
         elif command == "!min":
-            print(satisfaction.min(*args))
+            result = await satisfaction.min(request_input, *args)
+            if result.has_solution():
+                result.generate_graph_viz('output.gv')
+            print(result)
         elif command == "!max":
-            print(satisfaction.max(*args))
+            result = await satisfaction.max(request_input, *args)
+            if result.has_solution():
+                result.generate_graph_viz('output.gv')
+            print(result)
         elif command == "!items":
             print(satisfaction.items(*args))
         elif command == "!recipes":
@@ -47,5 +57,6 @@ def main():
 
 if __name__ == "__main__":
     print("Welcome to the Satisfoptimizer!")
-    main()
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
     print("Goodbye")
