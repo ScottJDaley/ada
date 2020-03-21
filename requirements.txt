@@ -2,3 +2,4 @@ pulp
 discord
 python-dotenv
 graphviz
+bs4

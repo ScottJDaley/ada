@@ -1,4 +1,5 @@
 from discord import Embed
+import image_fetcher
 
 
 class Item:
@@ -95,6 +96,13 @@ class Item:
         out.append("")
         return '\n'.join(out)
 
+    def wiki(self):
+        return "https://satisfactory.gamepedia.com/" + self.human_readable_underscored()
+
+    def thumb(self):
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
+
     def embed(self):
         # {
         #     "content": "```item:iron-ingot```",
@@ -119,10 +127,8 @@ class Item:
         # }
         embed = Embed(title=self.human_readable_name())
         embed.description = self.__data["description"]
-        underscored_name = self.human_readable_underscored()
-        embed.url = "https://satisfactory.gamepedia.com/" + underscored_name
-        embed.set_thumbnail(url="https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/" +
-                            underscored_name + ".png/120px-" + underscored_name + ".png")
+        embed.url = self.wiki()
+        embed.set_thumbnail(url=self.thumb())
         # embed.thumbnail.url = "https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/" + \
         #     underscored_name + ".png/120px-" + underscored_name + ".png"
         # embed.thumbnail.width = 120
