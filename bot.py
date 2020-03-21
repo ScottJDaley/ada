@@ -8,14 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
-async def send_message(ctx, msg, file=None):
-    DISCORD_MESSAGE_LIMIT = 2000
-    while len(msg) > DISCORD_MESSAGE_LIMIT:
-        newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
-        await ctx.send(msg[:newline_index])
-        msg = msg[newline_index:]
-    await ctx.send(content=msg, file=file)
-
 satisfaction = Satisfaction()
 
 bot = commands.Bot(command_prefix='!')
@@ -134,12 +126,33 @@ buildings_help = """Print building details
 !buildings building:constructor
 """
 
+
+async def send_message(ctx, msg, file=None):
+    DISCORD_MESSAGE_LIMIT = 2000
+    while len(msg) > DISCORD_MESSAGE_LIMIT:
+        newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
+        await ctx.send(msg[:newline_index])
+        msg = msg[newline_index:]
+    await ctx.send(content=msg, file=file)
+
+
+async def send_item_embed(ctx, item):
+    await ctx.send(content="`" + item.var() + "`", embed=item.embed())
+
+
 class Information(commands.Cog):
     """Informational commands"""
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        await send_message(ctx, satisfaction.items(*args))
+        items = satisfaction.items(*args)
+        if len(items) == 1:
+            await send_item_embed(ctx, items[0])
+        else:
+            out = []
+            for item in items:
+                out.append(item.var())
+            await send_message(ctx, '\n'.join(out))
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
@@ -148,6 +161,7 @@ class Information(commands.Cog):
     @commands.command(pass_context=True, help=buildings_help)
     async def buildings(self, ctx, *args):
         await send_message(ctx, satisfaction.buildings(*args))
+
 
 class Optimization(commands.Cog):
     """Optimization commands"""
@@ -159,6 +173,7 @@ class Optimization(commands.Cog):
     async def min(self, ctx, *args):
         def check(msg):
             return True
+
         async def request_input(msg):
             await send_message(ctx, msg)
             input_message = await self.__bot.wait_for('message', check=check)
@@ -175,6 +190,7 @@ class Optimization(commands.Cog):
     async def max(self, ctx, *args):
         def check(msg):
             return True
+
         async def request_input(msg):
             await send_message(ctx, msg)
             input_message = await self.__bot.wait_for('message', check=check)

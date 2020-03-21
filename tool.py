@@ -14,13 +14,16 @@ cmds = [
     '!exit',
 ]
 
+
 def print_help():
     print("Please enter a supported command:")
     print("  " + ", ".join(cmds))
 
+
 async def request_input(msg):
     print(msg)
     return input()
+
 
 async def main():
     satisfaction = Satisfaction()
@@ -46,7 +49,12 @@ async def main():
                 result.generate_graph_viz('output.gv')
             print(result)
         elif command == "!items":
-            print(satisfaction.items(*args))
+            items = satisfaction.items(*args)
+            if len(items) == 1:
+                print(items[0].details())
+            else:
+                for item in items:
+                    print(item.var())
         elif command == "!recipes":
             print(satisfaction.recipes(*args))
         elif command == "!buildings":

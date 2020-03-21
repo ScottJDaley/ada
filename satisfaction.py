@@ -1,6 +1,7 @@
 from db import DB
 from optimizer import Optimizer
 
+
 class Satisfaction:
     def __init__(self):
         self.__db = DB("data.json")
@@ -10,18 +11,19 @@ class Satisfaction:
         print("calling !items with", len(args), "arguments:", ', '.join(args))
 
         if len(args) == 0:
-            out = []
+            items = []
             for item in sorted(self.__db.items()):
-                out.append(item)
-            return '\n'.join(out)
+                items.append(self.__db.items()[item])
+            return items
         if len(args) == 1:
             item = args[0]
             if item not in self.__db.items():
                 return "Unknown item: " + item
-            return self.__db.items()[item].details()
+            return [self.__db.items()[item]]
 
     def recipes(self, *args):
-        print("calling !recipes with", len(args), "arguments:", ', '.join(args))
+        print("calling !recipes with", len(args),
+              "arguments:", ', '.join(args))
 
         out = []
         if len(args) == 0:
@@ -44,7 +46,7 @@ class Satisfaction:
             if args[0] != "using" and args[0] != "for":
                 return "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>"
             if args[1] not in self.__db.items():
-                 return "Unknown item: " + args[1]
+                return "Unknown item: " + args[1]
             if args[0] == "using":
                 for recipe in self.__db.recipes_for_ingredient(args[1]):
                     out.append(recipe.details())
@@ -54,7 +56,8 @@ class Satisfaction:
         return '\n'.join(out)
 
     def buildings(self, *args):
-        print("calling !buildings with", len(args), "arguments:", ', '.join(args))
+        print("calling !buildings with", len(
+            args), "arguments:", ', '.join(args))
 
         if len(args) == 0:
             out = []
@@ -69,7 +72,7 @@ class Satisfaction:
 
     async def min(self, request_input, *args):
         print("calling !min with", len(args), "arguments:", ', '.join(args))
-        return await self.__opt.optimize(request_input, False , *args)
+        return await self.__opt.optimize(request_input, False, *args)
 
     async def max(self, request_input, *args):
         print("calling !max with", len(args), "arguments:", ', '.join(args))

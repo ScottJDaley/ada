@@ -1,3 +1,6 @@
+from discord import Embed
+
+
 class Item:
     def __init__(self, data, is_resource):
         self.__data = data
@@ -33,7 +36,8 @@ class Item:
             out = '<'
             out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
             out += '<TR>'
-            out += '<TD COLSPAN="2" BGCOLOR="moccasin">' +  str(round(amount, 2)) + '/m'
+            out += '<TD COLSPAN="2" BGCOLOR="moccasin">' + \
+                str(round(amount, 2)) + '/m'
             out += '<BR/>' + self.item.human_readable_name() + '</TD>'
             out += '</TR>'
             out += '</TABLE>>'
@@ -59,7 +63,8 @@ class Item:
             out = '<'
             out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
             out += '<TR>'
-            out += '<TD COLSPAN="2" BGCOLOR="lightblue">' +  str(round(amount, 2)) + '/m'
+            out += '<TD COLSPAN="2" BGCOLOR="lightblue">' + \
+                str(round(amount, 2)) + '/m'
             out += '<BR/>' + self.human_readable_name() + '</TD>'
             out += '</TR>'
             out += '</TABLE>>'
@@ -71,6 +76,9 @@ class Item:
     def human_readable_name(self):
         return self.__data["name"]
 
+    def human_readable_underscored(self):
+        return self.human_readable_name().replace(' ', '_')
+
     def energy_value(self):
         if self.__data["liquid"]:
             return self.__data["energyValue"] * 1000
@@ -78,7 +86,7 @@ class Item:
 
     def is_resource(self):
         return self.__is_resource
-    
+
     def details(self):
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
@@ -86,3 +94,44 @@ class Item:
         out.append(self.__data["description"])
         out.append("")
         return '\n'.join(out)
+
+    def embed(self):
+        # {
+        #     "content": "```item:iron-ingot```",
+        #     "embed": {
+        #         "title": "Iron Ingot",
+        #         "description": "Used for crafting.\nCrafted into the most basic parts.",
+        #         "url": "https://satisfactory.gamepedia.com/Iron_Ingot",
+        #         "thumbnail": {
+        #         "url": "https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/Iron_Ingot.png/120px-Iron_Ingot.png"
+        #         },
+        #         "fields": [
+        #         {
+        #             "name": "stack size",
+        #             "value": "100"
+        #         },
+        #         {
+        #             "name": "sink value",
+        #             "value": "2"
+        #         }
+        #         ]
+        #     }
+        # }
+        embed = Embed(title=self.human_readable_name())
+        embed.description = self.__data["description"]
+        underscored_name = self.human_readable_underscored()
+        embed.url = "https://satisfactory.gamepedia.com/" + underscored_name
+        embed.set_thumbnail(url="https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/" +
+                            underscored_name + ".png/120px-" + underscored_name + ".png")
+        # embed.thumbnail.url = "https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/" + \
+        #     underscored_name + ".png/120px-" + underscored_name + ".png"
+        # embed.thumbnail.width = 120
+        # embed.thumbnail.height = 120
+        # print("https://gamepedia.cursecdn.com/satisfactory_gamepedia_en/thumb/0/0a/" +
+        #       underscored_name + ".png/120px-" + underscored_name + ".png")
+
+        embed.add_field(name="Stack Size", value=str(
+            self.__data["stackSize"]), inline=True)
+        embed.add_field(name="Sink Value",
+                        value="TODO", inline=True)
+        return embed
