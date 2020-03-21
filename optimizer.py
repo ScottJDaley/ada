@@ -223,12 +223,3 @@ class Optimizer:
         #     status = prob.solve()
 
         return result
-
-        
-            
-
-        
-
-        
-
-            
