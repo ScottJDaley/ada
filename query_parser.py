@@ -15,6 +15,26 @@ class ParseResult:
         self.normalized_query = normalized_query
 
 
+async def make_choice(msg, request_input_fn, choices):
+    out = []
+    out.append(msg)
+    for i, choice in enumerate(choices, start=1):
+        out.append("  " + str(i) + ") " + choice)
+    num_choices = len(choices)
+    out.append("Enter a number between 1 and " + str(num_choices))
+    attempts = 0
+    while attempts < 3:
+        attempts += 1
+        choice = await request_input_fn('\n'.join(out))
+        if not choice.isdigit():
+            continue
+        index = int(choice)
+        if index <= 0 or index > num_choices:
+            continue
+        return index - 1
+    raise ParseException("Could not determine choice.")
+
+
 class QueryParser:
     def __init__(self, variables, return_all_matches=True,
                  match_groups=['^.*$']):
@@ -76,30 +96,11 @@ class QueryParser:
             return [var for var in self.__variables if re.match(group, var)]
         return [matches_for(group) for group in self.__match_groups]
 
-    async def make_choice(self, msg, request_input_fn, choices):
-        out = []
-        out.append(msg)
-        for i, choice in enumerate(choices, start=1):
-            out.append("  " + str(i) + ") " + choice)
-        num_choices = len(choices)
-        out.append("Enter a number between 1 and " + str(num_choices))
-        attempts = 0
-        while attempts < 3:
-            attempts += 1
-            choice = await request_input_fn('\n'.join(out))
-            if not choice.isdigit():
-                continue
-            index = int(choice)
-            if index <= 0 or index > num_choices:
-                continue
-            return index - 1
-        raise ParseException("Could not determine choice.")
-
     async def pick_variables(self, request_input_fn, var_expr, vars, all_vars_pattern):
         msg = "Input '" + var_expr + "' matches multiple variables, pick one:"
         choices = vars.copy()
         choices.append("pick all matches")
-        choice = await self.make_choice(msg, request_input_fn, choices)
+        choice = await make_choice(msg, request_input_fn, choices)
         if choice < len(vars):
             return ParseResult([vars[choice]], vars[choice])
         return ParseResult(vars, all_vars_pattern)
@@ -108,7 +109,7 @@ class QueryParser:
         msg = "Failed to find a solution without byproducts.\nTry picking a byproduct to allow:"
         choices = byproducts.copy()
         choices.append("allow all byproducts")
-        choice = await self.make_choice(msg, request_input_fn, choices)
+        choice = await make_choice(msg, request_input_fn, choices)
         if choice < len(byproducts):
             return [byproducts[choice]]
         return byproducts

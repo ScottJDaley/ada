@@ -75,7 +75,7 @@ class Item:
         return self.OutputVariable(self)
 
     def human_readable_name(self):
-        return self.__data["name"]
+        return ''.join(i for i in self.__data["name"] if ord(i) < 128)
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(' ', '_')

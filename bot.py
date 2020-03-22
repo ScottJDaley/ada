@@ -6,6 +6,7 @@ import discord
 import math
 import traceback
 import re
+import query_parser
 
 
 load_dotenv()
@@ -64,7 +65,7 @@ Notes:
  - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 Examples:
- 
+
 Find the most resource-efficient way to ...
 
     - produce 60/m iron rods:
@@ -83,7 +84,7 @@ Change the objective function:
 
     - Minimize 60/m iron rods using unweighted resources:
       !min unweighted-resources where iron-rod = 60
-    
+
     - Minimize rubber production from a fuel setup:
       !min rubber where fuel = 600 and crude-oil <= 240 and water >= 0
 """
@@ -104,7 +105,7 @@ Notes:
  - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 Examples:
- 
+
 Maximize production of ...
 
     - iron rods with only 60/m of iron ore:
@@ -151,22 +152,44 @@ async def send_message(ctx, msg, file=None):
 
 
 async def send_item_embed(ctx, item):
-    await ctx.send(content="`" + item.var() + "`", embed=item.embed())
+    await ctx.send(content='`' + CMD_PREFIX + 'items ' + item.var() + '`', embed=item.embed())
 
 ITEMS_PER_PAGE = 9
 
+NUM_EMOJI = ['0️⃣', '1️⃣', '2️⃣', '3️⃣',
+             '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
 
-def create_items_embed(items, page, num_pages):
+
+# async def add_num_reactions(message, num):
+#     for i in range(1, num+1):
+#         await message.add_reaction(NUM_EMOJI[i])
+
+
+def first_index(page):
+    return (page - 1) * ITEMS_PER_PAGE
+
+
+def last_index(page, items):
+    return min(first_index(page) + ITEMS_PER_PAGE, len(items))
+
+
+def count_on_page(page, items):
+    return min(ITEMS_PER_PAGE, len(items) - first_index(page))
+
+
+def num_pages(items):
+    return math.ceil(len(items) / ITEMS_PER_PAGE)
+
+
+def create_items_embed(items, page):
     embed = discord.Embed()
 
-    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages))
+    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages(items)))
 
-    first_index = (page - 1) * ITEMS_PER_PAGE
-    last_index = min(first_index + ITEMS_PER_PAGE, len(items))
-    for index in range(first_index, last_index):
+    for index in range(first_index(page), last_index(page, items)):
         item = items[index]
         embed.add_field(name='`' + item.var() + '`',
-                        value=item.human_readable_name(), inline=True)
+                        value=item.human_readable_name(), inline=False)
     return embed
 
 
@@ -184,22 +207,14 @@ async def on_reaction_add(reaction, user):
     command = args[0][1:]
     if command != 'items':
         return
-    if reaction.emoji != '⏪' and reaction.emoji != '⏩':
+
+    if reaction.emoji != '◀️' and reaction.emoji != '▶️' and reaction.emoji != '↗️':
         return
 
     match = re.match("Page ([0-9]+) of ([0-9]+)",
                      message.embeds[0].footer.text)
     current_page = int(match.group(1))
     num_pages = int(match.group(2))
-
-    if reaction.emoji == '⏪':
-        if current_page <= 1:
-            return
-        page = current_page - 1
-    else:  # if reaction.emoji == '⏩':
-        if current_page >= num_pages:
-            return
-        page = current_page + 1
 
     def check(message):
         return True
@@ -210,14 +225,39 @@ async def on_reaction_add(reaction, user):
         return input_message.content
 
     result = await satisfaction.items(request_input, *args[1:])
+    items = result.items
+
+    if reaction.emoji == '↗️':
+        choices = [item.var() for item in items[first_index(
+            current_page):last_index(current_page, items)]]
+        choice = await query_parser.make_choice(
+            "Which item would you like more information about?",
+            request_input, choices)
+        item_var = choices[choice]
+        for item in items:
+            if item.var() == item_var:
+                chosen_item = item
+                break
+        await send_item_embed(message.channel, chosen_item)
+        return
+
+    if reaction.emoji == '◀️':
+        if current_page <= 1:
+            return
+        page = current_page - 1
+    elif reaction.emoji == '▶️':
+        if current_page >= num_pages:
+            return
+        page = current_page + 1
 
     await message.clear_reactions()
-    if page > 1:
-        await message.add_reaction('⏪')
-    if page < num_pages:
-        await message.add_reaction('⏩')
+    await message.edit(embed=create_items_embed(items, page))
 
-    await message.edit(embed=create_items_embed(result.items, page, num_pages))
+    if page > 1:
+        await message.add_reaction('◀️')
+    await message.add_reaction('↗️')
+    if page < num_pages:
+        await message.add_reaction('▶️')
 
 
 class Information(commands.Cog):
@@ -241,19 +281,18 @@ class Information(commands.Cog):
             await send_item_embed(ctx, items[0])
             return
 
-        num_pages = math.ceil(len(items) / ITEMS_PER_PAGE)
-
-        embed = create_items_embed(items, page, num_pages)
+        embed = create_items_embed(items, page)
         content = '`' + CMD_PREFIX + 'items ' + result.normalized_args + '`'
         msg = await ctx.send(content=content, embed=embed)
 
-        if num_pages == 1:
+        if num_pages(items) == 1:
             return
 
         if page > 1:
-            await msg.add_reaction('⏪')
-        if page < num_pages:
-            await msg.add_reaction('⏩')
+            await msg.add_reaction('◀️')
+        await msg.add_reaction('↗️')
+        if page < num_pages(items):
+            await msg.add_reaction('▶️')
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
