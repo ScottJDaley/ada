@@ -1,9 +1,11 @@
+from dotenv import load_dotenv
+from discord.ext import commands
+from satisfaction import Satisfaction
 import os
 import discord
-from satisfaction import Satisfaction
+import math
+import traceback
 
-from discord.ext import commands
-from dotenv import load_dotenv
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -20,30 +22,39 @@ async def on_ready():
 
 # @bot.event
 # async def on_error(event, *args, **kwargs):
-#     with open('err.log', 'a') as f:
-#         if event == 'on_message':
-#             print('Unhandled message', args[0])
-#         else:
-#             raise
+#     print('Ignoring exception in command {}:'.format(
+#         ctx.command), file=sys.stderr)
+#     traceback.print_exception(
+#         type(error), error, error.__traceback__, file=sys.stderr)
+
+# @bot.event
+# async def on_error(event, *args, **kwargs):
+#     message = args[0]  # Gets the message object
+#     traceback.print_exception()  # logs the error
+#     await bot.send_message(message.channel, "You caused an error!")
 
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.CheckFailure):
-        await ctx.send('You do not have the correct role for this command.')
+# @bot.event
+# async def on_command_error(ctx, error):
+#     if isinstance(error, commands.errors.CheckFailure):
+#         await ctx.send('You do not have the correct role for this command.')
+#     if not isinstance(error, commands.CheckFailure):
+#         await ctx.message.add_reaction(':false:508021839981707304')
+#         await ctx.send("<a:siren:507952050181636098> `Invalid command` <a:siren:507952050181636098>")
+
 
 min_help = """Minimize resource usage to produce something
 
 Finds an optimal production chain that minimizes an objective while satisfying all constraints
 
 Usage:
-  !min [{objective} where] {constraints}
-  {objective} = {item|built-in-objective}
-  {built-in-objective} = 'unweighted-resources' or 'weighted-resources' or 'mean-weighted-resources'
-  {constraints} = {constraint} [and {constraints}]
-  {constraint} = {item-var} {operator} {number}
-  {operator} = '=' or '<=' or '>='
-  {item-var} = {input|output}:{item}
+    !min [{objective} where] {constraints}
+    {objective} = {item|built-in-objective}
+    {built-in-objective} = 'unweighted-resources' or 'weighted-resources' or 'mean-weighted-resources'
+    {constraints} = {constraint} [and {constraints}]
+    {constraint} = {item-var} {operator} {number}
+    {operator} = '=' or '<=' or '>='
+    {item-var} = {input|output}:{item}
 
 Notes:
  - If the {objective} is ommitted, the weighted-resources objective is used by default.
@@ -51,7 +62,7 @@ Notes:
 
 Examples:
  
-  Find the most resource-efficient way to ...
+Find the most resource-efficient way to ...
 
     - produce 60/m iron rods:
       !min iron-rod = 60
@@ -65,7 +76,7 @@ Examples:
     - produce 60/m iron rods and 120/m iron plates:
       !min  iron-rod = 60 and iron-plate = 120
 
-  Change the objective function:
+Change the objective function:
 
     - Minimize 60/m iron rods using unweighted resources:
       !min unweighted-resources where iron-rod = 60
@@ -79,19 +90,19 @@ max_help = """Maximize production of something
 Finds an optimal production chain that maximizes an objective while satisfying all constraints.
 
 Usage:
-  !max {objective} where {constraints}
-  {objective} = {item}
-  {constraints} = {constraint} [and {constraints}]
-  {constraint} = {item-var} {operator} {number}
-  {operator} = '=' or '<=' or '>='
-  {item-var} = {input|output}:{item}
+    !max {objective} where {constraints}
+    {objective} = {item}
+    {constraints} = {constraint} [and {constraints}]
+    {constraint} = {item-var} {operator} {number}
+    {operator} = '=' or '<=' or '>='
+    {item-var} = {input|output}:{item}
 
 Notes:
  - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 Examples:
  
-  Maximize production of ...
+Maximize production of ...
 
     - iron rods with only 60/m of iron ore:
       !max iron-rod where iron-ore <= 60
@@ -139,20 +150,54 @@ async def send_message(ctx, msg, file=None):
 async def send_item_embed(ctx, item):
     await ctx.send(content="`" + item.var() + "`", embed=item.embed())
 
+ITEMS_PER_PAGE = 9
+
+
+async def handle_items_cmd(ctx, *args):
+    # embed = discord.Embed()
+
+    # embed.set_footer(text="Page 2 of 4")
+
+    # embed.add_field(name="Iron Rod", value="`item:iron-rod`", inline=True)
+    # embed.add_field(name="Copper Ingot", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Iron Ingot", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Wire", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Cable", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Coal", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Iron ore", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Copper ore", value="`item:copper-ingot`", inline=True)
+    # embed.add_field(name="Copper ore", value="`item:copper-ingot`", inline=True)
+
+    # await bot.say(content="`!items`", embed=embed)
+    page = 2
+
+    items = satisfaction.items(*args)
+    if len(items) == 1:
+        await send_item_embed(ctx, items[0])
+        return
+
+    embed = discord.Embed()
+
+    num_pages = math.ceil(len(items) / ITEMS_PER_PAGE)
+    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages))
+
+    print("here")
+
+    first_index = (page-1)*ITEMS_PER_PAGE
+    for index in range(first_index, first_index+ITEMS_PER_PAGE):
+        item = items[index]
+        embed.add_field(name='`' + item.var() + '`',
+                        value=item.human_readable_name(), inline=True)
+    content = '`!items ' + ' '.join(args) + '`'
+    await ctx.send(content=content, embed=embed)
+
 
 class Information(commands.Cog):
     """Informational commands"""
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        items = satisfaction.items(*args)
-        if len(items) == 1:
-            await send_item_embed(ctx, items[0])
-        else:
-            out = []
-            for item in items:
-                out.append(item.var())
-            await send_message(ctx, '\n'.join(out))
+        await handle_items_cmd(ctx, *args)
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
@@ -161,6 +206,9 @@ class Information(commands.Cog):
     @commands.command(pass_context=True, help=buildings_help)
     async def buildings(self, ctx, *args):
         await send_message(ctx, satisfaction.buildings(*args))
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        await ctx.send('An error occurred: {}'.format(str(error)))
 
 
 class Optimization(commands.Cog):
@@ -202,6 +250,9 @@ class Optimization(commands.Cog):
             result.generate_graph_viz(filename)
             file = discord.File(filename + '.png')
         await send_message(ctx, str(result), file)
+
+    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        await ctx.send('An error occurred: {}'.format(str(error)))
 
 
 bot.add_cog(Information())
