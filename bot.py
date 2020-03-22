@@ -5,6 +5,7 @@ import os
 import discord
 import math
 import traceback
+import re
 
 
 load_dotenv()
@@ -12,7 +13,9 @@ token = os.getenv('DISCORD_TOKEN')
 
 satisfaction = Satisfaction()
 
-bot = commands.Bot(command_prefix='!')
+CMD_PREFIX = '!'
+
+bot = commands.Bot(command_prefix=CMD_PREFIX)
 
 
 @bot.event
@@ -152,44 +155,77 @@ async def send_item_embed(ctx, item):
 
 ITEMS_PER_PAGE = 9
 
+def create_items_embed(items, page, num_pages):
+    embed = discord.Embed()
 
-async def handle_items_cmd(ctx, *args):
-    # embed = discord.Embed()
+    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages))
 
-    # embed.set_footer(text="Page 2 of 4")
+    first_index = (page - 1) * ITEMS_PER_PAGE
+    last_index = min(first_index + ITEMS_PER_PAGE, len(items))
+    for index in range(first_index, last_index):
+        item = items[index]
+        embed.add_field(name='`' + item.var() + '`',
+                        value=item.human_readable_name(), inline=True)
+    return embed
+    
 
-    # embed.add_field(name="Iron Rod", value="`item:iron-rod`", inline=True)
-    # embed.add_field(name="Copper Ingot", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Iron Ingot", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Wire", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Cable", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Coal", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Iron ore", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Copper ore", value="`item:copper-ingot`", inline=True)
-    # embed.add_field(name="Copper ore", value="`item:copper-ingot`", inline=True)
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user == bot.user:
+        return
+    msg = reaction.message
+    if not msg.content.startswith(CMD_PREFIX):
+        return
+    args = msg.content.split(' ')
+    command = args[0][1:]
+    if command != 'items':
+        return
+    if reaction.emoji != '⏪' and reaction.emoji != '⏩':
+        return
 
-    # await bot.say(content="`!items`", embed=embed)
-    page = 2
+    match = re.match("Page ([0-9]+) of ([0-9]+)", msg.embeds[0].footer.text)
+    current_page = int(match.group(1))
+    num_pages = int(match.group(2))
 
+    if reaction.emoji == '⏪':
+        if current_page <= 1:
+            return
+        page = current_page - 1
+    else: # if reaction.emoji == '⏩':
+        if current_page >= num_pages:
+            return
+        page = current_page + 1
+
+    items = satisfaction.items(*args[1:])
+
+    await msg.clear_reactions()
+    if page > 1:
+        await msg.add_reaction('⏪')
+    if page < num_pages:
+        await msg.add_reaction('⏩')
+    
+    await msg.edit(embed=create_items_embed(items, page, num_pages))
+
+
+async def handle_items_cmd(ctx, page, *args):
     items = satisfaction.items(*args)
     if len(items) == 1:
         await send_item_embed(ctx, items[0])
         return
-
-    embed = discord.Embed()
-
+    
     num_pages = math.ceil(len(items) / ITEMS_PER_PAGE)
-    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages))
 
-    print("here")
+    embed = create_items_embed(items, page, num_pages)
+    content = CMD_PREFIX + 'items ' + ' '.join(args)
+    msg = await ctx.send(content=content, embed=embed)
 
-    first_index = (page-1)*ITEMS_PER_PAGE
-    for index in range(first_index, first_index+ITEMS_PER_PAGE):
-        item = items[index]
-        embed.add_field(name='`' + item.var() + '`',
-                        value=item.human_readable_name(), inline=True)
-    content = '`!items ' + ' '.join(args) + '`'
-    await ctx.send(content=content, embed=embed)
+    if num_pages == 1:
+        return 
+
+    if page > 1:
+        await msg.add_reaction('⏪')
+    if page < num_pages:
+        await msg.add_reaction('⏩')
 
 
 class Information(commands.Cog):
@@ -197,7 +233,7 @@ class Information(commands.Cog):
 
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        await handle_items_cmd(ctx, *args)
+        await handle_items_cmd(ctx, 1, *args)
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
@@ -259,5 +295,3 @@ bot.add_cog(Information())
 bot.add_cog(Optimization(bot))
 
 bot.run(token)
-
-input("Enter")
