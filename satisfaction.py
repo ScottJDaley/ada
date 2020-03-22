@@ -1,5 +1,12 @@
 from db import DB
 from optimizer import Optimizer
+from query_parser import QueryParser
+
+
+class ItemsResult:
+    def __init__(self, items, normalized_args):
+        self.items = items
+        self.normalized_args = normalized_args
 
 
 class Satisfaction:
@@ -7,19 +14,16 @@ class Satisfaction:
         self.__db = DB("data.json")
         self.__opt = Optimizer(self.__db)
 
-    def items(self, *args):
+    async def items(self, request_input, *args):
         print("calling !items with", len(args), "arguments:", ', '.join(args))
 
-        if len(args) == 0:
-            items = []
-            for item in sorted(self.__db.items()):
-                items.append(self.__db.items()[item])
-            return items
-        if len(args) == 1:
-            item = args[0]
-            if item not in self.__db.items():
-                return "Unknown item: " + item
-            return [self.__db.items()[item]]
+        query_parser = QueryParser(
+            list(self.__db.items().keys()))
+        result = await query_parser.parse_items_query(request_input, *args)
+        items = []
+        for item_var in sorted(result.vars):
+            items.append(self.__db.items()[item_var])
+        return ItemsResult(items, result.normalized_query)
 
     def recipes(self, *args):
         print("calling !recipes with", len(args),

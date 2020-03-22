@@ -1,5 +1,6 @@
 import re
 
+
 class ParseException(Exception):
     def __init__(self, msg):
         self.msg = msg
@@ -7,10 +8,19 @@ class ParseException(Exception):
     def __str__(self):
         return self.msg
 
-class QueryParser:
-    def __init__(self, variables):
-        self.__variables = variables
 
+class ParseResult:
+    def __init__(self, vars, normalized_query):
+        self.vars = vars
+        self.normalized_query = normalized_query
+
+
+class QueryParser:
+    def __init__(self, variables, match_groups=['^.*$']):
+        self.__variables = variables
+        self.__match_groups = match_groups
+
+        # TODO: Move these somewhere else
         unweighted_resources = {
             "resource:water:input": 0,
             "resource:iron-ore:input": 1,
@@ -59,17 +69,10 @@ class QueryParser:
         }
 
     def partition_variables_by_match_order(self):
-        match_groups = [
-            '^power$',
-            '^resource:.*:input$',
-            '^resource:.*:output$',
-            '^item:.*:output$',
-            '^item:.*:input$',
-            '^.*$',
-        ]
+
         def matches_for(group):
             return [var for var in self.__variables if re.match(group, var)]
-        return [matches_for(group) for group in match_groups]
+        return [matches_for(group) for group in self.__match_groups]
 
     async def make_choice(self, msg, request_input_fn, choices):
         out = []
@@ -90,14 +93,14 @@ class QueryParser:
             return index - 1
         raise ParseException("Could not determine choice.")
 
-    async def pick_variables(self, request_input_fn, var_expr, vars):
+    async def pick_variables(self, request_input_fn, var_expr, vars, all_vars_pattern):
         msg = "Input '" + var_expr + "' matches multiple variables, pick one:"
         choices = vars.copy()
-        choices.append("apply expression to all matches")
+        choices.append("pick all matches")
         choice = await self.make_choice(msg, request_input_fn, choices)
         if choice < len(vars):
-            return [vars[choice]]
-        return vars
+            return ParseResult([vars[choice]], vars[choice])
+        return ParseResult(vars, all_vars_pattern)
 
     async def pick_byproducts(self, request_input_fn, byproducts):
         msg = "Failed to find a solution without byproducts.\nTry picking a byproduct to allow:"
@@ -110,20 +113,26 @@ class QueryParser:
 
     async def parse_variables(self, request_input_fn, var_expr):
         for partition in self.partition_variables_by_match_order():
-            inner_matched = [var for var in partition if var_expr in var.split(':')]
+            inner_matched = [
+                var for var in partition if var_expr in var.split(':')]
             substring_matched = [var for var in partition if var_expr in var]
             re_matched = [var for var in partition if re.search(var_expr, var)]
             if len(inner_matched) == 1:
-                return inner_matched
+                return ParseResult(inner_matched, var_expr)
             if len(inner_matched) > 1:
-                return await self.pick_variables(request_input_fn, var_expr, inner_matched)
+                inner_pattern = "^(.*:)*" + var_expr + "(:.*)*$"
+                return await self.pick_variables(request_input_fn, var_expr,
+                                                 inner_matched, inner_pattern)
             if len(substring_matched) == 1:
-                return substring_matched
+                return ParseResult(substring_matched, var_expr)
             if len(substring_matched) > 1:
-                return await self.pick_variables(request_input_fn, var_expr, substring_matched)
+                substring_pattern = "^.*" + var_expr + ".*$"
+                return await self.pick_variables(request_input_fn, var_expr,
+                                                 substring_matched, substring_pattern)
             if len(re_matched) > 0:
-                return re_matched
-        raise ParseException("Input '" + var_expr + "' does not match any variables")
+                return ParseResult(re_matched, var_expr)
+        raise ParseException("Input '" + var_expr +
+                             "' does not match any variables")
 
     async def parse_constraints(self, request_input_fn, *args):
         # First separate constraints by 'and'
@@ -143,14 +152,15 @@ class QueryParser:
             if len(constraint) != 3:
                 raise ParseException(
                     "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-            expanded_vars = await self.parse_variables(request_input_fn, constraint[0])
+            expanded_vars = await self.parse_variables(request_input_fn, constraint[0]).vars
             operator = constraint[1]
             try:
                 bound = int(constraint[2])
             except ValueError:
                 raise ParseException("Constraint bound must be an number.")
             if operator != "=" and operator != ">=" and operator != "<=":
-                raise ParseException("Constraint operator must be one of {{=|<=|>=}}")
+                raise ParseException(
+                    "Constraint operator must be one of {{=|<=|>=}}")
             for var in expanded_vars:
                 constraints[var] = (operator, bound)
         return constraints
@@ -168,13 +178,13 @@ class QueryParser:
                 objective[self.__variables[var_name]] = coefficient
                 objective_vars.append(var_name)
         else:
-            objective_items = await self.parse_variables(request_input_fn, arg0)
+            objective_items = await self.parse_variables(request_input_fn, arg0).vars
             for objective_item in objective_items:
                 objective[self.__variables[objective_item]] = 1
                 objective_vars.append(objective_item)
         return objective, objective_vars
 
-    async def parse_input(self, request_input_fn, *args):
+    async def parse_optimize_query(self, request_input_fn, *args):
         # First separate out the {item} where clause
         if len(args) < 2:
             raise ParseException(
@@ -194,3 +204,10 @@ class QueryParser:
             query_vars.append(var)
         return objective, constraints, query_vars
 
+    async def parse_items_query(self, request_input_fn, *args):
+        if len(args) == 0:
+            return ParseResult(self.__variables, "")
+        if len(args) == 1:
+            return await self.parse_variables(request_input_fn, args[0])
+        raise ParseException(
+            "Input must an item or item regular expression")

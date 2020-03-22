@@ -60,7 +60,7 @@ Usage:
     {item-var} = {input|output}:{item}
 
 Notes:
- - If the {objective} is ommitted, the weighted-resources objective is used by default.
+ - If the {objective} is omitted, the weighted-resources objective is used by default.
  - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
 
 Examples:
@@ -155,6 +155,7 @@ async def send_item_embed(ctx, item):
 
 ITEMS_PER_PAGE = 9
 
+
 def create_items_embed(items, page, num_pages):
     embed = discord.Embed()
 
@@ -167,23 +168,27 @@ def create_items_embed(items, page, num_pages):
         embed.add_field(name='`' + item.var() + '`',
                         value=item.human_readable_name(), inline=True)
     return embed
-    
+
 
 @bot.event
 async def on_reaction_add(reaction, user):
     if user == bot.user:
         return
-    msg = reaction.message
-    if not msg.content.startswith(CMD_PREFIX):
+    message = reaction.message
+    if not message.content.startswith('`') or not message.content.endswith('`'):
         return
-    args = msg.content.split(' ')
+    content = message.content[1:-1]
+    if not content.startswith(CMD_PREFIX):
+        return
+    args = content.split(' ')
     command = args[0][1:]
     if command != 'items':
         return
     if reaction.emoji != '⏪' and reaction.emoji != '⏩':
         return
 
-    match = re.match("Page ([0-9]+) of ([0-9]+)", msg.embeds[0].footer.text)
+    match = re.match("Page ([0-9]+) of ([0-9]+)",
+                     message.embeds[0].footer.text)
     current_page = int(match.group(1))
     num_pages = int(match.group(2))
 
@@ -191,49 +196,68 @@ async def on_reaction_add(reaction, user):
         if current_page <= 1:
             return
         page = current_page - 1
-    else: # if reaction.emoji == '⏩':
+    else:  # if reaction.emoji == '⏩':
         if current_page >= num_pages:
             return
         page = current_page + 1
 
-    items = satisfaction.items(*args[1:])
+    def check(message):
+        return True
 
-    await msg.clear_reactions()
+    async def request_input(msg):
+        await message.channel.send(content=msg)
+        input_message = await bot.wait_for('message', check=check)
+        return input_message.content
+
+    result = await satisfaction.items(request_input, *args[1:])
+
+    await message.clear_reactions()
     if page > 1:
-        await msg.add_reaction('⏪')
+        await message.add_reaction('⏪')
     if page < num_pages:
-        await msg.add_reaction('⏩')
-    
-    await msg.edit(embed=create_items_embed(items, page, num_pages))
+        await message.add_reaction('⏩')
 
-
-async def handle_items_cmd(ctx, page, *args):
-    items = satisfaction.items(*args)
-    if len(items) == 1:
-        await send_item_embed(ctx, items[0])
-        return
-    
-    num_pages = math.ceil(len(items) / ITEMS_PER_PAGE)
-
-    embed = create_items_embed(items, page, num_pages)
-    content = CMD_PREFIX + 'items ' + ' '.join(args)
-    msg = await ctx.send(content=content, embed=embed)
-
-    if num_pages == 1:
-        return 
-
-    if page > 1:
-        await msg.add_reaction('⏪')
-    if page < num_pages:
-        await msg.add_reaction('⏩')
+    await message.edit(embed=create_items_embed(result.items, page, num_pages))
 
 
 class Information(commands.Cog):
     """Informational commands"""
 
+    def __init__(self, bot):
+        self.__bot = bot
+
+    async def handle_items_cmd(self, ctx, page, *args):
+        def check(msg):
+            return True
+
+        async def request_input(msg):
+            await send_message(ctx, msg)
+            input_message = await self.__bot.wait_for('message', check=check)
+            return input_message.content
+
+        result = await satisfaction.items(request_input, *args)
+        items = result.items
+        if len(items) == 1:
+            await send_item_embed(ctx, items[0])
+            return
+
+        num_pages = math.ceil(len(items) / ITEMS_PER_PAGE)
+
+        embed = create_items_embed(items, page, num_pages)
+        content = '`' + CMD_PREFIX + 'items ' + result.normalized_args + '`'
+        msg = await ctx.send(content=content, embed=embed)
+
+        if num_pages == 1:
+            return
+
+        if page > 1:
+            await msg.add_reaction('⏪')
+        if page < num_pages:
+            await msg.add_reaction('⏩')
+
     @commands.command(pass_context=True, help=items_help)
     async def items(self, ctx, *args):
-        await handle_items_cmd(ctx, 1, *args)
+        await self.handle_items_cmd(ctx, 1, *args)
 
     @commands.command(pass_context=True, help=recipes_help)
     async def recipes(self, ctx, *args):
@@ -291,7 +315,7 @@ class Optimization(commands.Cog):
         await ctx.send('An error occurred: {}'.format(str(error)))
 
 
-bot.add_cog(Information())
+bot.add_cog(Information(bot))
 bot.add_cog(Optimization(bot))
 
 bot.run(token)

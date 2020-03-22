@@ -2,6 +2,7 @@ import pulp
 from result import Result, ErrorResult
 from query_parser import QueryParser, ParseException
 
+
 class Optimizer:
     def __init__(self, db):
         self.__db = db
@@ -13,16 +14,20 @@ class Optimizer:
         for recipe in self.__db.recipes():
             self.__variables[recipe] = pulp.LpVariable(recipe, lowBound=0)
         for power_recipe in self.__db.power_recipes():
-            self.__variables[power_recipe] = pulp.LpVariable(power_recipe, lowBound=0)
+            self.__variables[power_recipe] = pulp.LpVariable(
+                power_recipe, lowBound=0)
         for item in self.__db.items().values():
-            self.__variables[item.input().var()] = pulp.LpVariable(item.input().var(), lowBound=0)
-            self.__variables[item.output().var()] = pulp.LpVariable(item.output().var(), lowBound=0)
+            self.__variables[item.input().var()] = pulp.LpVariable(
+                item.input().var(), lowBound=0)
+            self.__variables[item.output().var()] = pulp.LpVariable(
+                item.output().var(), lowBound=0)
         for crafter in self.__db.crafters():
             self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
         for generator_var, generator in self.__db.generators().items():
-            self.__variables[generator_var] = pulp.LpVariable(generator_var, lowBound=0)
+            self.__variables[generator_var] = pulp.LpVariable(
+                generator_var, lowBound=0)
         self.__variables["power"] = pulp.LpVariable("power")
-        
+
         self.__byproducts = [
             "item:fuel:output",
             "item:polymer-resin:output",
@@ -40,18 +45,21 @@ class Optimizer:
         #   products - ingredients - net output = 0
         # For resources:
         #   products - ingredients = - net input
-        #   products - ingredients + net input = 0 
+        #   products - ingredients + net input = 0
         for item_var, item in self.__db.items().items():
             var_coeff = {}  # variable => coefficient
             recipes_for_item = self.__db.recipes_for_product(item_var)
             recipes_from_item = self.__db.recipes_for_ingredient(item_var)
             for recipe in recipes_for_item:
-                var_coeff[self.__variables[recipe.var()]] = recipe.product(item_var).minute_rate()
+                var_coeff[self.__variables[recipe.var()]] = recipe.product(
+                    item_var).minute_rate()
             for recipe in recipes_from_item:
-                var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(item_var).minute_rate()
+                var_coeff[self.__variables[recipe.var()]] = - \
+                    recipe.ingredient(item_var).minute_rate()
             if item_var in self.__db.power_recipes_by_fuel():
                 power_recipe = self.__db.power_recipes_by_fuel()[item_var]
-                var_coeff[self.__variables[power_recipe.var()]] = -power_recipe.fuel_minute_rate()
+                var_coeff[self.__variables[power_recipe.var()]] = - \
+                    power_recipe.fuel_minute_rate()
             var_coeff[self.__variables[item.input().var()]] = 1
             var_coeff[self.__variables[item.output().var()]] = -1
             self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
@@ -77,9 +85,11 @@ class Optimizer:
         # Create a single power equality for all recipes and generators
         power_coeff = {}
         for generator_var, generator in self.__db.generators().items():
-            power_coeff[self.__variables[generator_var]] = generator.power_production()
+            power_coeff[self.__variables[generator_var]
+                        ] = generator.power_production()
         for recipe_var, recipe in self.__db.recipes().items():
-            power_coeff[self.__variables[recipe_var]] = -recipe.crafter().power_consumption()
+            power_coeff[self.__variables[recipe_var]] = - \
+                recipe.crafter().power_consumption()
         power_coeff[self.__variables["power"]] = -1
         self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
@@ -88,9 +98,17 @@ class Optimizer:
     async def optimize(self, request_input_fn, max, *args):
         # Parse input
         # {item} where {item} {=|<=|>=} {number} and ...
+        match_groups = [
+            '^power$',
+            '^resource:.*:input$',
+            '^resource:.*:output$',
+            '^item:.*:output$',
+            '^item:.*:input$',
+            '^.*$',
+        ]
         try:
-            parser = QueryParser(self.__variables)
-            objective, constraints, query_vars = await parser.parse_input(request_input_fn, *args)
+            parser = QueryParser(self.__variables, match_groups)
+            objective, constraints, query_vars = await parser.parse_optimize_query(request_input_fn, *args)
         except ParseException as err:
             return ErrorResult(err.msg)
 
@@ -121,9 +139,9 @@ class Optimizer:
         else:
             normalized_input.append("min " + str(objective_exp))
         for item, expr in constraints.items():
-            normalized_input.append("  " + item + " " + expr[0] + " " + str(expr[1]))
+            normalized_input.append(
+                "  " + item + " " + expr[0] + " " + str(expr[1]))
         print('\n'.join(normalized_input))
-
 
         # Add constraints for all item, crafter, and power equalities
         for exp in self.equalities:
@@ -134,16 +152,19 @@ class Optimizer:
             # Don't require any other inputs
             if item.input().var() not in query_vars:
                 if item.is_resource():
-                    prob.addConstraint(self.__variables[item.input().var()] >= 0, item.input().var())
+                    prob.addConstraint(
+                        self.__variables[item.input().var()] >= 0, item.input().var())
                 else:
-                    prob.addConstraint(self.__variables[item.input().var()] == 0, item.input().var())
+                    prob.addConstraint(
+                        self.__variables[item.input().var()] == 0, item.input().var())
             # Eliminate unneccessary byproducts
             if item.output().var() not in query_vars:
                 # if item in self.__byproducts:
                 #     prob += self.__variables[item.input().var()] >= 0
                 # else:
                 #     prob += self.__variables[item.output().var()] == 0
-                prob.addConstraint(self.__variables[item.output().var()] == 0, item.output().var())
+                prob.addConstraint(
+                    self.__variables[item.output().var()] == 0, item.output().var())
 
         # Disable power recipes unless the query specifies something about power
         if "power" not in query_vars:
@@ -185,11 +206,11 @@ class Optimizer:
                 prob += self.__variables[item] == bound
             elif op == ">=":
                 prob += self.__variables[item] >= bound
-            else: # op == "<="
+            else:  # op == "<="
                 prob += self.__variables[item] <= bound
-        
-        # Display the problem 
-        # print(prob) 
+
+        # Display the problem
+        # print(prob)
 
         # Solve
         status = prob.solve()
@@ -206,7 +227,8 @@ class Optimizer:
         #         continue
         #     print("Allowing byproduct", byproduct)
         #     prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)
-        possible_byproducts = [byproduct for byproduct in self.__byproducts if byproduct not in query_vars]
+        possible_byproducts = [
+            byproduct for byproduct in self.__byproducts if byproduct not in query_vars]
         allowed_byproducts = await parser.pick_byproducts(request_input_fn, possible_byproducts)
         for byproduct in allowed_byproducts:
             prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)

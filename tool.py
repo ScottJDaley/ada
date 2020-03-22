@@ -49,7 +49,8 @@ async def main():
                 result.generate_graph_viz('output.gv')
             print(result)
         elif command == "!items":
-            items = satisfaction.items(*args)
+            result = await satisfaction.items(request_input, *args)
+            items = result.items
             if len(items) == 1:
                 print(items[0].details())
             else:
