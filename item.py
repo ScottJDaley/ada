@@ -3,8 +3,9 @@ import image_fetcher
 
 
 class Item:
-    def __init__(self, data, is_resource):
+    def __init__(self, data, sink_value, is_resource):
         self.__data = data
+        self.__sink_value = sink_value
         self.__is_resource = is_resource
 
     def slug(self):
@@ -92,6 +93,7 @@ class Item:
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  stack size: " + str(self.__data["stackSize"]))
+        out.append("  sink value: " + str(self.__sink_value))
         out.append(self.__data["description"])
         out.append("")
         return '\n'.join(out)
@@ -139,5 +141,5 @@ class Item:
         embed.add_field(name="Stack Size", value=str(
             self.__data["stackSize"]), inline=True)
         embed.add_field(name="Sink Value",
-                        value="TODO", inline=True)
+                        value=str(self.__sink_value), inline=True)
         return embed

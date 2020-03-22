@@ -11,7 +11,7 @@ class ItemsResult:
 
 class Satisfaction:
     def __init__(self):
-        self.__db = DB("data.json")
+        self.__db = DB()
         self.__opt = Optimizer(self.__db)
 
     async def items(self, request_input, *args):

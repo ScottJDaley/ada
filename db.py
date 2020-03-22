@@ -5,11 +5,15 @@ from item import Item
 from recipe import Recipe
 from power_recipe import PowerRecipe
 
+
 class DB:
-    def __init__(self, path):
+    def __init__(self):
         # Parse data file
-        with open(path) as f:
+        with open("data.json") as f:
             data = json.load(f)
+
+        with open("sink.json") as f:
+            sink = json.load(f)
 
         # Parse resources
         self.__resource_class_names = []
@@ -23,7 +27,11 @@ class DB:
         for item_data in data["items"].values():
             item_class_name = item_data["className"]
             is_resource = item_class_name in self.__resource_class_names
-            item = Item(item_data, is_resource)
+            sink_value = -1
+            sink_key = ''.join(i for i in item_data["name"] if ord(i) < 128)
+            if sink_key in sink:
+                sink_value = sink[sink_key]
+            item = Item(item_data, sink_value, is_resource)
             self.__items[item.var()] = item
             self.__item_var_from_class_name[item_class_name] = item.var()
 
@@ -35,14 +43,16 @@ class DB:
                 continue
             crafter = Crafter(building_data)
             self.__crafters[crafter.var()] = crafter
-            self.__crafter_var_from_class_name[building_data["className"]] = crafter.var()
+            self.__crafter_var_from_class_name[building_data["className"]] = crafter.var(
+            )
 
         # Parse generators
         self.__generators = {}
         for generator_data in data["generators"].values():
             # Replace the "Build_" prefix with the "Desc_" prefix to get the building class name.
             building_class_name = "Desc_" + generator_data["className"][6:]
-            generator = Generator(data["buildings"][building_class_name], generator_data, self)
+            generator = Generator(
+                data["buildings"][building_class_name], generator_data, self)
             self.__generators[generator.var()] = generator
 
         # Parse recipes
@@ -76,7 +86,6 @@ class DB:
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
 
-
     def items(self):
         return self.__items
 
@@ -98,7 +107,7 @@ class DB:
 
     def power_recipes(self):
         return self.__power_recipes
-        
+
     def power_recipes_by_fuel(self):
         return self.__power_recipes_by_fuel
 

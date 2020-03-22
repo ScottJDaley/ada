@@ -285,9 +285,6 @@ class Information(commands.Cog):
         content = '`' + CMD_PREFIX + 'items ' + result.normalized_args + '`'
         msg = await ctx.send(content=content, embed=embed)
 
-        if num_pages(items) == 1:
-            return
-
         if page > 1:
             await msg.add_reaction('◀️')
         await msg.add_reaction('↗️')
