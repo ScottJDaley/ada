@@ -107,7 +107,10 @@ class Optimizer:
             '^.*$',
         ]
         try:
-            parser = QueryParser(self.__variables, match_groups)
+            parser = QueryParser(
+                variables=self.__variables,
+                return_all_matches=False,
+                match_groups=match_groups)
             objective, constraints, query_vars = await parser.parse_optimize_query(request_input_fn, *args)
         except ParseException as err:
             return ErrorResult(err.msg)

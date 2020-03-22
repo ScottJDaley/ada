@@ -16,8 +16,10 @@ class ParseResult:
 
 
 class QueryParser:
-    def __init__(self, variables, match_groups=['^.*$']):
+    def __init__(self, variables, return_all_matches=True,
+                 match_groups=['^.*$']):
         self.__variables = variables
+        self.__return_all_matches = return_all_matches
         self.__match_groups = match_groups
 
         # TODO: Move these somewhere else
@@ -115,20 +117,26 @@ class QueryParser:
         for partition in self.partition_variables_by_match_order():
             inner_matched = [
                 var for var in partition if var_expr in var.split(':')]
-            substring_matched = [var for var in partition if var_expr in var]
-            re_matched = [var for var in partition if re.search(var_expr, var)]
             if len(inner_matched) == 1:
                 return ParseResult(inner_matched, var_expr)
             if len(inner_matched) > 1:
+                if self.__return_all_matches:
+                    return ParseResult(inner_matched, var_expr)
                 inner_pattern = "^(.*:)*" + var_expr + "(:.*)*$"
                 return await self.pick_variables(request_input_fn, var_expr,
                                                  inner_matched, inner_pattern)
+
+            substring_matched = [var for var in partition if var_expr in var]
             if len(substring_matched) == 1:
                 return ParseResult(substring_matched, var_expr)
             if len(substring_matched) > 1:
+                if self.__return_all_matches:
+                    return ParseResult(substring_matched, var_expr)
                 substring_pattern = "^.*" + var_expr + ".*$"
                 return await self.pick_variables(request_input_fn, var_expr,
                                                  substring_matched, substring_pattern)
+
+            re_matched = [var for var in partition if re.search(var_expr, var)]
             if len(re_matched) > 0:
                 return ParseResult(re_matched, var_expr)
         raise ParseException("Input '" + var_expr +
@@ -152,7 +160,8 @@ class QueryParser:
             if len(constraint) != 3:
                 raise ParseException(
                     "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-            expanded_vars = await self.parse_variables(request_input_fn, constraint[0]).vars
+            result = await self.parse_variables(request_input_fn, constraint[0])
+            expanded_vars = result.vars
             operator = constraint[1]
             try:
                 bound = int(constraint[2])
@@ -178,7 +187,8 @@ class QueryParser:
                 objective[self.__variables[var_name]] = coefficient
                 objective_vars.append(var_name)
         else:
-            objective_items = await self.parse_variables(request_input_fn, arg0).vars
+            result = await self.parse_variables(request_input_fn, arg0)
+            objective_items = result.vars
             for objective_item in objective_items:
                 objective[self.__variables[objective_item]] = 1
                 objective_vars.append(objective_item)
