@@ -1,5 +1,9 @@
-# satisfoptimizer
-A production calculator and optimizer for the video game Satisfactory. Available as a commandline tool or a discord bot.
+# ADA
+ADA is a Discord bot for the Satisfactory video game.
+
+With ADA, you can browse information about items, recipes, and buildings within Discord. You can also ask ADA to calculate an optimal production chains and produce visualizations.
+
+ADA is also available as a command line tool.
 
 ## Windows Installation
 
@@ -38,7 +42,7 @@ sudo apt-get install git
 
 5. Clone repo (in directory of you choosing)
 ```console
-git clone https://github.com/ScottJDaley/satisfoptimizer.git
+git clone https://github.com/ScottJDaley/ada.git
 ```
 
 6. Move inside the repo
@@ -265,5 +269,5 @@ Get a list of all buildings or information about a particular building.
 ```
 
 ## Acknowledgements
-The JSON data used by this program comes from Greeny's SatisfactoryTools
-https://github.com/greeny/SatisfactoryTools
+- The JSON data used by this program comes from [Greeny's SatisfactoryTools](https://github.com/greeny/SatisfactoryTools)
+- Images are taken from the [Official Satisfactory Wiki](https://satisfactory.gamepedia.com/Satisfactory_Wiki).
