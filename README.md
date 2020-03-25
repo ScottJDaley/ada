@@ -61,7 +61,7 @@ pip3 install -r requirements.txt
 
 7. Set up Discord bot
 ```console
-cat DISCORD_TOKEN={token from discord developer portal} > .env
+echo "DISCORD_TOKEN={token from discord developer portal}" > .env
 ```
  
 ## How to run
