@@ -1,11 +1,17 @@
 from db import DB
 from optimizer import Optimizer
-from query_parser import QueryParser
+from query_parser import QueryParser, ParseException
 
 
 class ItemsResult:
     def __init__(self, items, normalized_args):
         self.items = items
+        self.normalized_args = normalized_args
+
+
+class RecipesResult:
+    def __init__(self, recipes, normalized_args):
+        self.recipes = recipes
         self.normalized_args = normalized_args
 
 
@@ -17,47 +23,51 @@ class Satisfaction:
     async def items(self, request_input, *args):
         print("calling !items with", len(args), "arguments:", ', '.join(args))
 
-        query_parser = QueryParser(
-            list(self.__db.items().keys()))
-        result = await query_parser.parse_items_query(request_input, *args)
-        items = []
-        for item_var in sorted(result.vars):
-            items.append(self.__db.items()[item_var])
-        return ItemsResult(items, result.normalized_query)
+        if len(args) == 0:
+            all_items = [self.__db.items()[item_var]
+                         for item_var in sorted(self.__db.items().keys())]
+            return ItemsResult(all_items, "")
+        if len(args) == 1:
+            query_parser = QueryParser(
+                list(self.__db.items().keys()))
+            result = await query_parser.parse_variables(request_input, args[0])
+            matched_items = [self.__db.items()[item_var]
+                             for item_var in sorted(result.vars)]
+            return ItemsResult(matched_items, result.normalized_query)
+        raise ParseException(
+            "Input must an item or item regular expression")
 
-    def recipes(self, *args):
+    async def recipes(self, request_input, *args):
         print("calling !recipes with", len(args),
               "arguments:", ', '.join(args))
 
-        out = []
         if len(args) == 0:
-            for recipe in sorted(self.__db.recipes()):
-                out.append(recipe)
-        elif len(args) == 1:
-            arg = args[0]
-            if arg in self.__db.recipes():
-                return self.__db.recipes()[arg].details()
-            elif arg in self.__db.items():
-                for recipe in self.__db.recipes_for_product(arg):
-                    out.append(recipe.details())
-            elif arg in self.__db.crafters():
-                for recipe in self.__db.recipes().values():
-                    if arg == recipe.crafter().var():
-                        out.append(recipe.details())
-            else:
-                return "Unknown recipe, item, or building: " + arg
-        elif len(args) == 2:
+            all_recipes = [self.__db.recipes()[recipe_var]
+                           for recipe_var in sorted(self.__db.recipes().keys())]
+            return RecipesResult(all_recipes, "")
+        if len(args) == 1:
+            query_parser = QueryParser(
+                list(self.__db.recipes().keys()))
+            result = await query_parser.parse_variables(request_input, args[0])
+            matched_recipes = [self.__db.recipes()[recipe_var]
+                               for recipe_var in sorted(result.vars)]
+            return RecipesResult(matched_recipes, result.normalized_query)
+        if len(args) == 2:
             if args[0] != "using" and args[0] != "for":
-                return "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>"
-            if args[1] not in self.__db.items():
-                return "Unknown item: " + args[1]
+                raise ParseException(
+                    "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>")
+            query_parser = QueryParser(
+                list(self.__db.items().keys()), return_all_matches=False)
+            result = await query_parser.parse_variables(request_input, args[1])
+            matched_item_var = result.vars[0]
             if args[0] == "using":
-                for recipe in self.__db.recipes_for_ingredient(args[1]):
-                    out.append(recipe.details())
-            elif args[0] == "for":
-                for recipe in self.__db.recipes_for_product(args[1]):
-                    out.append(recipe.details())
-        return '\n'.join(out)
+                return RecipesResult(self.__db.recipes_for_ingredient(matched_item_var),
+                                     result.normalized_query)
+            if args[0] == "for":
+                return RecipesResult(self.__db.recipes_for_product(matched_item_var),
+                                     result.normalized_query)
+        raise ParseException(
+            "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>")
 
     def buildings(self, *args):
         print("calling !buildings with", len(

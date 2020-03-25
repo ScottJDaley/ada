@@ -14,7 +14,7 @@ token = os.getenv('DISCORD_TOKEN')
 
 satisfaction = Satisfaction()
 
-CMD_PREFIX = '!'
+CMD_PREFIX = '?'
 
 bot = commands.Bot(command_prefix=CMD_PREFIX)
 

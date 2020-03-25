@@ -214,12 +214,3 @@ class QueryParser:
         for var in constraints:
             query_vars.append(var)
         return objective, constraints, query_vars
-
-    async def parse_items_query(self, request_input_fn, *args):
-        if len(args) == 0:
-            return ParseResult(self.__variables, "")
-        if len(args) == 1:
-            return await self.parse_variables(request_input_fn, args[0])
-        print(args)
-        raise ParseException(
-            "Input must an item or item regular expression")

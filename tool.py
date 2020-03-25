@@ -51,13 +51,23 @@ async def main():
         elif command == "!items":
             result = await satisfaction.items(request_input, *args)
             items = result.items
-            if len(items) == 1:
+            if len(items) == 0:
+                    print("Found no matching items")
+            elif len(items) == 1:
                 print(items[0].details())
             else:
                 for item in items:
                     print(item.var())
         elif command == "!recipes":
-            print(satisfaction.recipes(*args))
+            result = await satisfaction.recipes(request_input, *args)
+            recipes = result.recipes
+            if len(recipes) == 0:
+                print("Found no matching recipes")
+            elif len(recipes) == 1:
+                print(recipes[0].details())
+            else:
+                for recipe in recipes:
+                    print(recipe.var())
         elif command == "!buildings":
             print(satisfaction.buildings(*args))
         else:
