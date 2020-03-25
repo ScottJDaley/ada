@@ -1,4 +1,8 @@
 # ADA
+>I am ADA, also known as Artificial Directory and Assistant, tasked to support pioneers, such as you, in their mission.
+>
+> ~ *ADA*
+
 ADA is a Discord bot for the Satisfactory video game.
 
 With ADA, you can browse information about items, recipes, and buildings within Discord. You can also ask ADA to calculate an optimal production chains and produce visualizations.
