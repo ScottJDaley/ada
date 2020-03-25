@@ -220,5 +220,6 @@ class QueryParser:
             return ParseResult(self.__variables, "")
         if len(args) == 1:
             return await self.parse_variables(request_input_fn, args[0])
+        print(args)
         raise ParseException(
             "Input must an item or item regular expression")

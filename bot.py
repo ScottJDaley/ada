@@ -181,16 +181,40 @@ def num_pages(items):
     return math.ceil(len(items) / ITEMS_PER_PAGE)
 
 
-def create_items_embed(items, page):
+def create_items_embed(items, page, is_prompt):
     embed = discord.Embed()
 
     embed.set_footer(text="Page " + str(page) + " of " + str(num_pages(items)))
 
+    out = []
+    num = 1
+    if is_prompt:
+        out.append("Which item would you like more information about?")
     for index in range(first_index(page), last_index(page, items)):
         item = items[index]
-        embed.add_field(name='`' + item.var() + '`',
-                        value=item.human_readable_name(), inline=False)
+        if is_prompt:
+            out.append(NUM_EMOJI[num] + " - " + item.human_readable_name())
+        else:
+            out.append("- " + item.human_readable_name())
+        num += 1
+    embed.description = '\n'.join(out)
+
+    # for index in range(first_index(page), last_index(page, items)):
+    #     item = items[index]
+    #     embed.add_field(name='`' + item.var() + '`',
+    #                     value=item.human_readable_name(), inline=False)
     return embed
+
+
+def get_choice(reaction, items):
+    for line in reaction.message.embeds[0].description.splitlines():
+        if not line.startswith(reaction.emoji):
+            continue
+        match = re.match(".*- (.*)", line)
+        item_name = match.group(1)
+        for item in items:
+            if item.human_readable_name() == item_name:
+                return item
 
 
 @bot.event
@@ -198,23 +222,30 @@ async def on_reaction_add(reaction, user):
     if user == bot.user:
         return
     message = reaction.message
-    if not message.content.startswith('`') or not message.content.endswith('`'):
+    content_lines = message.content.splitlines()
+    if len(content_lines) <= 2:
+        print("Content only had", len(content_lines), "lines")
         return
-    content = message.content[1:-1]
-    if not content.startswith(CMD_PREFIX):
+    if not content_lines[0].startswith('```') or not content_lines[2].startswith('```'):
+        print("Content missing code section:\n", content_lines)
         return
-    args = content.split(' ')
-    command = args[0][1:]
-    if command != 'items':
+    if not content_lines[0][3:].isdigit():
+        print("Page was not a digit: " +
+              content_lines[0][3:] + " content:\n", content_lines)
+        return
+    current_page = int(content_lines[0][3:])
+    breadcrumbs = content_lines[1]
+    if not breadcrumbs.startswith(CMD_PREFIX):
+        print("Breadcrumbs did not start with prefix " + CMD_PREFIX)
+        return
+    args = breadcrumbs.split(' ')
+    command = args[0][len(CMD_PREFIX):]
+
+    if command != 'items':  # TODO: Support other commands here too
+        print("Command is not items, was: " + command)
         return
 
-    if reaction.emoji != '◀️' and reaction.emoji != '▶️' and reaction.emoji != '↗️':
-        return
-
-    match = re.match("Page ([0-9]+) of ([0-9]+)",
-                     message.embeds[0].footer.text)
-    current_page = int(match.group(1))
-    num_pages = int(match.group(2))
+    print("content:\n", message.content)
 
     def check(message):
         return True
@@ -224,21 +255,50 @@ async def on_reaction_add(reaction, user):
         input_message = await bot.wait_for('message', check=check)
         return input_message.content
 
+    if reaction.emoji == '◀️' and len(args) > 1:
+        if '>' not in args:
+            print("No '>' found:", args)
+        for i, arg in enumerate(args):
+            if arg == '>':
+                # Found bread crumbs, so handle back button
+                print("handling back button")
+                result = await satisfaction.items(request_input, *(args[1:i]))
+                items = result.items
+
+                await message.clear_reactions()
+
+                await message.edit(embed=create_items_embed(items, current_page, False),
+                                   content='```' + str(current_page) + '\n' +
+                                   ' '.join(args[0:i]) + '\n```')
+
+                if current_page > 1:
+                    await message.add_reaction('◀️')
+                await message.add_reaction('ℹ️')
+                if current_page < num_pages(items):
+                    await message.add_reaction('▶️')
+
+                return
+
+    # match = re.match("Page ([0-9]+) of ([0-9]+)",
+    #                  message.embeds[0].footer.text)
+    # current_page = int(match.group(1))
+    # num_pages = int(match.group(2))
+
     result = await satisfaction.items(request_input, *args[1:])
     items = result.items
 
-    if reaction.emoji == '↗️':
-        choices = [item.var() for item in items[first_index(
-            current_page):last_index(current_page, items)]]
-        choice = await query_parser.make_choice(
-            "Which item would you like more information about?",
-            request_input, choices)
-        item_var = choices[choice]
-        for item in items:
-            if item.var() == item_var:
-                chosen_item = item
-                break
-        await send_item_embed(message.channel, chosen_item)
+    if reaction.emoji in NUM_EMOJI:
+        item = get_choice(reaction, items)
+        await message.clear_reactions()
+        await message.edit(embed=item.embed(), content='```' + str(current_page) + '\n' + breadcrumbs + ' > ' + item.var() + '\n```')
+        await message.add_reaction('◀️')
+        return
+
+    if reaction.emoji == 'ℹ️':
+        await message.clear_reactions()
+        await message.edit(embed=create_items_embed(items, current_page, True))
+        for i in range(1, count_on_page(current_page, items) + 1):
+            await message.add_reaction(NUM_EMOJI[i])
         return
 
     if reaction.emoji == '◀️':
@@ -246,17 +306,19 @@ async def on_reaction_add(reaction, user):
             return
         page = current_page - 1
     elif reaction.emoji == '▶️':
-        if current_page >= num_pages:
+        if current_page >= num_pages(items):
             return
         page = current_page + 1
 
     await message.clear_reactions()
-    await message.edit(embed=create_items_embed(items, page))
+    await message.edit(embed=create_items_embed(items, page, False),
+                       content='```' + str(page) + '\n' +
+                       breadcrumbs + '\n```')
 
     if page > 1:
         await message.add_reaction('◀️')
-    await message.add_reaction('↗️')
-    if page < num_pages:
+    await message.add_reaction('ℹ️')
+    if page < num_pages(items):
         await message.add_reaction('▶️')
 
 
@@ -281,13 +343,17 @@ class Information(commands.Cog):
             await send_item_embed(ctx, items[0])
             return
 
-        embed = create_items_embed(items, page)
-        content = '`' + CMD_PREFIX + 'items ' + result.normalized_args + '`'
+        embed = create_items_embed(items, page, False)
+        if len(result.normalized_args) > 0:
+            content = '```' + str(page) + '\n' + CMD_PREFIX + \
+                'items ' + result.normalized_args + '\n```'
+        else:
+            content = '```' + str(page) + '\n' + CMD_PREFIX + 'items\n```'
         msg = await ctx.send(content=content, embed=embed)
 
         if page > 1:
             await msg.add_reaction('◀️')
-        await msg.add_reaction('↗️')
+        await msg.add_reaction('ℹ️')
         if page < num_pages(items):
             await msg.add_reaction('▶️')
 
