@@ -46,8 +46,7 @@ class Satisfaction:
                            for recipe_var in sorted(self.__db.recipes().keys())]
             return RecipesResult(all_recipes, "")
         if len(args) == 1:
-            query_parser = QueryParser(
-                list(self.__db.recipes().keys()))
+            query_parser = QueryParser(list(self.__db.recipes().keys()))
             result = await query_parser.parse_variables(request_input, args[0])
             matched_recipes = [self.__db.recipes()[recipe_var]
                                for recipe_var in sorted(result.vars)]
@@ -55,7 +54,8 @@ class Satisfaction:
         if len(args) == 2:
             if args[0] != "using" and args[0] != "for":
                 raise ParseException(
-                    "Input must be in the form \"!recipes\" \"for\" | \"using\" <item>")
+                    "Input must be in the form \"!recipes\" \"for\" | \"using\""
+                    " <item>")
             query_parser = QueryParser(
                 list(self.__db.items().keys()), return_all_matches=False)
             result = await query_parser.parse_variables(request_input, args[1])

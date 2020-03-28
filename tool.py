@@ -62,7 +62,7 @@ async def main():
             result = await satisfaction.recipes(request_input, *args)
             recipes = result.recipes
             if len(recipes) == 0:
-                print("Found no matching recipes")
+                print("Found no matching recipes")''
             elif len(recipes) == 1:
                 print(recipes[0].details())
             else:

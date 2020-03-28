@@ -1,216 +1,220 @@
-import re
+import pyparsing as pp
+from pyparsing import pyparsing_common as ppc
+import inflect
+from functools import partial
 
-
-class ParseException(Exception):
-    def __init__(self, msg):
-        self.msg = msg
-
-    def __str__(self):
-        return self.msg
-
-
-class ParseResult:
-    def __init__(self, vars, normalized_query):
-        self.vars = vars
-        self.normalized_query = normalized_query
-
-
-async def make_choice(msg, request_input_fn, choices):
-    out = []
-    out.append(msg)
-    for i, choice in enumerate(choices, start=1):
-        out.append("  " + str(i) + ") " + choice)
-    num_choices = len(choices)
-    out.append("Enter a number between 1 and " + str(num_choices))
-    attempts = 0
-    while attempts < 3:
-        attempts += 1
-        choice = await request_input_fn('\n'.join(out))
-        if not choice.isdigit():
-            continue
-        index = int(choice)
-        if index <= 0 or index > num_choices:
-            continue
-        return index - 1
-    raise ParseException("Could not determine choice.")
+p = inflect.engine()
 
 
 class QueryParser:
-    def __init__(self, variables, return_all_matches=True,
-                 match_groups=['^.*$']):
-        self.__variables = variables
-        self.__return_all_matches = return_all_matches
-        self.__match_groups = match_groups
 
-        # TODO: Move these somewhere else
-        unweighted_resources = {
-            "resource:water:input": 0,
-            "resource:iron-ore:input": 1,
-            "resource:copper-ore:input": 1,
-            "resource:limestone:input": 1,
-            "resource:coal:input": 1,
-            "resource:crude-oil:input": 1,
-            "resource:bauxite:input": 1,
-            "resource:caterium-ore:input": 1,
-            "resource:uranium:input": 1,
-            "resource:raw-quartz:input": 1,
-            "resource:sulfur:input": 1,
-        }
-        # Proportional to amount of resource on map
-        weighted_resources = {
-            "resource:water:input": 0,
-            "resource:iron-ore:input": 1,
-            "resource:copper-ore:input": 3.29,
-            "resource:limestone:input": 1.47,
-            "resource:coal:input": 2.95,
-            "resource:crude-oil:input": 4.31,
-            "resource:bauxite:input": 8.48,
-            "resource:caterium-ore:input": 6.36,
-            "resource:uranium:input": 46.67,
-            "resource:raw-quartz:input": 6.36,
-            "resource:sulfur:input": 13.33,
-        }
-        # Square root of weighted amounts above
-        mean_weighted_resources = {
-            "resource:water:input": 0,
-            "resource:iron-ore:input": 1,
-            "resource:copper-ore:input": 1.81,
-            "resource:limestone:input": 1.21,
-            "resource:coal:input": 1.72,
-            "resource:crude-oil:input": 2.08,
-            "resource:bauxite:input": 2.91,
-            "resource:caterium-ore:input": 2.52,
-            "resource:uranium:input": 6.83,
-            "resource:raw-quartz:input": 2.52,
-            "resource:sulfur:input": 3.65,
-        }
-        self.__built_in_objectives = {
-            "unweighted-resources": unweighted_resources,
-            "weighted-resources": weighted_resources,
-            "mean-weighted-resources": mean_weighted_resources,
-        }
+    def __init__(self, db):
 
-    def partition_variables_by_match_order(self):
+        # Keywords
+        output_kw = pp.Keyword("produce") | pp.Keyword(
+            "make") | pp.Keyword("create") | pp.Keyword("output")
+        input_kw = pp.Keyword("from") | pp.Keyword(
+            "input") | pp.Keyword("using")
+        include_kw = pp.Keyword("with") | pp.Keyword("including")
+        exclude_kw = pp.Keyword("without") | pp.Keyword("excluding")
+        objective_kw = pp.Keyword("?").setParseAction(
+            partial(self.push_value, "?"))
+        any_kw = (pp.Keyword("any") | pp.Keyword("_")
+                  ).setParseAction(partial(self.push_value, "_"))
+        only_kw = pp.Keyword("only").setParseAction(self.set_is_only)
+        no_kw = (pp.Keyword("no") | pp.Keyword("0") |
+                 "-").setParseAction(partial(self.push_value, 0))
+        and_kw = pp.Keyword("and") | "+"
+        nor_kw = pp.Keyword("and") | pp.Keyword("or") | pp.Keyword("nor")
+        power_kw = pp.Keyword("power").setParseAction(
+            partial(self.push_var, "power"))
+        tickets_kw = pp.Keyword("tickets").setParseAction(
+            partial(self.push_var, "tickets"))
+        space_kw = pp.Keyword("space").setParseAction(
+            partial(self.push_var, "space"))
+        unweighted_resources_kw = (pp.Keyword("unweighted resources") | pp.Keyword(
+            "resources")).setParseAction(partial(self.push_var, "unweighted-resources"))
+        weighted_resources_kw = pp.Keyword("weighted resources").setParseAction(
+            partial(self.push_var, "weighted-resources"))
+        alternate_recipes_kw = pp.Keyword("alternate recipes").setParseAction(
+            partial(self.push_var, "alternate-recipes"))
+        byproducts_kw = pp.Keyword("byproducts").setParseAction(
+            partial(self.push_var, "byproducts"))
 
-        def matches_for(group):
-            return [var for var in self.__variables if re.match(group, var)]
-        return [matches_for(group) for group in self.__match_groups]
+        # end_of_expr = output_kw | input_kw | include_kw | exclude_kw | and_kw
 
-    async def pick_variables(self, request_input_fn, var_expr, vars, all_vars_pattern):
-        msg = "Input '" + var_expr + "' matches multiple variables, pick one:"
-        choices = vars.copy()
-        choices.append("pick all matches")
-        choice = await make_choice(msg, request_input_fn, choices)
-        if choice < len(vars):
-            return ParseResult([vars[choice]], vars[choice])
-        return ParseResult(vars, all_vars_pattern)
+        # Expressions for variable names
+        # Consider going back to looking for any string up until end_of_expr.
+        # Then as a parse action, check if it matches. That way we can give a
+        # better failure message.
+        item_expr = self.get_var_expr(
+            [item for item in db.items().values() if not item.is_resource()])
+        resource_expr = self.get_var_expr(
+            [item for item in db.items().values() if item.is_resource()])
+        recipe_expr = self.get_var_expr(db.recipes().values())
+        crafter_expr = self.get_var_expr(db.crafters().values())
+        generator_expr = self.get_var_expr(db.generators().values())
 
-    async def pick_byproducts(self, request_input_fn, byproducts):
-        msg = "Failed to find a solution without byproducts.\nTry picking a byproduct to allow:"
-        choices = byproducts.copy()
-        choices.append("allow all byproducts")
-        choice = await make_choice(msg, request_input_fn, choices)
-        if choice < len(byproducts):
-            return [byproducts[choice]]
-        return byproducts
+        output_var = power_kw | tickets_kw | item_expr
+        input_var = power_kw | space_kw | unweighted_resources_kw | \
+            weighted_resources_kw | resource_expr | item_expr
+        # TODO: Consider moving building expressions to inputs instead so that a
+        # value can be used. Or do both.
+        include_var = alternate_recipes_kw | byproducts_kw | recipe_expr | \
+            crafter_expr | generator_expr
+        exclude_var = alternate_recipes_kw | byproducts_kw | recipe_expr | \
+            crafter_expr | generator_expr
 
-    async def parse_variables(self, request_input_fn, var_expr):
-        for partition in self.partition_variables_by_match_order():
-            inner_matched = [
-                var for var in partition if var_expr in var.split(':')]
-            if len(inner_matched) == 1:
-                return ParseResult(inner_matched, var_expr)
-            if len(inner_matched) > 1:
-                if self.__return_all_matches:
-                    return ParseResult(inner_matched, var_expr)
-                inner_pattern = "^(.*:)*" + var_expr + "(:.*)*$"
-                return await self.pick_variables(request_input_fn, var_expr,
-                                                 inner_matched, inner_pattern)
+        include_value_expr = (only_kw | no_kw).setParseAction(self.handle_value)
 
-            substring_matched = [var for var in partition if var_expr in var]
-            if len(substring_matched) == 1:
-                return ParseResult(substring_matched, var_expr)
-            if len(substring_matched) > 1:
-                if self.__return_all_matches:
-                    return ParseResult(substring_matched, var_expr)
-                substring_pattern = "^.*" + var_expr + ".*$"
-                return await self.pick_variables(request_input_fn, var_expr,
-                                                 substring_matched, substring_pattern)
+        number_value = ppc.integer.setParseAction(self.push_number_value)
+        value = number_value | any_kw | objective_kw
+        value_expr = ((pp.Optional(only_kw) + pp.Optional(value))
+                      | no_kw).setParseAction(self.handle_value)
 
-            re_matched = [var for var in partition if re.search(var_expr, var)]
-            if len(re_matched) > 0:
-                return ParseResult(re_matched, var_expr)
-        raise ParseException("Input '" + var_expr +
-                             "' does not match any variables")
+        output_expr = (pp.Optional(value_expr) +
+                       output_var).setParseAction(self.output_action)
+        input_expr = (pp.Optional(value_expr) +
+                      input_var).setParseAction(self.input_action)
+        include_expr = (pp.Optional(include_value_expr) +
+                        include_var).setParseAction(self.include_action)
+        exclude_expr = exclude_var.setParseAction(self.exclude_action)
 
-    async def parse_constraints(self, request_input_fn, *args):
-        # First separate constraints by 'and'
-        constraints_raw = []
-        start_index = 0
-        index = 0
-        while index <= len(args):
-            if index >= len(args) or args[index] == "and":
-                constraints_raw.append(args[start_index:index])
-                start_index = index + 1
-            index += 1
+        outputs = output_expr + pp.ZeroOrMore(and_kw + output_expr)
+        inputs = input_expr + pp.ZeroOrMore(and_kw + input_expr)
+        includes = include_expr + pp.ZeroOrMore(and_kw + include_expr)
+        excludes = exclude_expr + pp.ZeroOrMore(nor_kw + exclude_expr)
 
-        # Then parse the constraints
-        #     var => (op, bound)
-        constraints = {}
-        for constraint in constraints_raw:
-            if len(constraint) != 3:
-                raise ParseException(
-                    "Constraint must be in the form {{item}} {{=|<=|>=}} {{number}}.")
-            result = await self.parse_variables(request_input_fn, constraint[0])
-            expanded_vars = result.vars
-            operator = constraint[1]
-            try:
-                bound = int(constraint[2])
-            except ValueError:
-                raise ParseException("Constraint bound must be an number.")
-            if operator != "=" and operator != ">=" and operator != "<=":
-                raise ParseException(
-                    "Constraint operator must be one of {{=|<=|>=}}")
-            for var in expanded_vars:
-                constraints[var] = (operator, bound)
-        return constraints
+        outputs_expr = output_kw + outputs
+        inputs_expr = input_kw + inputs
+        includes_expr = include_kw + includes
+        excludes_expr = exclude_kw + excludes
 
-    async def parse_objective(self, request_input_fn, *args):
-        # TODO: Support expression objectives
-        if len(args) > 1:
-            raise ParseException(
-                "Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
-        arg0 = args[0]
-        objective = {}
-        objective_vars = []
-        if arg0 in self.__built_in_objectives:
-            for var_name, coefficient in self.__built_in_objectives[arg0].items():
-                objective[self.__variables[var_name]] = coefficient
-                objective_vars.append(var_name)
+        self.__query_syntax = outputs_expr + pp.Optional(inputs_expr) + \
+            pp.Optional(includes_expr) + pp.Optional(excludes_expr)
+
+        self.reset()
+
+    def reset_intermidiates(self):
+        self.__last_vars = []
+        self.__last_value = None
+        self.__is_only = False
+
+    def push_number_value(self, toks):
+        self.__last_value = toks[0]
+
+    def push_value(self, value, toks):
+        self.__last_value = value
+
+    def set_is_only(self, toks):
+        self.__is_only = True
+
+    def handle_value(self, toks):
+        if not self.__last_value:
+            self.__last_value = "_"
+
+    def push_var(self, var, toks):
+        self.__last_vars.append(var)
+        print(var)
+
+    def get_var_expr(self, vars):
+        var_names = []
+        for var in vars:
+            singular = pp.CaselessLiteral(var.human_readable_name().lower())
+            plural = pp.CaselessLiteral(
+                p.plural(var.human_readable_name().lower()))
+            var_names.append((plural | singular).setParseAction(
+                partial(self.push_var, var.var())))
+        return pp.Or(var_names)
+
+    def output_action(self, toks):
+        print("output:", toks)
+        if self.__last_value == "?":
+            self.__objective.is_max = True
+            self.__objective.vars = self.__last_vars
+        elif self.__last_value == "_":
+            for var in self.__last_vars:
+                self.__ge_constraints[var] = 0
         else:
-            result = await self.parse_variables(request_input_fn, arg0)
-            objective_items = result.vars
-            for objective_item in objective_items:
-                objective[self.__variables[objective_item]] = 1
-                objective_vars.append(objective_item)
-        return objective, objective_vars
+            for var in self.__last_vars:
+                self.__eq_constraints[var] = int(self.__last_value)
+        self.reset_intermidiates()
 
-    async def parse_optimize_query(self, request_input_fn, *args):
-        # First separate out the {item} where clause
-        if len(args) < 2:
-            raise ParseException(
-                "Input must be in the form {{item}} where {{item}} {{=|<=|>=}} {{number}} ")
-        where_index = -1
-        for i in range(len(args)):
-            arg = args[i]
-            if arg == "where":
-                where_index = i
-        if where_index <= 0:
-            objective, objective_vars = await self.parse_objective(request_input_fn, "weighted-resources")
+    def input_action(self, toks):
+        print("input:", toks)
+        if self.__last_value == "?":
+            self.__objective.is_max = False
+            self.__objective.vars = self.__last_vars
+        elif self.__last_value == "_":
+            for var in self.__last_vars:
+                self.__le_constraints[var] = 0
         else:
-            objective, objective_vars = await self.parse_objective(request_input_fn, *args[:where_index])
-        constraints = await self.parse_constraints(request_input_fn, *args[where_index+1:])
-        query_vars = objective_vars
-        for var in constraints:
-            query_vars.append(var)
-        return objective, constraints, query_vars
+            for var in self.__last_vars:
+                self.__eq_constraints[var] = -int(self.__last_value)
+        self.reset_intermidiates()
+
+    def include_action(self, toks):
+        print("include:", toks)
+        if self.__last_value == "_":
+            for var in self.__last_vars:
+                self.__ge_constraints[var] = 0
+        else:
+            for var in self.__last_vars:
+                self.__eq_constraints[var] = self.__last_value
+        self.reset_intermidiates()
+
+    def exclude_action(self, toks):
+        print("exclude:", toks)
+        if self.__last_value == "_":
+            for var in self.__last_vars:
+                self.__le_constraints[var] = 0
+        else:
+            for var in self.__last_vars:
+                self.__eq_constraints[var] = self.__last_value
+        for var in self.__last_vars:
+            self.__eq_constraints[var] = 0
+        self.reset_intermidiates()
+
+    def grammar(self):
+        return self.__query_syntax
+
+    def reset(self):
+        self.reset_intermidiates()
+
+        class Objective:
+            pass
+        self.__objective = Objective()
+        self.__objective.is_max = True
+        # vars will be added in objective, vars[0] + vars[1] + ...
+        self.__objective.vars = []
+        self.__eq_constraints = {}  # var = value
+        self.__ge_constraints = {}  # var >= value
+        self.__le_constraints = {}  # var <= value
+
+    def print_output(self):
+        print("Objective:")
+        func = "minimize"
+        if self.__objective.is_max:
+            func = "maximize"
+        print("  " + func + " " + " + ".join(self.__objective.vars))
+        print("Constraints:")
+        for var, val in self.__eq_constraints.items():
+            print("  " + var + " = " + str(val))
+        for var, val in self.__ge_constraints.items():
+            print("  " + var + " >= " + str(val))
+        for var, val in self.__le_constraints.items():
+            print("  " + var + " <= " + str(val))
+
+    def test(self, test_str):
+        self.reset()
+        try:
+            results = self.__query_syntax.parseString(test_str, parseAll=True)
+        except pp.ParseException as pe:
+            print("\"" + test_str + "\" ==> failed parse:")
+            print((pe.loc+1)*" " + "^")
+            print(str(pe), "\n")
+        else:
+            print("\"" + test_str + "\" ==> parsing succeeded:\n",
+                  results, "\n")
+            self.print_output()
+            print()
