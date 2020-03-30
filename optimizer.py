@@ -200,7 +200,7 @@ class Optimizer:
                     self.__variables[item.var()] <= 0, item.var())
             else:
                 prob.addConstraint(
-                    self.__variables[item.var()] == 0, item.var())
+                    self.__variables[item.var()] >= 0, item.var())
 
         # Disable power recipes unless the query specifies something about power
         if "power" not in query_vars:

@@ -1,6 +1,7 @@
 from db import DB
 from optimizer import Optimizer
 from query_parser import QueryParser, QueryParseException
+from result import ErrorResult
 
 
 class Ada:
@@ -15,6 +16,6 @@ class Ada:
             query = self.__parser.parse(raw_query)
         except QueryParseException as e:
             print(e)
-            return str(e)
+            return ErrorResult(e.msg)
 
         return await self.__opt.optimize(query)

@@ -21,6 +21,18 @@ class Item:
             return "resource-" + self.slug()
         return "item-" + self.slug()
 
+    def viz_label(self, amount):
+        color = "moccasin" if amount < 0 else "lightblue"
+        out = '<'
+        out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+        out += '<TR>'
+        out += '<TD COLSPAN="2" BGCOLOR="' + color + '">' + \
+            str(round(abs(amount), 2)) + '/m'
+        out += '<BR/>' + self.human_readable_name() + '</TD>'
+        out += '</TR>'
+        out += '</TABLE>>'
+        return out
+
     # class InputVariable:
     #     def __init__(self, item):
     #         self.item = item

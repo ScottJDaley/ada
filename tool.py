@@ -10,8 +10,8 @@ async def main():
         if raw_query == "exit":
             return
         result = await ada.do(raw_query)
-        # if result.has_solution():
-        #     result.generate_graph_viz('output.gv')
+        if result.has_solution():
+            result.generate_graph_viz('output.gv')
         print(result)
 
 

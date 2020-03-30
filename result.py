@@ -106,19 +106,14 @@ class Result:
             targets[item_var][target] = amount
 
         # items
-        self.__add_nodes(s, [item.input()
-                             for item in self.__db.items().values()])
-        self.__add_nodes(s, [item.output()
-                             for item in self.__db.items().values()])
+        self.__add_nodes(s, self.__db.items().values())
         for item in self.__db.items().values():
-            input_var = item.input().var()
-            if self.__has_value(input_var):
-                add_to_target(item.var(), sources, item.input(
-                ).viz_name(), self.__get_value(input_var))
-            output_var = item.output().var()
-            if self.__has_value(output_var):
-                add_to_target(item.var(), sinks, item.output(
-                ).viz_name(), self.__get_value(output_var))
+            if not self.__has_value(item.var()):
+                continue
+            amount = self.__get_value(item.var())
+            target = sources if amount < 0 else sinks
+            add_to_target(item.var(), target, item.viz_name(),
+                          self.__get_value(item.var()))
         # recipes
         self.__add_nodes(s, self.__db.recipes().values())
         for recipe in self.__db.recipes().values():
