@@ -1,6 +1,11 @@
 import pulp
 from result import Result, ErrorResult
-from query_parser import QueryParser, ParseException
+# from query_parser import QueryParser, ParseException
+
+POWER = "power"
+UNWEIGHTED_RESOURCES = "unweighted-resources"
+WEIGHTED_RESOURCES = "weighted-resources"
+MEAN_WEIGHTED_RESOURCES = "mean-weighted-resources"
 
 
 class Optimizer:
@@ -17,16 +22,19 @@ class Optimizer:
             self.__variables[power_recipe] = pulp.LpVariable(
                 power_recipe, lowBound=0)
         for item in self.__db.items().values():
-            self.__variables[item.input().var()] = pulp.LpVariable(
-                item.input().var(), lowBound=0)
-            self.__variables[item.output().var()] = pulp.LpVariable(
-                item.output().var(), lowBound=0)
+            self.__variables[item.var()] = pulp.LpVariable(item.var())
         for crafter in self.__db.crafters():
             self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
         for generator_var, generator in self.__db.generators().items():
             self.__variables[generator_var] = pulp.LpVariable(
                 generator_var, lowBound=0)
-        self.__variables["power"] = pulp.LpVariable("power")
+        self.__variables[POWER] = pulp.LpVariable(POWER)
+        self.__variables[UNWEIGHTED_RESOURCES] = pulp.LpVariable(
+            UNWEIGHTED_RESOURCES)
+        self.__variables[WEIGHTED_RESOURCES] = pulp.LpVariable(
+            WEIGHTED_RESOURCES)
+        self.__variables[MEAN_WEIGHTED_RESOURCES] = pulp.LpVariable(
+            MEAN_WEIGHTED_RESOURCES)
 
         self.__byproducts = [
             "item:fuel:output",
@@ -60,8 +68,8 @@ class Optimizer:
                 power_recipe = self.__db.power_recipes_by_fuel()[item_var]
                 var_coeff[self.__variables[power_recipe.var()]] = - \
                     power_recipe.fuel_minute_rate()
-            var_coeff[self.__variables[item.input().var()]] = 1
-            var_coeff[self.__variables[item.output().var()]] = -1
+            var_coeff[self.__variables[item.var()]] = -1
+            # var_coeff[self.__variables[item.output().var()]] = -1
             self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
         # For each type of crafter, create an equality for all recipes that require it
@@ -93,9 +101,134 @@ class Optimizer:
         power_coeff[self.__variables["power"]] = -1
         self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
+        unweighted_resources = {
+            self.__variables["resource:water"]: 0,
+            self.__variables["resource:iron-ore"]: 1,
+            self.__variables["resource:copper-ore"]: 1,
+            self.__variables["resource:limestone"]: 1,
+            self.__variables["resource:coal"]: 1,
+            self.__variables["resource:crude-oil"]: 1,
+            self.__variables["resource:bauxite"]: 1,
+            self.__variables["resource:caterium-ore"]: 1,
+            self.__variables["resource:uranium"]: 1,
+            self.__variables["resource:raw-quartz"]: 1,
+            self.__variables["resource:sulfur"]: 1,
+            self.__variables[UNWEIGHTED_RESOURCES]: -1,
+        }
+        self.equalities.append(
+            pulp.LpAffineExpression(unweighted_resources) == 0)
+        # Proportional to amount of resource on map
+        weighted_resources = {
+            self.__variables["resource:water"]: 0,
+            self.__variables["resource:iron-ore"]: 1,
+            self.__variables["resource:copper-ore"]: 3.29,
+            self.__variables["resource:limestone"]: 1.47,
+            self.__variables["resource:coal"]: 2.95,
+            self.__variables["resource:crude-oil"]: 4.31,
+            self.__variables["resource:bauxite"]: 8.48,
+            self.__variables["resource:caterium-ore"]: 6.36,
+            self.__variables["resource:uranium"]: 46.67,
+            self.__variables["resource:raw-quartz"]: 6.36,
+            self.__variables["resource:sulfur"]: 13.33,
+            self.__variables[WEIGHTED_RESOURCES]: -1,
+        }
+        self.equalities.append(
+            pulp.LpAffineExpression(weighted_resources) == 0)
+        # Square root of weighted amounts above
+        mean_weighted_resources = {
+            self.__variables["resource:water"]: 0,
+            self.__variables["resource:iron-ore"]: 1,
+            self.__variables["resource:copper-ore"]: 1.81,
+            self.__variables["resource:limestone"]: 1.21,
+            self.__variables["resource:coal"]: 1.72,
+            self.__variables["resource:crude-oil"]: 2.08,
+            self.__variables["resource:bauxite"]: 2.91,
+            self.__variables["resource:caterium-ore"]: 2.52,
+            self.__variables["resource:uranium"]: 6.83,
+            self.__variables["resource:raw-quartz"]: 2.52,
+            self.__variables["resource:sulfur"]: 3.65,
+            self.__variables[MEAN_WEIGHTED_RESOURCES]: -1,
+        }
+        self.equalities.append(
+            pulp.LpAffineExpression(mean_weighted_resources) == 0)
+
         print("Finished creating optimizer")
 
-    async def optimize(self, request_input_fn, max, *args):
+    async def optimize(self, query):
+        print("called optimize() with query:\n", query)
+
+        # TODO: Always max since inputs are negative?
+        if query.maximize_objective:
+            prob = pulp.LpProblem('max-problem', pulp.LpMaximize)
+        else:
+            prob = pulp.LpProblem('min-problem', pulp.LpMinimize)
+
+        query_vars = []
+        query_vars.extend(query.objective_coefficients.keys())
+
+        prob += pulp.LpAffineExpression([(self.__variables[var], coeff)
+                                         for var, coeff in query.objective_coefficients.items()])
+
+        print("eq:", query.eq_constraints)
+        print("ge:", query.ge_constraints)
+        print("le:", query.le_constraints)
+
+        for var, bound in query.eq_constraints.items():
+            prob += self.__variables[var] == bound
+            query_vars.append(var)
+        for var, bound in query.ge_constraints.items():
+            prob += self.__variables[var] >= bound
+            query_vars.append(var)
+        for var, bound in query.le_constraints.items():
+            prob += self.__variables[var] <= bound
+            query_vars.append(var)
+
+        # Display the problem before all recipes are added
+        print(prob)
+        print(query_vars)
+
+        # Add constraints for all item, crafter, and power equalities
+        for exp in self.equalities:
+            prob += exp
+
+         # Add item constraints
+        for item in self.__db.items().values():
+            if item.var() in query_vars:
+                continue
+            if item.is_resource():
+                prob.addConstraint(
+                    self.__variables[item.var()] <= 0, item.var())
+            else:
+                prob.addConstraint(
+                    self.__variables[item.var()] == 0, item.var())
+
+        # Disable power recipes unless the query specifies something about power
+        if "power" not in query_vars:
+            for power_recipe_var in self.__db.power_recipes():
+                prob += self.__variables[power_recipe_var] == 0
+
+        # Disable geothermal generators since they are "free" energy.
+        if "generator:geo-thermal-generator" not in query_vars:
+            prob += self.__variables["generator:geo-thermal-generator"] == 0
+
+        # Disable biomasss burners since they cannot be automated.
+        if "generator:biomass-burner" not in query_vars:
+            prob += self.__variables["generator:biomass-burner"] == 0
+
+        # Display the problem
+        # print(prob)
+
+        # Write out complete problem to file
+        with open('problem.txt', 'w') as f:
+            f.write(str(prob))
+
+        # Solve
+        status = prob.solve()
+        result = Result(self.__db, self.__variables, prob, status)
+
+        return result
+
+    async def optimize_old(self, request_input_fn, max, *args):
         # Parse input
         # {item} where {item} {=|<=|>=} {number} and ...
         match_groups = [

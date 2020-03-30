@@ -2,8 +2,17 @@ import pyparsing as pp
 from pyparsing import pyparsing_common as ppc
 import inflect
 from functools import partial
+from query import Query
 
 p = inflect.engine()
+
+
+class QueryParseException(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
 
 
 class QueryParser:
@@ -93,7 +102,10 @@ class QueryParser:
         self.__query_syntax = outputs_expr + pp.Optional(inputs_expr) + \
             pp.Optional(includes_expr) + pp.Optional(excludes_expr)
 
-        self.reset()
+        self.__last_vars = []
+        self.__last_value = None
+        self.__is_only = False
+        self.__query = None
 
     def reset_intermidiates(self):
         self.__last_vars = []
@@ -130,83 +142,61 @@ class QueryParser:
     def output_action(self, toks):
         print("output:", toks)
         if self.__last_value == "?":
-            self.__objective.is_max = True
-            self.__objective.vars = self.__last_vars
+            # Maximize the outputs
+            self.__query.maximize_objective = True
+            for var in self.__last_vars:
+                self.__query.objective_coefficients[var] = 1
         elif self.__last_value == "_":
             for var in self.__last_vars:
-                self.__ge_constraints[var] = 0
+                self.__query.ge_constraints[var] = 0
         else:
             for var in self.__last_vars:
-                self.__eq_constraints[var] = int(self.__last_value)
+                self.__query.eq_constraints[var] = int(self.__last_value)
         self.reset_intermidiates()
 
     def input_action(self, toks):
         print("input:", toks)
         if self.__last_value == "?":
-            self.__objective.is_max = False
-            self.__objective.vars = self.__last_vars
+            # Minimize the inputs
+            self.__query.maximize_objective = False
+            for var in self.__last_vars:
+                self.__query.objective_coefficients[var] = -1
         elif self.__last_value == "_":
             for var in self.__last_vars:
-                self.__le_constraints[var] = 0
+                self.__query.le_constraints[var] = 0
         else:
             for var in self.__last_vars:
-                self.__eq_constraints[var] = -int(self.__last_value)
+                self.__query.eq_constraints[var] = -int(self.__last_value)
         self.reset_intermidiates()
 
     def include_action(self, toks):
         print("include:", toks)
         if self.__last_value == "_":
             for var in self.__last_vars:
-                self.__ge_constraints[var] = 0
+                self.__query.ge_constraints[var] = 0
         else:
             for var in self.__last_vars:
-                self.__eq_constraints[var] = self.__last_value
+                self.__query.eq_constraints[var] = self.__last_value
         self.reset_intermidiates()
 
     def exclude_action(self, toks):
         print("exclude:", toks)
         if self.__last_value == "_":
             for var in self.__last_vars:
-                self.__le_constraints[var] = 0
+                self.__query.le_constraints[var] = 0
         else:
             for var in self.__last_vars:
-                self.__eq_constraints[var] = self.__last_value
+                self.__query.eq_constraints[var] = self.__last_value
         for var in self.__last_vars:
-            self.__eq_constraints[var] = 0
+            self.__query.eq_constraints[var] = 0
         self.reset_intermidiates()
 
     def grammar(self):
         return self.__query_syntax
 
-    def reset(self):
-        self.reset_intermidiates()
-
-        class Objective:
-            pass
-        self.__objective = Objective()
-        self.__objective.is_max = True
-        # vars will be added in objective, vars[0] + vars[1] + ...
-        self.__objective.vars = []
-        self.__eq_constraints = {}  # var = value
-        self.__ge_constraints = {}  # var >= value
-        self.__le_constraints = {}  # var <= value
-
-    def print_output(self):
-        print("Objective:")
-        func = "minimize"
-        if self.__objective.is_max:
-            func = "maximize"
-        print("  " + func + " " + " + ".join(self.__objective.vars))
-        print("Constraints:")
-        for var, val in self.__eq_constraints.items():
-            print("  " + var + " = " + str(val))
-        for var, val in self.__ge_constraints.items():
-            print("  " + var + " >= " + str(val))
-        for var, val in self.__le_constraints.items():
-            print("  " + var + " <= " + str(val))
-
     def test(self, test_str):
-        self.reset()
+        self.reset_intermidiates()
+        self.__query = Query()
         try:
             results = self.__query_syntax.parseString(test_str, parseAll=True)
         except pp.ParseException as pe:
@@ -216,5 +206,19 @@ class QueryParser:
         else:
             print("\"" + test_str + "\" ==> parsing succeeded:\n",
                   results, "\n")
-            self.print_output()
+            print(self.__query)
             print()
+
+    def parse(self, raw_query):
+        self.reset_intermidiates()
+        self.__query = Query()
+        try:
+            results = self.__query_syntax.parseString(raw_query, parseAll=True)
+        except pp.ParseException as pe:
+            raise QueryParseException(
+                "\"" + raw_query + "\" ==> failed parse:\n" + (pe.loc+1)*" " +
+                "^\n" + str(pe))
+        else:
+            print("\"" + raw_query + "\" ==> parsing succeeded:\n",
+                  results, "\n")
+            return self.__query
