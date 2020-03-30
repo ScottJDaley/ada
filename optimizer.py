@@ -154,6 +154,98 @@ class Optimizer:
 
         print("Finished creating optimizer")
 
+    def enable_related_recipes(self, query, prob):
+        # Find inputs and outputs
+        inputs = []
+        outputs = []
+
+        for var, coeff in query.objective_coefficients.items():
+            if var not in self.__db.items() and var != POWER:
+                continue
+            if coeff < 0:
+                inputs.append(var)
+            elif coeff >= 0:
+                outputs.append(var)
+
+        def process_constraints(constraints):
+            for var, value in constraints.items():
+                if var not in self.__db.items() and var != POWER:
+                    continue
+                if value < 0:
+                    inputs.append(var)
+                elif value >= 0:
+                    outputs.append(var)
+
+        process_constraints(query.eq_constraints)
+        process_constraints(query.ge_constraints)
+        process_constraints(query.le_constraints)
+
+        enabled_recipes = []
+        enabled_power_recipes = []
+
+        # If there is a path from var to the query_input_var, then add all
+        # connected recipes.
+
+        def check(input_var, var, connected_recipes, chain):
+            # print("Checking if", var, "is connected to", input_var)
+            if var == input_var:
+                print("  Found connection!")
+                print("  " + " -> ".join(reversed(chain)))
+                return True
+            if var.startswith("resource:"):
+                return False
+            if len(self.__db.recipes_for_product(var)) == 0:
+                return False
+            is_var_connected = False
+            for recipe in self.__db.recipes_for_product(var):
+                if recipe.var() in connected_recipes:
+                    continue
+                chain.append(recipe.var())
+                connected_recipes.append(recipe.var())
+                # print("Checking recipe", recipe.var())
+                for ingredient in recipe.ingredients():
+                    chain.append(ingredient)
+                    if check(input_var, ingredient, connected_recipes, chain):
+                        is_var_connected = True
+                    chain.pop()
+                chain.pop()
+            return is_var_connected
+
+        for input_var in inputs:
+            if input_var == POWER:
+                # Nothing to do for power input
+                continue
+            for output_var in outputs:
+                if output_var == POWER:
+                    for power_recipe in self.__db.power_recipes().values():
+                        connected_recipes = []
+                        fuel_var = power_recipe.fuel_item().var()
+                        chain = [fuel_var]
+                        print("\nChecking connection from",
+                              input_var, "to", fuel_var)
+                        if check(input_var, fuel_var, connected_recipes, chain):
+                            enabled_recipes.extend(connected_recipes)
+                            enabled_power_recipes.append(power_recipe.var())
+
+                else:
+                    connected_recipes = []
+                    chain = [output_var]
+                    print("\nChecking connection from",
+                          input_var, "to", output_var)
+                    if check(input_var, output_var, connected_recipes, chain):
+                        enabled_recipes.extend(connected_recipes)
+
+        print(enabled_recipes)
+        print(enabled_power_recipes)
+
+        # Disable any disconnected recipes.
+        for recipe_var in self.__db.recipes():
+            if recipe_var not in enabled_recipes:
+                prob += self.__variables[recipe_var] == 0
+        for power_recipe_var in self.__db.power_recipes():
+            if power_recipe_var not in enabled_power_recipes:
+                prob += self.__variables[power_recipe_var] == 0
+
     async def optimize(self, query):
         print("called optimize() with query:\n", query)
 
@@ -202,10 +294,12 @@ class Optimizer:
                 prob.addConstraint(
                     self.__variables[item.var()] >= 0, item.var())
 
+        self.enable_related_recipes(query, prob)
+
         # Disable power recipes unless the query specifies something about power
-        if "power" not in query_vars:
-            for power_recipe_var in self.__db.power_recipes():
-                prob += self.__variables[power_recipe_var] == 0
+        # if "power" not in query_vars:
+        #     for power_recipe_var in self.__db.power_recipes():
+        #         prob += self.__variables[power_recipe_var] == 0
 
         # Disable geothermal generators since they are "free" energy.
         if "generator:geo-thermal-generator" not in query_vars:
