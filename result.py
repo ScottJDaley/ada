@@ -93,6 +93,22 @@ class Result:
     def has_solution(self):
         return self.__status is pulp.LpStatusOptimal and self.__has_non_zero_var()
 
+    def __power_viz_label(self, output, net):
+        color = "moccasin" if net < 0 else "lightblue"
+        out = '<'
+        out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+        if output > 0:
+            out += '<TR>'
+            out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Power Output</TD>'
+            out += '<TD>' + str(round(abs(output), 2)) + ' MW</TD>'
+            out += '</TR>'
+        out += '<TR>'
+        out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Net Power</TD>'
+        out += '<TD>' + str(round(abs(net), 2)) + ' MW</TD>'
+        out += '</TR>'
+        out += '</TABLE>>'
+        return out
+
     def generate_graph_viz(self, filename):
         s = Digraph('structs', format='png', filename=filename,
                     node_attr={'shape': 'record'})
@@ -128,6 +144,15 @@ class Result:
                 product_amount = recipe_amount * product.minute_rate()
                 add_to_target(item_var, sources,
                               recipe.viz_name(), product_amount)
+        # power
+        power_output = 0
+        net_power = 0
+        if self.__has_value("power"):
+            net_power = self.__get_value("power")
+
+        def get_power_edge_label(power_production):
+            return str(round(power_production, 2)) + ' MW'
+
         # power recipes
         self.__add_nodes(s, self.__db.power_recipes().values())
         for power_recipe in self.__db.power_recipes().values():
@@ -138,11 +163,14 @@ class Result:
                 power_recipe.var()) * power_recipe.fuel_minute_rate()
             add_to_target(fuel_item.var(), sinks,
                           power_recipe.viz_name(), fuel_amount)
-        # power
-        net_power = 0
-        if self.__has_value("power"):
-            net_power = self.__get_value("power")
-        s.node("power", str(net_power) + " MW Net Power")
+            power_production = self.__get_value(
+                power_recipe.var()) * power_recipe.power_production()
+            power_output += power_production
+            s.edge(power_recipe.viz_name(), "power",
+                   label=get_power_edge_label(power_production))
+
+        s.node("power", self.__power_viz_label(
+            power_output, net_power), shape="plaintext")
 
         def get_edge_label(item, amount):
             return str(round(amount, 2)) + '/m\n' + item
