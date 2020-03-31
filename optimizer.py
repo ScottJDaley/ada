@@ -1,6 +1,5 @@
 import pulp
-from result import Result, ErrorResult
-# from query_parser import QueryParser, ParseException
+from result import Result
 
 POWER = "power"
 UNWEIGHTED_RESOURCES = "unweighted-resources"
@@ -45,7 +44,7 @@ class Optimizer:
             "item:silica:output",
         ]
 
-        self.equalities = []
+        self.__equalities = []
 
         # For each item, create an equality for all inputs and outputs
         # For items:
@@ -70,7 +69,7 @@ class Optimizer:
                     power_recipe.fuel_minute_rate()
             var_coeff[self.__variables[item.var()]] = -1
             # var_coeff[self.__variables[item.output().var()]] = -1
-            self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+            self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
         # For each type of crafter, create an equality for all recipes that require it
         for crafter_var in self.__db.crafters():
@@ -79,7 +78,7 @@ class Optimizer:
                 if recipe.crafter().var() == crafter_var:
                     var_coeff[self.__variables[recipe_var]] = 1
             var_coeff[self.__variables[crafter_var]] = -1
-            self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+            self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
         # For each type of generator, create an equality for power recipes that require it
         for generator_var in self.__db.generators():
@@ -88,7 +87,7 @@ class Optimizer:
                 if power_recipe.generator().var() == generator_var:
                     var_coeff[self.__variables[power_recipe_var]] = 1
             var_coeff[self.__variables[generator_var]] = -1
-            self.equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
+            self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
         # Create a single power equality for all recipes and generators
         power_coeff = {}
@@ -99,7 +98,7 @@ class Optimizer:
             power_coeff[self.__variables[recipe_var]] = - \
                 recipe.crafter().power_consumption()
         power_coeff[self.__variables["power"]] = -1
-        self.equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
+        self.__equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
         unweighted_resources = {
             self.__variables["resource:water"]: 0,
@@ -115,7 +114,7 @@ class Optimizer:
             self.__variables["resource:sulfur"]: 1,
             self.__variables[UNWEIGHTED_RESOURCES]: -1,
         }
-        self.equalities.append(
+        self.__equalities.append(
             pulp.LpAffineExpression(unweighted_resources) == 0)
         # Proportional to amount of resource on map
         weighted_resources = {
@@ -132,7 +131,7 @@ class Optimizer:
             self.__variables["resource:sulfur"]: 13.33,
             self.__variables[WEIGHTED_RESOURCES]: -1,
         }
-        self.equalities.append(
+        self.__equalities.append(
             pulp.LpAffineExpression(weighted_resources) == 0)
         # Square root of weighted amounts above
         mean_weighted_resources = {
@@ -149,7 +148,7 @@ class Optimizer:
             self.__variables["resource:sulfur"]: 3.65,
             self.__variables[MEAN_WEIGHTED_RESOURCES]: -1,
         }
-        self.equalities.append(
+        self.__equalities.append(
             pulp.LpAffineExpression(mean_weighted_resources) == 0)
 
         print("Finished creating optimizer")
@@ -160,6 +159,10 @@ class Optimizer:
         outputs = []
 
         for var, coeff in query.objective_coefficients.items():
+            if var in [UNWEIGHTED_RESOURCES,
+                       WEIGHTED_RESOURCES,
+                       MEAN_WEIGHTED_RESOURCES]:
+                return
             if var not in self.__db.items() and var != POWER:
                 continue
             if coeff < 0:
@@ -186,11 +189,11 @@ class Optimizer:
         # If there is a path from var to the query_input_var, then add all
         # connected recipes.
 
-        def check(input_var, var, connected_recipes, chain):
+        def check(input_var, var, connected_recipes, stack):
             # print("Checking if", var, "is connected to", input_var)
             if var == input_var:
                 print("  Found connection!")
-                print("  " + " -> ".join(reversed(chain)))
+                print("  " + " -> ".join(reversed(stack)))
                 return True
             if var.startswith("resource:"):
                 return False
@@ -200,15 +203,15 @@ class Optimizer:
             for recipe in self.__db.recipes_for_product(var):
                 if recipe.var() in connected_recipes:
                     continue
-                chain.append(recipe.var())
+                stack.append(recipe.var())
                 connected_recipes.append(recipe.var())
                 # print("Checking recipe", recipe.var())
                 for ingredient in recipe.ingredients():
-                    chain.append(ingredient)
-                    if check(input_var, ingredient, connected_recipes, chain):
+                    stack.append(ingredient)
+                    if check(input_var, ingredient, connected_recipes, stack):
                         is_var_connected = True
-                    chain.pop()
-                chain.pop()
+                    stack.pop()
+                stack.pop()
             return is_var_connected
 
         for input_var in inputs:
@@ -220,19 +223,19 @@ class Optimizer:
                     for power_recipe in self.__db.power_recipes().values():
                         connected_recipes = []
                         fuel_var = power_recipe.fuel_item().var()
-                        chain = [fuel_var]
+                        stack = [fuel_var]
                         print("\nChecking connection from",
                               input_var, "to", fuel_var)
-                        if check(input_var, fuel_var, connected_recipes, chain):
+                        if check(input_var, fuel_var, connected_recipes, stack):
                             enabled_recipes.extend(connected_recipes)
                             enabled_power_recipes.append(power_recipe.var())
 
                 else:
                     connected_recipes = []
-                    chain = [output_var]
+                    stack = [output_var]
                     print("\nChecking connection from",
                           input_var, "to", output_var)
-                    if check(input_var, output_var, connected_recipes, chain):
+                    if check(input_var, output_var, connected_recipes, stack):
                         enabled_recipes.extend(connected_recipes)
 
         print(enabled_recipes)
@@ -247,7 +250,7 @@ class Optimizer:
                 prob += self.__variables[power_recipe_var] == 0
 
     async def optimize(self, query):
-        print("called optimize() with query:\n", query)
+        print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
         if query.maximize_objective:
@@ -255,8 +258,7 @@ class Optimizer:
         else:
             prob = pulp.LpProblem('min-problem', pulp.LpMinimize)
 
-        query_vars = []
-        query_vars.extend(query.objective_coefficients.keys())
+        query_vars = query.query_vars()
 
         prob += pulp.LpAffineExpression([(self.__variables[var], coeff)
                                          for var, coeff in query.objective_coefficients.items()])
@@ -267,20 +269,17 @@ class Optimizer:
 
         for var, bound in query.eq_constraints.items():
             prob += self.__variables[var] == bound
-            query_vars.append(var)
         for var, bound in query.ge_constraints.items():
             prob += self.__variables[var] >= bound
-            query_vars.append(var)
         for var, bound in query.le_constraints.items():
             prob += self.__variables[var] <= bound
-            query_vars.append(var)
 
         # Display the problem before all recipes are added
         print(prob)
         print(query_vars)
 
         # Add constraints for all item, crafter, and power equalities
-        for exp in self.equalities:
+        for exp in self.__equalities:
             prob += exp
 
          # Add item constraints
@@ -288,11 +287,44 @@ class Optimizer:
             if item.var() in query_vars:
                 continue
             if item.is_resource():
-                prob.addConstraint(
-                    self.__variables[item.var()] <= 0, item.var())
+                if query.strict_inputs:
+                    prob.addConstraint(
+                        self.__variables[item.var()] == 0, item.var())
+                else:
+                    prob.addConstraint(
+                        self.__variables[item.var()] <= 0, item.var())
             else:
+                if query.strict_outputs:
+                    prob.addConstraint(
+                        self.__variables[item.var()] == 0, item.var())
+                else:
+                    prob.addConstraint(
+                        self.__variables[item.var()] >= 0, item.var())
+
+        if query.strict_crafters:
+            for crafter_var in self.__db.crafters():
+                if crafter_var in query_vars:
+                    continue
                 prob.addConstraint(
-                    self.__variables[item.var()] >= 0, item.var())
+                    self.__variables[crafter_var] == 0, crafter_var)
+        if query.strict_generators:
+            for generator_var in self.__db.generators():
+                if generator_var in query_vars:
+                    continue
+                prob.addConstraint(
+                    self.__variables[generator_var] == 0, generator_var)
+        if query.strict_recipes:
+            for recipe_var in self.__db.recipes():
+                if recipe_var in query_vars:
+                    continue
+                prob.addConstraint(
+                    self.__variables[recipe_var] == 0, recipe_var)
+        if query.strict_power_recipes:
+            for power_recipe_var in self.__db.power_recipes():
+                if power_recipe_var in query_vars:
+                    continue
+                prob.addConstraint(
+                    self.__variables[power_recipe_var] == 0, power_recipe_var)
 
         self.enable_related_recipes(query, prob)
 
@@ -319,159 +351,5 @@ class Optimizer:
         # Solve
         status = prob.solve()
         result = Result(self.__db, self.__variables, prob, status)
-
-        return result
-
-    async def optimize_old(self, request_input_fn, max, *args):
-        # Parse input
-        # {item} where {item} {=|<=|>=} {number} and ...
-        match_groups = [
-            '^power$',
-            '^resource:.*:input$',
-            '^resource:.*:output$',
-            '^item:.*:output$',
-            '^item:.*:input$',
-            '^.*$',
-        ]
-        try:
-            parser = QueryParser(
-                variables=self.__variables,
-                return_all_matches=False,
-                match_groups=match_groups)
-            objective, constraints, query_vars = await parser.parse_optimize_query(request_input_fn, *args)
-        except ParseException as err:
-            return ErrorResult(err.msg)
-
-        for query_var in query_vars:
-            print("query var:", query_var)
-        for item, expr in constraints.items():
-            print("constraint:", item, expr[0], expr[1])
-
-        # Ojective: to maximize the production of on an item given the constraints.
-        if max:
-            prob = pulp.LpProblem('max-problem', pulp.LpMaximize)
-        else:
-            prob = pulp.LpProblem('min-problem', pulp.LpMinimize)
-
-        if objective:
-            # TODO: Support more flexible objective
-            print("OBJECTIVE:", objective)
-            print()
-            prob += pulp.LpAffineExpression(objective)
-        else:
-            return ErrorResult("Must have objective")
-
-        # TODO: Remove this
-        normalized_input = ["NORMALIZED INPUT:"]
-        objective_exp = pulp.LpAffineExpression(objective)
-        if max:
-            normalized_input.append("max " + str(objective_exp) + " where:")
-        else:
-            normalized_input.append("min " + str(objective_exp))
-        for item, expr in constraints.items():
-            normalized_input.append(
-                "  " + item + " " + expr[0] + " " + str(expr[1]))
-        print('\n'.join(normalized_input))
-
-        # Add constraints for all item, crafter, and power equalities
-        for exp in self.equalities:
-            prob += exp
-
-        # Add item constraints
-        for item in self.__db.items().values():
-            # Don't require any other inputs
-            if item.input().var() not in query_vars:
-                if item.is_resource():
-                    prob.addConstraint(
-                        self.__variables[item.input().var()] >= 0, item.input().var())
-                else:
-                    prob.addConstraint(
-                        self.__variables[item.input().var()] == 0, item.input().var())
-            # Eliminate unneccessary byproducts
-            if item.output().var() not in query_vars:
-                # if item in self.__byproducts:
-                #     prob += self.__variables[item.input().var()] >= 0
-                # else:
-                #     prob += self.__variables[item.output().var()] == 0
-                prob.addConstraint(
-                    self.__variables[item.output().var()] == 0, item.output().var())
-
-        # Disable power recipes unless the query specifies something about power
-        if "power" not in query_vars:
-            for power_recipe_var in self.__db.power_recipes():
-                prob += self.__variables[power_recipe_var] == 0
-
-        # Disable geothermal generators since they are "free" energy.
-        if "generator:geo-thermal-generator" not in query_vars:
-            prob += self.__variables["generator:geo-thermal-generator"] == 0
-
-        # Disable biomasss burners since they cannot be automated.
-        if "generator:biomass-burner" not in query_vars:
-            prob += self.__variables["generator:biomass-burner"] == 0
-
-        # Add flexible constraint for resources
-        # for resource_var, multiplier in self.weighted_resources.items():
-        #     resource = resource_var.name
-        #     if resource in constraints or resource == max_item:
-        #         continue
-        #     constraint = pulp.LpConstraint(e=resource_var, name=resource, sense=pulp.LpConstraintLE, rhs=0)
-        #     penalty = multiplier
-        #     elastic_prob = constraint.makeElasticSubProblem(penalty=penalty, proportionFreeBound=0)
-        #     prob.extend(elastic_prob)
-
-        # Add flexible constraint for byproducts
-        # for byproduct in self.__byproducts:
-        #     if byproduct in query_vars:
-        #         continue
-        #     constraint = pulp.LpConstraint(e=self.__variables[byproduct], name=byproduct, sense=pulp.LpConstraintLE, rhs=0)
-        #     penalty = -1000
-        #     elastic_prob = constraint.makeElasticSubProblem(penalty=penalty, proportionFreeBound=0)
-        #     prob.extend(elastic_prob)
-
-        # Add provided contraints
-        for item, expr in constraints.items():
-            op = expr[0]
-            bound = expr[1]
-            if op == "=":
-                prob += self.__variables[item] == bound
-            elif op == ">=":
-                prob += self.__variables[item] >= bound
-            else:  # op == "<="
-                prob += self.__variables[item] <= bound
-
-        # Display the problem
-        # print(prob)
-
-        # Solve
-        status = prob.solve()
-        result = Result(self.__db, self.__variables, prob, status)
-
-        if result.has_solution():
-            return result
-
-        # Try again, this time allowing byproducts
-        # print("Trying again, this time allowing byproducts")
-        prob.noOverlap = False
-        # for byproduct in self.__byproducts:
-        #     if byproduct in query_vars:
-        #         continue
-        #     print("Allowing byproduct", byproduct)
-        #     prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)
-        possible_byproducts = [
-            byproduct for byproduct in self.__byproducts if byproduct not in query_vars]
-        allowed_byproducts = await parser.pick_byproducts(request_input_fn, possible_byproducts)
-        for byproduct in allowed_byproducts:
-            prob.addConstraint(self.__variables[byproduct] >= 0, byproduct)
-        status = prob.solve()
-        result = Result(self.__db, self.__variables, prob, status)
-
-        # TODO: This doesn't work because a constraint of x >= 0 doesn't
-        # override a previous constraint of x == 0.
-        #
-        # if not found_non_zero_var:
-        #     print("Problem was too constrained, allowing byproducts")
-        #     for byproduct in self.__byproducts:
-        #         prob += self.__variables[byproduct] >= 0
-        #     status = prob.solve()
 
         return result

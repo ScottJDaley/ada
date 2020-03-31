@@ -61,6 +61,7 @@ class QueryParser:
         resource_expr = self.get_var_expr(
             [item for item in db.items().values() if item.is_resource()])
         recipe_expr = self.get_var_expr(db.recipes().values())
+        power_recipe_expr = self.get_var_expr(db.power_recipes().values())
         crafter_expr = self.get_var_expr(db.crafters().values())
         generator_expr = self.get_var_expr(db.generators().values())
 
@@ -70,9 +71,9 @@ class QueryParser:
         # TODO: Consider moving building expressions to inputs instead so that a
         # value can be used. Or do both.
         include_var = alternate_recipes_kw | byproducts_kw | recipe_expr | \
-            crafter_expr | generator_expr
+            power_recipe_expr | crafter_expr | generator_expr
         exclude_var = alternate_recipes_kw | byproducts_kw | recipe_expr | \
-            crafter_expr | generator_expr
+            power_recipe_expr | crafter_expr | generator_expr
 
         include_value_expr = (only_kw | no_kw).setParseAction(self.handle_value)
 
@@ -115,17 +116,17 @@ class QueryParser:
     def push_number_value(self, toks):
         self.__last_value = toks[0]
 
-    def push_value(self, value, toks):
+    def push_value(self, value, _):
         self.__last_value = value
 
-    def set_is_only(self, toks):
+    def set_is_only(self, _):
         self.__is_only = True
 
-    def handle_value(self, toks):
+    def handle_value(self, _):
         if not self.__last_value:
             self.__last_value = "_"
 
-    def push_var(self, var, toks):
+    def push_var(self, var, _):
         self.__last_vars.append(var)
         print(var)
 
@@ -139,8 +140,7 @@ class QueryParser:
                 partial(self.push_var, var.var())))
         return pp.Or(var_names)
 
-    def output_action(self, toks):
-        print("output:", toks)
+    def output_action(self, _):
         if self.__last_value == "?":
             # Maximize the outputs
             self.__query.maximize_objective = True
@@ -152,10 +152,11 @@ class QueryParser:
         else:
             for var in self.__last_vars:
                 self.__query.eq_constraints[var] = int(self.__last_value)
+        if self.__is_only:
+            self.__query.strict_outputs = True
         self.reset_intermidiates()
 
-    def input_action(self, toks):
-        print("input:", toks)
+    def input_action(self, _):
         if self.__last_value == "?":
             # Minimize the inputs
             self.__query.maximize_objective = False
@@ -167,20 +168,30 @@ class QueryParser:
         else:
             for var in self.__last_vars:
                 self.__query.eq_constraints[var] = -int(self.__last_value)
+        if self.__is_only:
+            self.__query.strict_inputs = True
         self.reset_intermidiates()
 
-    def include_action(self, toks):
-        print("include:", toks)
+    def include_action(self, _):
         if self.__last_value == "_":
             for var in self.__last_vars:
                 self.__query.ge_constraints[var] = 0
         else:
             for var in self.__last_vars:
                 self.__query.eq_constraints[var] = self.__last_value
+        if self.__is_only:
+            for var in self.__last_vars:
+                if var.startswith("crafter:"):
+                    self.__query.strict_crafters = True
+                if var.startswith("generator:"):
+                    self.__query.strict_generators = True
+                if var.startswith("recipe:"):
+                    self.__query.strict_recipes = True
+                if var.startswith("power-recipe:"):
+                    self.__query.strict_power_recipes = True
         self.reset_intermidiates()
 
-    def exclude_action(self, toks):
-        print("exclude:", toks)
+    def exclude_action(self, _):
         if self.__last_value == "_":
             for var in self.__last_vars:
                 self.__query.le_constraints[var] = 0
@@ -199,10 +210,10 @@ class QueryParser:
         self.__query = Query()
         try:
             results = self.__query_syntax.parseString(test_str, parseAll=True)
-        except pp.ParseException as pe:
+        except pp.ParseException as exception:
             print("\"" + test_str + "\" ==> failed parse:")
-            print((pe.loc+1)*" " + "^")
-            print(str(pe), "\n")
+            print((exception.loc+1)*" " + "^")
+            print(str(exception), "\n")
         else:
             print("\"" + test_str + "\" ==> parsing succeeded:\n",
                   results, "\n")

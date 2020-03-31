@@ -7,7 +7,7 @@ async def main():
 
     while True:
         raw_query = input()
-        if raw_query == "exit":
+        if raw_query == "exit" or raw_query == "quit":
             return
         result = await ada.do(raw_query)
         if result.has_solution():
