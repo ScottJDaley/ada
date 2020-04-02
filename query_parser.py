@@ -2,7 +2,7 @@ import pyparsing as pp
 from pyparsing import pyparsing_common as ppc
 import inflect
 from functools import partial
-from query import Query
+from query import OptimizationQuery, InfoQuery
 
 p = inflect.engine()
 
@@ -18,6 +18,7 @@ class QueryParseException(Exception):
 class QueryParser:
 
     def __init__(self, db):
+        self.__db = db
 
         # Keywords
         output_kw = pp.Keyword("produce") | pp.Keyword(
@@ -49,6 +50,9 @@ class QueryParser:
             partial(self.push_var, "alternate-recipes"))
         byproducts_kw = pp.Keyword("byproducts").setParseAction(
             partial(self.push_var, "byproducts"))
+        recipe_kw = pp.CaselessKeyword("recipe")
+        recipes_kw = pp.CaselessKeyword("recipes")
+        for_kw = pp.CaselessKeyword("for")
 
         # end_of_expr = output_kw | input_kw | include_kw | exclude_kw | and_kw
 
@@ -100,8 +104,34 @@ class QueryParser:
         includes_expr = include_kw + includes
         excludes_expr = exclude_kw + excludes
 
-        self.__query_syntax = outputs_expr + pp.Optional(inputs_expr) + \
+        optimization_query = outputs_expr + pp.Optional(inputs_expr) + \
             pp.Optional(includes_expr) + pp.Optional(excludes_expr)
+
+        item_query = (resource_expr | item_expr).setParseAction(
+            self.push_info_vars)
+        crafter_query = crafter_expr.setParseAction(self.push_info_vars)
+        generator_query = generator_expr.setParseAction(self.push_info_vars)
+
+        recipes_for_query = ((item_expr + recipes_kw) | (item_expr + recipe_kw)
+                             | (recipes_kw + for_kw + item_expr)
+                             | (recipe_kw + for_kw + item_expr)).setParseAction(self.recipes_for_action)
+        recipes_from_query = (recipes_kw + input_kw +
+                              item_expr).setParseAction(self.recipes_from_action)
+        single_recipe_query = recipe_expr.setParseAction(self.push_info_vars)
+        crafter_recipes_query = (
+            crafter_expr + recipes_kw).setParseAction(self.crafter_recipes)
+        generator_recipes_query = (
+            generator_expr + recipes_kw).setParseAction(self.generator_recipes)
+
+        recipe_query = (recipes_for_query | recipes_from_query |
+                        single_recipe_query | crafter_recipes_query |
+                        generator_recipes_query).setParseAction()
+
+        info_query = recipe_query | item_query | crafter_query | generator_query
+
+        self.__query_syntax = optimization_query | info_query
+
+        self.__is_optimization_query = output_kw
 
         self.__last_vars = []
         self.__last_value = None
@@ -202,12 +232,39 @@ class QueryParser:
             self.__query.eq_constraints[var] = 0
         self.reset_intermidiates()
 
+    def push_info_vars(self, toks):
+        print("push_info_vars", toks, self.__last_vars)
+        self.__query.vars.extend(self.__last_vars)
+
+    def recipes_for_action(self, _):
+        for var in self.__last_vars:
+            for recipe in self.__db.recipes_for_product(var):
+                self.__query.vars.append(recipe.var())
+
+    def recipes_from_action(self, _):
+        for var in self.__last_vars:
+            for recipe in self.__db.recipes_for_ingredient(var):
+                self.__query.vars.append(recipe.var())
+
+    def crafter_recipes(self, toks):
+        print("crafter recipes", toks, self.__last_vars)
+        for var in self.__last_vars:
+            for recipe in self.__db.recipes().values():
+                if recipe.crafter().var() == var:
+                    self.__query.vars.append(recipe.var())
+
+    def generator_recipes(self, _):
+        for var in self.__last_vars:
+            for power_recipe in self.__db.power_recipes().values():
+                if power_recipe.generator().var() == var:
+                    self.__query.vars.append(power_recipe.var())
+
     def grammar(self):
         return self.__query_syntax
 
     def test(self, test_str):
         self.reset_intermidiates()
-        self.__query = Query()
+        self.__query = OptimizationQuery()
         try:
             results = self.__query_syntax.parseString(test_str, parseAll=True)
         except pp.ParseException as exception:
@@ -222,7 +279,18 @@ class QueryParser:
 
     def parse(self, raw_query):
         self.reset_intermidiates()
-        self.__query = Query()
+        # TODO: Use parse actions and supress() to convert and normalize input.
+        # Let parser return the AST and derive the query from that instead of
+        # building it using parse actions
+        try:
+            self.__is_optimization_query.parseString(raw_query, parseAll=False)
+        except pp.ParseException as pe:
+            self.__query = InfoQuery()
+            print("Found info query")
+        else:
+            self.__query = OptimizationQuery()
+            print("Found optimization query")
+
         try:
             results = self.__query_syntax.parseString(raw_query, parseAll=True)
         except pp.ParseException as pe:

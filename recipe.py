@@ -17,7 +17,8 @@ class Recipe:
             return 60 * self.amount() / self.__time
 
         def human_readable_name(self):
-            return self.item().human_readable_name() + ": " + str(self.amount()) + " (" + str(self.minute_rate()) + "/m)"
+            return self.item().human_readable_name() + ": " + \
+                str(self.amount()) + " (" + str(self.minute_rate()) + "/m)"
 
     def __init__(self, data, db):
         self.__data = data

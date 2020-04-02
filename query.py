@@ -1,6 +1,10 @@
 
+class InfoQuery:
+    def __init__(self):
+        self.vars = []
 
-class Query:
+
+class OptimizationQuery:
     def __init__(self):
         self.maximize_objective = True
         self.objective_coefficients = {}
