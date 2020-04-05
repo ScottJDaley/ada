@@ -16,7 +16,6 @@ class Ada:
         try:
             query = self.__parser.parse(raw_query)
         except QueryParseException as e:
-            print(e)
             return ErrorResult(e.msg)
 
         if isinstance(query, OptimizationQuery):

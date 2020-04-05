@@ -169,19 +169,27 @@ class Optimizer:
                 inputs.append(var)
             elif coeff >= 0:
                 outputs.append(var)
-
-        def process_constraints(constraints):
-            for var, value in constraints.items():
-                if var not in self.__db.items() and var != POWER:
-                    continue
-                if value < 0:
-                    inputs.append(var)
-                elif value >= 0:
-                    outputs.append(var)
-
-        process_constraints(query.eq_constraints)
-        process_constraints(query.ge_constraints)
-        process_constraints(query.le_constraints)
+        for var, value in query.eq_constraints.items():
+            if var not in self.__db.items() and var != POWER:
+                continue
+            if value < 0:
+                inputs.append(var)
+            elif value > 0:
+                outputs.append(var)
+        for var, value in query.le_constraints.items():
+            if var not in self.__db.items() and var != POWER:
+                continue
+            if value <= 0:
+                inputs.append(var)
+            elif value > 0:
+                outputs.append(var)
+        for var, value in query.ge_constraints.items():
+            if var not in self.__db.items() and var != POWER:
+                continue
+            if value < 0:
+                inputs.append(var)
+            elif value >= 0:
+                outputs.append(var)
 
         enabled_recipes = []
         enabled_power_recipes = []

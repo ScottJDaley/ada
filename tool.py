@@ -6,7 +6,7 @@ import sys
 async def main():
     ada = Ada()
 
-    if len(sys.argv) > 0:
+    if len(sys.argv) > 1:
         print(sys.argv)
         result = await ada.do(" ".join(sys.argv[1:]))
         print(result)

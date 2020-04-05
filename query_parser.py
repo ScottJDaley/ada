@@ -14,6 +14,7 @@ from pyparsing import (
     Suppress,
     StringEnd,
     White,
+    Combine,
 )
 # TODO: Remove this
 import pyparsing as pp
@@ -21,6 +22,7 @@ from pyparsing import pyparsing_common as ppc
 import inflect
 from functools import partial
 from query import OptimizationQuery, InfoQuery
+import re
 
 
 PRODUCE = CaselessKeyword('produce')
@@ -91,32 +93,38 @@ class QueryParser:
 
     entity_expr_end = (output_kw | input_kw | exclude_kw |
                        and_kw | or_kw | RECIPE | RECIPES | StringEnd())
-    entity_expr = Suppress(Optional(White())) + SkipTo(entity_expr_end)
+    entity_expr = Combine(SkipTo(entity_expr_end))("entity")
 
-    output_var = (POWER | TICKETS | entity_expr)("var")
-    input_var = (POWER | SPACE | unweighted_resources_kw |
-                 weighted_resources_kw | entity_expr)("var")
-    exclude_var = (alternate_recipes_kw | BYPRODUCTS | entity_expr)("var")
+    # TODO: Consider allowing all literals in grammar and then enforce it during
+    # validation step.
+    output_literal = (POWER | TICKETS)("literal")
+    output_var = output_literal | entity_expr
+
+    input_literal = (
+        POWER | SPACE | unweighted_resources_kw | weighted_resources_kw )("literal")
+    input_var = input_literal | entity_expr
+
+    exclude_literal = (alternate_recipes_kw | BYPRODUCTS)("literal")
+    exclude_var = exclude_literal | entity_expr
 
     objective_value = QUESTION_MARK
     any_value = Optional(ANY | UNDERSCORE).setParseAction(replaceWith('_'))
     num_value = pyparsing_common.integer
     value = (objective_value | num_value | any_value)("value")
 
-    output_expr = Group(value + output_var)("output*")
-    input_expr = Group(value + input_var)("input*")
-    exclude_expr = exclude_var("exclude*")
-
     strict = Optional(ONLY)("strict").setParseAction(lambda t: len(t) != 0)
 
-    outputs = Group(
-        strict + output_expr + ZeroOrMore(Suppress(and_kw) + output_expr)
+    output_expr = Group(strict + value + output_var)
+    input_expr = Group(strict + value + input_var)
+    exclude_expr = Group(exclude_var)
+
+    outputs = (
+        output_expr + ZeroOrMore(Suppress(and_kw) + output_expr)
     )
-    inputs = Group(
-        strict + input_expr +
-        ZeroOrMore(Suppress(and_kw) + input_expr)
+    inputs = (
+        input_expr + ZeroOrMore(Suppress(and_kw) + input_expr)
     )
-    excludes = Group(
+    excludes = (
         exclude_expr + ZeroOrMore(Suppress(or_kw) + exclude_expr)
     )
 
@@ -146,10 +154,129 @@ class QueryParser:
     query = optimization_query | recipe_query | entity_query
 
     def __init__(self, db):
-        self.__db = db
+        self._db = db
+
+    @staticmethod
+    def _check_var(expr, var):
+        # Support the following:
+        # 1. singular human-readable name
+        # 2. plural human-readable name
+        # 3. var name
+        # 4. regex on human-readable name
+        # 5. regex on var name
+        expr = expr.strip().lower()
+        expr_parts = re.split(r'[\s\-\_:]', expr)
+
+        singular = var.human_readable_name().lower()
+        singular_parts = re.split(r'[\s:]', singular)
+        if expr_parts == singular_parts:
+            return True
+        plural = inflect.engine().plural(singular)
+        plural_parts = re.split(r'[\s:]', plural)
+        if expr_parts == plural_parts:
+            return True
+
+        var_parts = re.split(r'[:\-]', var.var())
+        if expr_parts == var_parts:
+            return True
+        # Don't require the user to specify the entity type.
+        if expr_parts == var_parts[1:]:
+            return True
+
+        if re.fullmatch(expr, singular):
+            return True
+        if re.fullmatch(expr, plural):
+            return True
+        if re.fullmatch(expr, var.var()):
+            return True
+        return False
+        
+
+    def _get_matches(self, expr, allowed_types):
+        print("get_matches '" + expr + "'", allowed_types)
+        allowed_vars = set()
+        if "resource" in allowed_types:
+            allowed_vars.update(
+                [item for item in self._db.items().values() if item.is_resource()])
+        if "item" in allowed_types:
+            allowed_vars.update(
+                [item for item in self._db.items().values() if not item.is_resource()])
+        if "recipe" in allowed_types:
+            allowed_vars.update(self._db.recipes().values())
+        if "power-recipe" in allowed_types:
+            allowed_vars.update(self._db.power_recipes().values())
+        if "crafter" in allowed_types:
+            allowed_vars.update(self._db.crafters().values())
+        if "generator" in allowed_types:
+            allowed_vars.update(self._db.generators().values())
+        return [var.var() for var in allowed_vars if QueryParser._check_var(expr, var)]
+
 
     def _build_optimization_query(self, parse_results):
         print("_build_optimization_query()")
+        outputs = parse_results.get("outputs")
+        inputs = parse_results.get("inputs")
+        excludes = parse_results.get("excludes")
+        if not outputs:
+            raise QueryParseException("No outputs specified in optimization query.")
+        if not inputs:
+            # TODO: Default to ? unweighted-resources for input
+            raise QueryParseException("No inputs specified in optimization query.")
+        
+        query = OptimizationQuery()
+        found_objective = False
+        for output in outputs:
+            output_vars = []
+            if "literal" in output:
+                output_vars = [output["literal"]]
+            if "entity" in output:
+                output_vars.extend(self._get_matches(output["entity"], ["item"]))
+            value = output["value"]
+            if value == "?":
+                if found_objective:
+                    raise QueryParseException("Only one objective may be specified.")
+                found_objective = True
+                query.maximize_objective = True
+                query.objective_coefficients = {var: 1 for var in output_vars}
+            elif value == "_":
+                query.ge_constraints.update({var: 0 for var in output_vars})
+            else:
+                query.ge_constraints.update({var: value for var in output_vars})
+            if output["strict"]:
+                query.strict_outputs = True
+        for input_ in inputs:
+            input_vars = []
+            if "literal" in input_:
+                input_vars = [input_["literal"]]
+            elif "entity" in input_:
+                input_vars.extend(self._get_matches(
+                    input_["entity"],
+                    ["resource","item", "recipe", "power-recipe", "crafter", "generator"]))
+            value = input_["value"]
+            if value == "?":
+                if found_objective:
+                    raise QueryParseException("Only one objective may be specified.")
+                found_objective = True
+                query.maximize_objective = False
+                query.objective_coefficients = {var: -1 for var in input_vars}
+            elif value == "_":
+                query.le_constraints.update({var: 0 for var in input_vars})
+            else:
+                query.ge_constraints.update({var: -value for var in input_vars})
+            if input_["strict"]:
+                query.strict_inputs = True
+        if excludes:
+            for exclude in excludes:
+                exclude_vars = []
+                if "literal" in exclude:
+                    exclude_vars = exclude["literal"]
+                elif "entity" in exclude:
+                    exclude_vars.extend(self._get_matches(
+                        exclude["entity"],
+                        ["recipe", "power-recipe", "crafter", "generator"]))
+                query.eq_constraints.update({var: 0 for var in exclude_vars})
+
+        return query
 
     def _build_info_query(self, parse_results):
         print("_build_info_query")

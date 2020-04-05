@@ -25,7 +25,13 @@ class OptimizationQuery:
         if self.maximize_objective:
             func = "maximize"
 
-        objective = [str(coeff) + "*" + var for var,
+        def get_str_coeff(coeff):
+            if coeff == 1:
+                return ""
+            if coeff == -1:
+                return "-"
+            return str(coeff) + "*"
+        objective = [get_str_coeff(coeff) + var for var,
                      coeff in self.objective_coefficients.items()]
         out.append("  " + func + " " + " + ".join(objective))
         out.append("Constraints:")

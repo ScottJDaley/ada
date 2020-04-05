@@ -4,4 +4,4 @@ python-dotenv
 graphviz
 bs4
 pyparsing
-inflectE
+inflect
