@@ -1,9 +1,16 @@
 from ada import Ada
 import asyncio
+import sys
 
 
 async def main():
     ada = Ada()
+
+    if len(sys.argv) > 0:
+        print(sys.argv)
+        result = await ada.do(" ".join(sys.argv[1:]))
+        print(result)
+        return
 
     while True:
         raw_query = input()
