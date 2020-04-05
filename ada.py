@@ -24,6 +24,7 @@ class Ada:
                 result.generate_graph_viz('output.gv')
             return result
         elif isinstance(query, InfoQuery):
-            return "Found info query for vars [\n " + "\n ".join(query.vars) + "\n]"
+            print(query.vars)
+            return "Found info query for vars [\n" + str(query) + "\n]"
         else:
             return "Unknown query"

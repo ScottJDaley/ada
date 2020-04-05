@@ -3,6 +3,10 @@ class InfoQuery:
     def __init__(self):
         self.vars = []
 
+    def __str__(self):
+        print(self.vars)
+        return "\n".join([var.human_readable_name() for var in self.vars])
+
 
 class OptimizationQuery:
     def __init__(self):

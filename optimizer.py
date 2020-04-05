@@ -364,7 +364,7 @@ class Optimizer:
             prob += self.__variables["generator:biomass-burner"] == 0
 
         # Display the problem
-        print(prob)
+        # print(prob)
 
         # Write out complete problem to file
         with open('problem.txt', 'w') as f:
