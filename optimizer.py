@@ -5,6 +5,7 @@ POWER = "power"
 UNWEIGHTED_RESOURCES = "unweighted-resources"
 WEIGHTED_RESOURCES = "weighted-resources"
 MEAN_WEIGHTED_RESOURCES = "mean-weighted-resources"
+ALTERNATE_RECIPES = "alternate-recipes"
 
 
 class Optimizer:
@@ -34,6 +35,8 @@ class Optimizer:
             WEIGHTED_RESOURCES)
         self.__variables[MEAN_WEIGHTED_RESOURCES] = pulp.LpVariable(
             MEAN_WEIGHTED_RESOURCES)
+        self.__variables[ALTERNATE_RECIPES] = pulp.LpVariable(
+            ALTERNATE_RECIPES, lowBound=0)
 
         self.__byproducts = [
             "item:fuel:output",
@@ -151,18 +154,29 @@ class Optimizer:
         self.__equalities.append(
             pulp.LpAffineExpression(mean_weighted_resources) == 0)
 
+        alternate_coeffs = {}
+        for recipe in self.__db.recipes().values():
+            if recipe.is_alternate():
+                alternate_coeffs[self.__variables[recipe.var()]] = 1
+        alternate_coeffs[self.__variables[ALTERNATE_RECIPES]] = -1
+        self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
+
         print("Finished creating optimizer")
 
     def enable_related_recipes(self, query, prob):
+        query_vars = query.query_vars()
+        if UNWEIGHTED_RESOURCES in query_vars:
+            return
+        if WEIGHTED_RESOURCES in query_vars:
+            return
+        if MEAN_WEIGHTED_RESOURCES in query_vars:
+            return
+
         # Find inputs and outputs
         inputs = []
         outputs = []
 
         for var, coeff in query.objective_coefficients.items():
-            if var in [UNWEIGHTED_RESOURCES,
-                       WEIGHTED_RESOURCES,
-                       MEAN_WEIGHTED_RESOURCES]:
-                return
             if var not in self.__db.items() and var != POWER:
                 continue
             if coeff < 0:
@@ -350,7 +364,7 @@ class Optimizer:
             prob += self.__variables["generator:biomass-burner"] == 0
 
         # Display the problem
-        # print(prob)
+        print(prob)
 
         # Write out complete problem to file
         with open('problem.txt', 'w') as f:

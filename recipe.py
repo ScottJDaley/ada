@@ -51,8 +51,11 @@ class Recipe:
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += '<TR>'
         out += '<TD COLSPAN="2" BGCOLOR="lightgray">' + \
-            str(round(amount, 2)) + 'x'
-        out += '<BR/>' + self.human_readable_name() + '</TD>'
+            str(round(amount, 2)) + 'x ' + \
+            self.crafter().human_readable_name() + '</TD>'
+        out += '</TR>'
+        out += '<TR>'
+        out += '<TD COLSPAN="2">' + self.human_readable_name() + '</TD>'
         out += '</TR>'
         for ingredient in self.ingredients().values():
             out += '<TR>'
