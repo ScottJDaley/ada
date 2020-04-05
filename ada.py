@@ -15,8 +15,8 @@ class Ada:
         print("calling do() with query:", raw_query)
         try:
             query = self.__parser.parse(raw_query)
-        except QueryParseException as e:
-            return ErrorResult(e.msg)
+        except QueryParseException as parse_exception:
+            return ErrorResult(str(parse_exception))
 
         if isinstance(query, OptimizationQuery):
             result = await self.__opt.optimize(query)
