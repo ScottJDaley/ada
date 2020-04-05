@@ -1,12 +1,11 @@
-import inflect
 import re
+
+import inflect
 from pyparsing import (
     CaselessKeyword,
     Literal,
     Word,
     alphas,
-    NotAny,
-    SkipTo,
     Optional,
     pyparsing_common,
     replaceWith,
@@ -15,14 +14,9 @@ from pyparsing import (
     OneOrMore,
     Suppress,
     StringEnd,
-    White,
     Combine,
-    FollowedBy,
-    restOfLine,
     ParseException,
 )
-from pyparsing import pyparsing_common as ppc
-from functools import partial
 from query import OptimizationQuery, InfoQuery
 
 
