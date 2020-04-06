@@ -50,6 +50,15 @@ class OptimizationResult:
     def __get_value(self, var):
         return self.__vars[var].value()
 
+    def __get_vars(self, objs, check_value=lambda val: True):
+        out = []
+        for obj in objs:
+            var = obj.var()
+            if self.__has_value(var) and check_value(self.__get_value(var)):
+                out.append(obj.human_readable_name() +
+                           ": " + str(self.__get_value(var)))
+        return out
+
     def __get_section(self, title, objs, check_value=lambda val: True):
         found_any = False
         out = []
@@ -102,8 +111,17 @@ class OptimizationResult:
 
     def __solution_embed(self):
         embed = Embed(title="Optimization Query")
-        embed.description = str(self)
-        # embed.add_field(name="Inputs", )
+        embed.description = "description"
+        inputs = self.__get_vars(self.__db.items().values(), check_value=lambda val: val < 0)
+        embed.add_field(name="Inputs", value="\n".join(inputs), inline=True)
+        outputs = self.__get_vars(self.__db.items().values(), check_value=lambda val: val > 0)
+        embed.add_field(name="Outputs", value="\n".join(outputs), inline=True)
+        recipes = self.__get_vars(self.__db.recipes().values())
+        embed.add_field(name="Recipes", value="\n".join(recipes), inline=False)
+        buildings = self.__get_vars(self.__db.crafters().values())
+        buildings.extend(self.__get_vars(self.__db.generators().values()))
+        embed.add_field(name="Buildings", value="\n".join(buildings), inline=True)
+        return embed
 
     def embed(self):
         if self.__status is pulp.LpStatusOptimal:
