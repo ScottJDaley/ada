@@ -183,7 +183,6 @@ class QueryParser:
                 or re.fullmatch(expr, typeless_var))
 
     def _get_matches(self, expr, allowed_types):
-        print("get_matches '" + expr + "'", allowed_types)
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(
@@ -258,7 +257,6 @@ class QueryParser:
             elif value == "_":
                 query.le_constraints.update({var: 0 for var in input_vars})
             else:
-                print(input_vars)
                 query.ge_constraints.update(
                     {var: -value for var in input_vars})
             if input_["strict"]:
@@ -374,8 +372,8 @@ class QueryParser:
                 "\"" + raw_query + "\" ==> failed parse:\n" + (pe.loc+1)*" " +
                 "^\n" + str(pe))
 
-        print("\"" + raw_query + "\" ==> parsing succeeded:\n",
-              results, "\n", results.dump(), "\n")
+        # print("\"" + raw_query + "\" ==> parsing succeeded:\n",
+        #       results, "\n", results.dump(), "\n")
 
         if "optimization" in results:
             return self._parse_optimization_query(results)

@@ -12,7 +12,6 @@ class Ada:
         self.__opt = Optimizer(self.__db)
 
     async def do(self, raw_query):
-        print("calling do() with query:", raw_query)
         try:
             query = self.__parser.parse(raw_query)
         except QueryParseException as parse_exception:
@@ -23,8 +22,6 @@ class Ada:
             if result.has_solution():
                 result.generate_graph_viz('output.gv')
             return result
-        elif isinstance(query, InfoQuery):
-            print(query.vars)
-            return "Found info query for vars [\n" + str(query) + "\n]"
-        else:
-            return "Unknown query"
+        if isinstance(query, InfoQuery):
+            return query
+        return "Unknown query"
