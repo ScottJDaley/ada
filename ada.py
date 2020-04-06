@@ -2,7 +2,7 @@ from db import DB
 from optimizer import Optimizer
 from query import OptimizationQuery, InfoQuery
 from query_parser import QueryParser, QueryParseException
-from result import ErrorResult
+from result import ErrorResult, InfoResult
 
 
 class Ada:
@@ -23,5 +23,5 @@ class Ada:
                 result.generate_graph_viz('output.gv')
             return result
         if isinstance(query, InfoQuery):
-            return query
-        return "Unknown query"
+            return InfoResult(query.vars)
+        return ErrorResult("Unknown query.")

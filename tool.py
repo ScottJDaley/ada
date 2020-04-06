@@ -1,13 +1,33 @@
-from ada import Ada
 import asyncio
 import sys
+import traceback
+
+
+from ada import Ada
+
+DEBUG_PRINTS = False
+
+
+class TracePrints(object):
+    def __init__(self):
+        self.stdout = sys.stdout
+
+    def write(self, s):
+        self.stdout.write("Writing %r\n" % s)
+        traceback.print_stack(file=self.stdout)
+
+    def flush(self):
+        pass
+
+
+if DEBUG_PRINTS:
+    sys.stdout = TracePrints()
 
 
 async def main():
     ada = Ada()
 
     if len(sys.argv) > 1:
-        print(sys.argv)
         result = await ada.do(" ".join(sys.argv[1:]))
         print(result)
         return

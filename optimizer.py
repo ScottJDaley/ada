@@ -1,5 +1,5 @@
 import pulp
-from result import Result
+from result import OptimizationResult
 
 POWER = "power"
 UNWEIGHTED_RESOURCES = "unweighted-resources"
@@ -161,9 +161,7 @@ class Optimizer:
         alternate_coeffs[self.__variables[ALTERNATE_RECIPES]] = -1
         self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
 
-        print("Finished creating optimizer")
-
-    def enable_related_recipes(self, query, prob):
+    def enable_related_recipes(self, query, prob, debug=False):
         query_vars = query.query_vars()
         if UNWEIGHTED_RESOURCES in query_vars:
             return
@@ -214,8 +212,9 @@ class Optimizer:
         def check(input_var, var, connected_recipes, stack):
             # print("Checking if", var, "is connected to", input_var)
             if var == input_var:
-                print("  Found connection!")
-                print("  " + " -> ".join(reversed(stack)))
+                if debug:
+                    print("  Found connection!")
+                    print("  " + " -> ".join(reversed(stack)))
                 return True
             if var.startswith("resource:"):
                 return False
@@ -246,8 +245,9 @@ class Optimizer:
                         connected_recipes = []
                         fuel_var = power_recipe.fuel_item().var()
                         stack = [fuel_var]
-                        print("\nChecking connection from",
-                              input_var, "to", fuel_var)
+                        if debug:
+                            print("\nChecking connection from",
+                                  input_var, "to", fuel_var)
                         if check(input_var, fuel_var, connected_recipes, stack):
                             enabled_recipes.extend(connected_recipes)
                             enabled_power_recipes.append(power_recipe.var())
@@ -260,8 +260,9 @@ class Optimizer:
                     if check(input_var, output_var, connected_recipes, stack):
                         enabled_recipes.extend(connected_recipes)
 
-        print(enabled_recipes)
-        print(enabled_power_recipes)
+        if debug:
+            print(enabled_recipes)
+            print(enabled_power_recipes)
 
         # Disable any disconnected recipes.
         for recipe_var in self.__db.recipes():
@@ -285,10 +286,6 @@ class Optimizer:
         prob += pulp.LpAffineExpression([(self.__variables[var], coeff)
                                          for var, coeff in query.objective_coefficients.items()])
 
-        print("eq:", query.eq_constraints)
-        print("ge:", query.ge_constraints)
-        print("le:", query.le_constraints)
-
         for var, bound in query.eq_constraints.items():
             prob += self.__variables[var] == bound
         for var, bound in query.ge_constraints.items():
@@ -298,7 +295,6 @@ class Optimizer:
 
         # Display the problem before all recipes are added
         print(prob)
-        print(query_vars)
 
         # Add constraints for all item, crafter, and power equalities
         for exp in self.__equalities:
@@ -348,7 +344,7 @@ class Optimizer:
                 prob.addConstraint(
                     self.__variables[power_recipe_var] == 0, power_recipe_var)
 
-        self.enable_related_recipes(query, prob)
+        self.enable_related_recipes(query, prob, debug=False)
 
         # Disable power recipes unless the query specifies something about power
         # if "power" not in query_vars:
@@ -372,6 +368,6 @@ class Optimizer:
 
         # Solve
         status = prob.solve()
-        result = Result(self.__db, self.__variables, prob, status)
+        result = OptimizationResult(self.__db, self.__variables, prob, status)
 
         return result

@@ -1,5 +1,6 @@
 import pulp
 from graphviz import Digraph
+from discord import Embed, File
 
 
 class ErrorResult:
@@ -12,12 +13,35 @@ class ErrorResult:
     def __str__(self):
         return self.__msg
 
+    def embed(self):
+        embed = Embed(title="Error")
+        embed.description = str(self)
+        return embed
 
-class Result:
-    def __init__(self, db, vars, prob, status):
+
+class InfoResult:
+    def __init__(self, vars_):
+        self._vars = vars_
+
+    def __str__(self):
+        if len(self._vars) == 1:
+            return self._vars[0].details()
+        return "\n".join([var.human_readable_name() for var in self._vars])
+
+    def embed(self):
+        if len(self._vars) == 1:
+            return self._vars[0].embed()
+
+        embed = Embed(title="Matches")
+        embed.description = str(self)
+        return embed
+
+
+class OptimizationResult:
+    def __init__(self, db, vars_, prob, status):
         self.__db = db
         self.__prob = prob
-        self.__vars = vars
+        self.__vars = vars_
         self.__status = status
 
     def __has_value(self, var):
@@ -26,13 +50,13 @@ class Result:
     def __get_value(self, var):
         return self.__vars[var].value()
 
-    def __get_section(self, title, objs):
+    def __get_section(self, title, objs, check_value=lambda val: True):
         found_any = False
         out = []
         out.append(title)
         for obj in objs:
             var = obj.var()
-            if self.__has_value(var):
+            if self.__has_value(var) and check_value(self.__get_value(var)):
                 found_any = True
                 out.append(obj.human_readable_name() +
                            ": " + str(self.__get_value(var)))
@@ -45,7 +69,9 @@ class Result:
         out = []
         out.append("=== OPTIMAL SOLUTION FOUND ===\n")
         out.extend(self.__get_section(
-            "INPUT & OUTPUT", self.__db.items().values()))
+            "INPUT", self.__db.items().values(), check_value=lambda val: val < 0))
+        out.extend(self.__get_section(
+            "OUTPUT", self.__db.items().values(), check_value=lambda val: val > 0))
         # out.extend(self.__get_section("INPUT", [item.input() for item in self.__db.items().values()]))
         # out.extend(self.__get_section("OUTPUT", [item.output() for item in self.__db.items().values()]))
         out.extend(self.__get_section("RECIPES", self.__db.recipes().values()))
@@ -72,8 +98,18 @@ class Result:
             return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)"
         if self.__status is pulp.LpStatusUnbounded:
             return "Solution is unbounded, try adding a constraint"
-        else:
-            return self.__string_solution()
+        return self.__string_solution()
+
+    def __solution_embed(self):
+        embed = Embed(title="Optimization Query")
+        embed.description = str(self)
+        # embed.add_field(name="Inputs", )
+
+    def embed(self):
+        if self.__status is pulp.LpStatusOptimal:
+            return self.__solution_embed()
+        embed = Embed(title=str(self))
+        return embed
 
     def __add_nodes(self, s, objs):
         for obj in objs:
@@ -86,7 +122,6 @@ class Result:
     def __has_non_zero_var(self):
         for var in self.__vars:
             if self.__has_value(var):
-                print("Found non zero var:", var)
                 return True
         return False
 

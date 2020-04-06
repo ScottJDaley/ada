@@ -1,3 +1,4 @@
+from discord import Embed
 
 
 class Recipe:
@@ -86,6 +87,17 @@ class Recipe:
             out.append("    " + product.human_readable_name())
         out.append("")
         return '\n'.join(out)
+
+    def embed(self):
+        embed = Embed(title=self.human_readable_name())
+        embed.description = "TODO"
+        ingredients = "\n".join([ing.human_readable_name()
+                                 for ing in self.ingredients().values()])
+        embed.add_field(name="Ingredients", value=ingredients)
+        products = "\n".join([pro.human_readable_name()
+                              for pro in self.products().values()])
+        embed.add_field(name="Products", value=products)
+        return embed
 
     def ingredients(self):
         return self.__ingredients

@@ -4,7 +4,8 @@ class InfoQuery:
         self.vars = []
 
     def __str__(self):
-        print(self.vars)
+        if len(self.vars) == 1:
+            return self.vars[0].details()
         return "\n".join([var.human_readable_name() for var in self.vars])
 
 
