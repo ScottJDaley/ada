@@ -75,7 +75,7 @@ class QueryParser:
     entity_expr_end = (output_kw | input_kw | include_kw | exclude_kw |
                        and_kw | or_kw | RECIPE | RECIPES | StringEnd())
     entity_expr = Combine(
-        OneOrMore(~entity_expr_end + Word(alphas + ".*")), joinString=" ", adjacent=False)("entity")
+        OneOrMore(~entity_expr_end + Word(alphas + ":.*-")), joinString=" ", adjacent=False)("entity")
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
@@ -130,9 +130,13 @@ class QueryParser:
     entity_query = entity_expr("entity-details")
 
     single_recipe_query = (
-        (Suppress(RECIPE + Optional(FOR)) + entity_expr)
-        | (entity_expr + Suppress(RECIPE))
+        Suppress(RECIPE) + entity_expr
     )("single-recipe")
+
+    recipe_for_query = (
+        (Suppress(RECIPE + FOR) + entity_expr)
+        | (entity_expr + Suppress(RECIPE))
+    )("recipe-for")
 
     recipes_for_query = (
         (Suppress(RECIPES + FOR) + entity_expr)
@@ -144,9 +148,9 @@ class QueryParser:
         Suppress(RECIPES + recipes_from_kw) + entity_expr
     )("recipes-from")
 
-    recipe_query = recipes_for_query | recipes_from_query | single_recipe_query
+    recipe_query = recipes_for_query | recipe_for_query | recipes_from_query | single_recipe_query
 
-    query_grammar = optimization_query | recipe_query | entity_query
+    query_grammar = optimization_query ^ recipe_query ^ entity_query
 
     def __init__(self, db):
         self._db = db
@@ -160,29 +164,39 @@ class QueryParser:
         # 4. regex on human-readable name
         # 5. regex on var name
         expr = expr.strip().lower()
-        expr_parts = re.split(r'[\s\-\_:]', expr)
+        expr_parts = list(filter(None, re.split(r'[\s\-\_:]', expr)))
 
         singular = var.human_readable_name().lower()
-        singular_parts = re.split(r'[\s:]', singular)
+        singular_parts = list(filter(None, re.split(r'[\s:\-]', singular)))
         if expr_parts == singular_parts:
             return True
         plural = inflect.engine().plural(singular)
-        plural_parts = re.split(r'[\s:]', plural)
+        plural_parts = list(filter(None, re.split(r'[\s:\-]', plural)))
         if expr_parts == plural_parts:
             return True
-        var_parts = re.split(r'[:\-]', var.var())
+        if singular.startswith("recipe: alternate: "):
+            if expr_parts == singular_parts[2:]:
+                return True
+            if expr_parts == singular_parts[:1] + singular_parts[2:]:
+                return True
+            if expr_parts == plural_parts[2:]:
+                return True
+            if expr_parts == plural_parts[:1] + plural_parts[2:]:
+                return True
+        var_parts = list(filter(None, re.split(r'[:\-]', var.var())))
         if expr_parts == var_parts:
             return True
         # Don't require the user to specify the entity type.
-        # typeless_var = var.var().split(':', 1)[1]
-        # typeless_var_parts = re.split(r'[:\-]', typeless_var)
-        # if expr_parts == typeless_var_parts:
-        #     return True
+        typeless_var = var.var().split(':', 1)[1]
+        typeless_var_parts = re.split(r'[:\-]', typeless_var)
+        if expr_parts == typeless_var_parts:
+            return True
+
 
         return (re.fullmatch(expr, singular)
                 or re.fullmatch(expr, plural)
-                or re.fullmatch(expr, var.var()))
-        # or re.fullmatch(expr, typeless_var))
+                or re.fullmatch(expr, var.var())
+                or re.fullmatch(expr, typeless_var))
 
     def _get_matches(self, expr, allowed_types):
         allowed_vars = set()
@@ -215,7 +229,7 @@ class QueryParser:
                     output["entity"], ["item"])])
                 if len(output_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse entity expression '"
+                        "Could not parse item expression '"
                         + output["entity"] + "'.")
             value = output["value"]
             if value == "?":
@@ -246,7 +260,7 @@ class QueryParser:
                     ["resource", "item"])])
                 if len(input_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse entity expression '"
+                        "Could not parse resource or item expression '"
                         + input_["entity"] + "'.")
             value = input_["value"]
             if value == "?":
@@ -277,7 +291,7 @@ class QueryParser:
                     ["recipe", "power-recipe", "crafter", "generator"])])
                 if len(include_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse entity expression '"
+                        "Could not parse recipe, power recipe, crafter, or generator expression '"
                         + include["entity"] + "'.")
             query.ge_constraints.update({var: 0 for var in include_vars})
             for var in include_vars:
@@ -303,7 +317,7 @@ class QueryParser:
                     ["recipe", "power-recipe", "crafter", "generator"])])
                 if len(exclude_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse entity expression '"
+                        "Could not parse recipe, power recipe, crafter, or generator expression '"
                         + exclude["entity"] + "'.")
             query.eq_constraints.update({var: 0 for var in exclude_vars})
 
@@ -315,14 +329,14 @@ class QueryParser:
         self._parse_excludes(parse_results.get("excludes"), query)
         return query
 
-    def _parse_single_recipe_query(self, parse_results):
+    def _parse_recipe_for_query(self, parse_results):
         query = InfoQuery()
         matches = self._get_matches(
             parse_results.get("entity"),
             ["item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse entity expression '"
+                "Could not parse item expression '"
                 + parse_results.get("entity") + "'.")
         all_vars = []
         non_alternate_vars = []
@@ -345,7 +359,7 @@ class QueryParser:
             ["resource", "item", "crafter", "generator"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse entity expression '"
+                "Could not parse resource, item, crafter, or generator expression '"
                 + parse_results.get("entity") + "'.")
         for match in matches:
             var = match.var()
@@ -368,24 +382,39 @@ class QueryParser:
                                     ["resource", "item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse entity expression '"
+                "Could not parse resoure or item expression '"
                 + parse_results.get("entity") + "'.")
         for match in matches:
             for recipe in self._db.recipes_for_ingredient(match.var()):
                 query.vars.append(recipe)
         return query
 
+    def _parse_single_recipe_query(self, parse_results):
+        query = InfoQuery()
+        matches = self._get_matches(parse_results.get("entity"),
+                                    ["recipe"])
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse recipe expression '"
+                + parse_results.get("entity") + "'.")
+        query.vars.extend(matches)
+        return query
+
     def _parse_entity_details(self, parse_results):
         query = InfoQuery()
-        matches = self._get_matches(
+        non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["resource", "item", "recipe", "power-recipe", "crafter",
-                "generator"])
-        if len(matches) == 0:
+            ["resource", "item", "crafter",  "generator"])
+        if len(non_recipe_matches) > 0:
+            query.vars.extend(non_recipe_matches)
+            return query
+        recipe_matches = self._get_matches(parse_results.get("entity-details"),
+                                           ["recipe", "power-recipe"])
+        if len(recipe_matches) == 0:
             raise QueryParseException(
                 "Could not parse entity expression '"
                 + parse_results.get("entity-details") + "'.")
-        query.vars.extend(matches)
+        query.vars.extend(recipe_matches)
         return query
 
     def parse(self, raw_query):
@@ -404,6 +433,8 @@ class QueryParser:
             return self._parse_optimization_query(results)
         elif "single-recipe" in results:
             return self._parse_single_recipe_query(results)
+        elif "recipe-for" in results:
+            return self._parse_recipe_for_query(results)
         elif "recipes-for" in results:
             return self._parse_recipes_for_query(results)
         elif "recipes-from" in results:
