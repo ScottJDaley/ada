@@ -1,8 +1,8 @@
-from db import DB
-from optimizer import Optimizer
-from query import OptimizationQuery, InfoQuery
-from query_parser import QueryParser, QueryParseException
-from result import ErrorResult, InfoResult
+from ada.db import DB
+from ada.optimizer import Optimizer
+from ada.query import OptimizationQuery, InfoQuery
+from ada.query_parser import QueryParser, QueryParseException
+from ada.result import ErrorResult, InfoResult
 
 
 class Ada:
@@ -18,10 +18,7 @@ class Ada:
             return ErrorResult(str(parse_exception))
 
         if isinstance(query, OptimizationQuery):
-            result = await self.__opt.optimize(query)
-            if result.has_solution():
-                result.generate_graph_viz('output.gv')
-            return result
+            return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):
             return InfoResult(query.vars)
         return ErrorResult("Unknown query.")

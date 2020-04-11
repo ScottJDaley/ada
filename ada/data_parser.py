@@ -1,14 +1,13 @@
 import json
 
-with open("Docs.json") as f:
+with open("data/Docs.json") as f:
     raw = json.load(f)
 
-with open('raw.json', 'w', encoding='utf-8') as f:
+with open('data/raw.json', 'w', encoding='utf-8') as f:
     json.dump(raw, f, ensure_ascii=False, indent=4)
 
 for entry in raw:
     print(entry["NativeClass"])
-
 
 
 for entry in raw:
@@ -32,6 +31,5 @@ generator_classes = ['FGBuildableGeneratorFuel',
                      'FGBuildableGeneratorGeoThermal']
 recipe_classes = ['FGRecipe']
 
-with open('new_data.json', 'w', encoding='utf-8') as f:
+with open('../data/new_data.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=4)
-

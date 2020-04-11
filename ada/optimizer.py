@@ -1,5 +1,5 @@
 import pulp
-from result import OptimizationResult
+from ada.result import OptimizationResult
 
 POWER = "power"
 UNWEIGHTED_RESOURCES = "unweighted-resources"

@@ -16,7 +16,7 @@ from pyparsing import (
     Combine,
     ParseException,
 )
-from query import OptimizationQuery, InfoQuery
+from ada.query import OptimizationQuery, InfoQuery
 
 
 PRODUCE = CaselessKeyword('produce')

@@ -1,5 +1,5 @@
 from discord import Embed
-import image_fetcher
+import ada.image_fetcher
 
 
 class Crafter:
@@ -31,8 +31,8 @@ class Crafter:
         return "https://satisfactory.gamepedia.com/" + self.human_readable_underscored()
 
     def thumb(self):
-        print(image_fetcher.fetch_first_on_page(self.wiki()))
-        return image_fetcher.fetch_first_on_page(self.wiki())
+        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
+        return ada.image_fetcher.fetch_first_on_page(self.wiki())
 
     def embed(self):
         embed = Embed(title=self.human_readable_name())

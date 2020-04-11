@@ -1,8 +1,8 @@
 import os
 import discord
 from dotenv import load_dotenv
-from ada import Ada
-from result import OptimizationResult
+from ada.ada import Ada
+from ada.result import OptimizationResult
 
 
 load_dotenv()
@@ -30,8 +30,8 @@ async def on_message(message):
         print(result)
         file = None
         embed = result.embed()
-        if isinstance(result, OptimizationResult):
-            filename = 'output.gv'
+        if isinstance(result, OptimizationResult) and result.has_solution():
+            filename = 'output/output.gv'
             result.generate_graph_viz(filename)
             file = discord.File(filename + '.png')
             embed.set_image(url="attachment://" + filename + ".png")
