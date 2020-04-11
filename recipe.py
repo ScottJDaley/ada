@@ -90,13 +90,20 @@ class Recipe:
 
     def embed(self):
         embed = Embed(title=self.human_readable_name())
-        embed.description = "TODO"
+        if self.is_alternate():
+            embed.description = "**Alternate**"
         ingredients = "\n".join([ing.human_readable_name()
                                  for ing in self.ingredients().values()])
-        embed.add_field(name="Ingredients", value=ingredients)
+        embed.add_field(name="Ingredients", value=ingredients, inline=True)
         products = "\n".join([pro.human_readable_name()
                               for pro in self.products().values()])
-        embed.add_field(name="Products", value=products)
+        embed.add_field(name="Products", value=products, inline=True)
+        embed.add_field(name="Crafting Time",
+                        value=str(self.__data["time"]) + " seconds",
+                        inline=True)
+        embed.add_field(name="Building",
+                        value=self.crafter().human_readable_name(),
+                        inline=True)
         return embed
 
     def ingredients(self):

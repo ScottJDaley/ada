@@ -20,11 +20,15 @@ if __name__ == "__main__":
         "iron rods",
         "iron.*",
         "iron rod recipe",
+        "recipe iron rod",
         "iron rod recipes",
         "recipe for iron rod",
         "recipes for iron rod",
         "recipes from iron rod",
-        "recipes for iron.*"
+        "recipes for iron.*",
+        "steel rod",
+        "recipe: steel rod",
+        "recipe: alternate: steel rod"
     ]
 
     for query in tests_queries:
