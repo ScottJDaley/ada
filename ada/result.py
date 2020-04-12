@@ -50,12 +50,12 @@ class InfoResult:
         return "Page " + str(page) + " of " + str(self._num_pages())
 
     def _get_var_on_page(self, page, index):
-        var_index = page * InfoResult.num_on_page + index
+        var_index = (page - 1) * InfoResult.num_on_page + index
         return self._vars[var_index]
 
     def _get_info_page(self, breadcrumbs):
         var_names = [var.human_readable_name() for var in self._vars]
-        start_index = breadcrumbs.page() * InfoResult.num_on_page
+        start_index = (breadcrumbs.page() - 1) * InfoResult.num_on_page
         last_index = start_index + InfoResult.num_on_page
 
         vars_on_page = var_names[start_index:last_index]
@@ -69,17 +69,25 @@ class InfoResult:
                 message.reactions.append(prefix)
             out.append("- " + prefix + var_)
         if not self._add_reaction_selectors:
-            message.reactions = [ada.emoji.PREVIOUS_PAGE,
-                                 ada.emoji.INFO,
-                                 ada.emoji.NEXT_PAGE]
-
-        message.embed = Embed(title="Matches")
+            message.reactions = []
+            if breadcrumbs.page() > 1:
+                 message.reactions.append(ada.emoji.PREVIOUS_PAGE)
+            message.reactions.append(ada.emoji.INFO)
+            if breadcrumbs.page() < self._num_pages():
+                 message.reactions.append(ada.emoji.NEXT_PAGE)
+            
+        message.embed = Embed(title="Found " + str(len(self._vars)) + " matches:")
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
         return message
 
     def message(self, breadcrumbs):
+        if len(self._vars) == 0:
+            message = ResultMessage()
+            message.embed = Embed(title="No matches found")
+            message.content = str(breadcrumbs)
+            return message
         if len(self._vars) > 1:
             return self._get_info_page(breadcrumbs)
         message = ResultMessage()

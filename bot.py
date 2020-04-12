@@ -29,13 +29,18 @@ async def add_reactions(message, reactions):
     for reaction in reactions:
         await message.add_reaction(reaction)
     content = message.content
+    if len(message.embeds) == 0:
+        return
     embed = message.embeds[0]
-    embed.description = embed.description + REACTIONS_DONE
+    if not embed.description:
+        embed.description = REACTIONS_DONE
+    else:
+        embed.description = embed.description + REACTIONS_DONE
     await message.edit(content=content, embed=embed)
 
 
 def are_reactions_done(message):
-    return message.embeds[0].description.endswith(REACTIONS_DONE)
+    return len(message.embeds) == 0 or message.embeds[0].description.endswith(REACTIONS_DONE)
 
 
 @client.event
