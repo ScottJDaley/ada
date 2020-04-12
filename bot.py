@@ -40,22 +40,26 @@ async def on_message(message):
 
 
 @client.event
-async def on_reaction_add(reaction, user):
+async def on_raw_reaction_add(payload):
+    user = await client.fetch_user(payload.user_id)
     if user == client.user:
         return
+    channel = await client.fetch_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    emoji = payload.emoji.name
     try:
-        breadcrumbs = Breadcrumbs.extract(reaction.message.content)
+        breadcrumbs = Breadcrumbs.extract(message.content)
         result = await ada.do(breadcrumbs.primary_query())
-        query = result.handle_reaction(reaction.emoji, breadcrumbs)
+        query = result.handle_reaction(emoji, breadcrumbs)
         if query:
             result = await ada.do(query)
 
-        result = result.message(breadcrumbs)
-        await reaction.message.clear_reactions()
-        await reaction.message.edit(content=result.content,
-                                    embed=result.embed)
-        for emoji in result.reactions:
-            await reaction.message.add_reaction(emoji)
+        result_message = result.message(breadcrumbs)
+        await message.clear_reactions()
+        await message.edit(content=result_message.content,
+                           embed=result_message.embed)
+        for emoji in result_message.reactions:
+            await message.add_reaction(emoji)
     except BreadcrumbsException as extraction_error:
         print(extraction_error)
 

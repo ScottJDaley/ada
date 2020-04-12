@@ -18,10 +18,14 @@ class ErrorResult:
     def __str__(self):
         return self.__msg
 
-    def embed(self, __):
-        embed = Embed(title="Error")
-        embed.description = str(self)
-        return embed
+    def message(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Error")
+        message.content = breadcrumbs
+        return message
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None
 
 
 class InfoResult:
