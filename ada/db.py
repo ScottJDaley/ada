@@ -1,18 +1,18 @@
 import json
-from crafter import Crafter
-from generator import Generator
-from item import Item
-from recipe import Recipe
-from power_recipe import PowerRecipe
+from ada.crafter import Crafter
+from ada.generator import Generator
+from ada.item import Item
+from ada.recipe import Recipe
+from ada.power_recipe import PowerRecipe
 
 
 class DB:
     def __init__(self):
         # Parse data file
-        with open("data.json") as f:
+        with open("data/data.json") as f:
             data = json.load(f)
 
-        with open("sink.json") as f:
+        with open("data/sink.json") as f:
             sink = json.load(f)
 
         # Parse resources

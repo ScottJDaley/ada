@@ -1,81 +1,49 @@
-import pulp
-import json
-import optimizer
 import asyncio
-from db import DB
-from satisfaction import Satisfaction
+import sys
+import traceback
 
-cmds = [
-    '!min',
-    '!max',
-    '!items',
-    '!recipes',
-    '!buildings',
-    '!exit',
-]
+from ada.ada import Ada
+from ada.result import OptimizationResult
+
+DEBUG_PRINTS = False
 
 
-def print_help():
-    print("Please enter a supported command:")
-    print("  " + ", ".join(cmds))
+class TracePrints(object):
+    def __init__(self):
+        self.stdout = sys.stdout
+
+    def write(self, s):
+        self.stdout.write("Writing %r\n" % s)
+        traceback.print_stack(file=self.stdout)
+
+    def flush(self):
+        pass
 
 
-async def request_input(msg):
-    print(msg)
-    return input()
+if DEBUG_PRINTS:
+    sys.stdout = TracePrints()
 
 
 async def main():
-    satisfaction = Satisfaction()
+    ada = Ada()
 
-    print_help()
+    if len(sys.argv) > 1:
+        result = await ada.do(" ".join(sys.argv[1:]))
+        print(result)
+        return
+
     while True:
-        inputs = str.split(input(), ' ')
-        if len(inputs) == 0:
-            continue
-        command = inputs[0]
-        args = inputs[1:]
-
-        if command == "exit" or command == '!exit':
+        raw_query = input()
+        if raw_query == "exit" or raw_query == "quit":
             return
-        elif command == "!min":
-            result = await satisfaction.min(request_input, *args)
-            if result.has_solution():
-                result.generate_graph_viz('output.gv')
-            print(result)
-        elif command == "!max":
-            result = await satisfaction.max(request_input, *args)
-            if result.has_solution():
-                result.generate_graph_viz('output.gv')
-            print(result)
-        elif command == "!items":
-            result = await satisfaction.items(request_input, *args)
-            items = result.items
-            if len(items) == 0:
-                    print("Found no matching items")
-            elif len(items) == 1:
-                print(items[0].details())
-            else:
-                for item in items:
-                    print(item.var())
-        elif command == "!recipes":
-            result = await satisfaction.recipes(request_input, *args)
-            recipes = result.recipes
-            if len(recipes) == 0:
-                print("Found no matching recipes")
-            elif len(recipes) == 1:
-                print(recipes[0].details())
-            else:
-                for recipe in recipes:
-                    print(recipe.var())
-        elif command == "!buildings":
-            print(satisfaction.buildings(*args))
-        else:
-            print_help()
+        result = await ada.do(raw_query)
+        if isinstance(result, OptimizationResult) and result.has_solution():
+            result.generate_graph_viz('output/output.gv')
+        print(result)
 
 
 if __name__ == "__main__":
-    print("Welcome to the Satisfoptimizer!")
+    print("Hi my name is ADA!")
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
     print("Goodbye")

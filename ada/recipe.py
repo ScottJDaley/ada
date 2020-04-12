@@ -1,3 +1,4 @@
+from discord import Embed
 
 
 class Recipe:
@@ -6,7 +7,7 @@ class Recipe:
             self.__item = item
             self.__amount = amount
             self.__time = time
-            
+
         def item(self):
             return self.__item
 
@@ -14,11 +15,11 @@ class Recipe:
             return self.__amount
 
         def minute_rate(self):
-            return 60 * self.amount() /  self.__time
+            return 60 * self.amount() / self.__time
 
         def human_readable_name(self):
-            return self.item().human_readable_name() + ": " + str(self.amount()) + " (" + str(self.minute_rate()) + "/m)"
-
+            return self.item().human_readable_name() + ": " + \
+                str(self.amount()) + " (" + str(self.minute_rate()) + "/m)"
 
     def __init__(self, data, db):
         self.__data = data
@@ -29,13 +30,15 @@ class Recipe:
         self.__products = {}
         for ingredient in data["ingredients"]:
             item = db.item_from_class_name(ingredient["item"])
-            self.__ingredients[item.var()] = self.RecipeItem(item, ingredient["amount"], data["time"])
+            self.__ingredients[item.var()] = self.RecipeItem(
+                item, ingredient["amount"], data["time"])
         for product in data["products"]:
             item = db.item_from_class_name(product["item"])
-            self.__products[item.var()] = self.RecipeItem(item, product["amount"], data["time"])
-        if len(self.__products) > 1:
-            print("Found multi-product recipe:", self.var())
-            print("  ", self.__products.keys())
+            self.__products[item.var()] = self.RecipeItem(
+                item, product["amount"], data["time"])
+        # if len(self.__products) > 1:
+        #     print("Found multi-product recipe:", self.var())
+        #     print("  ", self.__products.keys())
         self.__crafter = db.crafter_from_class_name(data["producedIn"][0])
 
     def var(self):
@@ -48,8 +51,12 @@ class Recipe:
         out = '<'
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += '<TR>'
-        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
-        out += '<BR/>' + self.human_readable_name() + '</TD>'
+        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' + \
+            str(round(amount, 2)) + 'x ' + \
+            self.crafter().human_readable_name() + '</TD>'
+        out += '</TR>'
+        out += '<TR>'
+        out += '<TD COLSPAN="2">' + self.human_readable_name() + '</TD>'
         out += '</TR>'
         for ingredient in self.ingredients().values():
             out += '<TR>'
@@ -81,15 +88,33 @@ class Recipe:
         out.append("")
         return '\n'.join(out)
 
+    def embed(self):
+        embed = Embed(title=self.human_readable_name())
+        if self.is_alternate():
+            embed.description = "**Alternate**"
+        ingredients = "\n".join([ing.human_readable_name()
+                                 for ing in self.ingredients().values()])
+        embed.add_field(name="Ingredients", value=ingredients, inline=True)
+        products = "\n".join([pro.human_readable_name()
+                              for pro in self.products().values()])
+        embed.add_field(name="Products", value=products, inline=True)
+        embed.add_field(name="Crafting Time",
+                        value=str(self.__data["time"]) + " seconds",
+                        inline=True)
+        embed.add_field(name="Building",
+                        value=self.crafter().human_readable_name(),
+                        inline=True)
+        return embed
+
     def ingredients(self):
         return self.__ingredients
-    
+
     def products(self):
         return self.__products
 
     def ingredient(self, var):
         return self.__ingredients[var]
-    
+
     def product(self, var):
         return self.__products[var]
 

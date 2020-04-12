@@ -3,3 +3,5 @@ discord
 python-dotenv
 graphviz
 bs4
+pyparsing
+inflect
