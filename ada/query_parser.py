@@ -16,7 +16,7 @@ from pyparsing import (
     Combine,
     ParseException,
 )
-from ada.query import OptimizationQuery, InfoQuery
+from ada.query import OptimizationQuery, InfoQuery, HelpQuery
 
 
 PRODUCE = CaselessKeyword('produce')
@@ -46,6 +46,7 @@ RECIPES = CaselessKeyword('recipes')
 RECIPE = CaselessKeyword('recipe')
 BYPRODUCTS = CaselessKeyword('byproducts')
 FOR = CaselessKeyword('for')
+HELP = CaselessKeyword('help')
 QUESTION_MARK = Literal('?')
 UNDERSCORE = Literal('_')
 ZERO = Literal('0')
@@ -150,7 +151,9 @@ class QueryParser:
 
     recipe_query = recipes_for_query | recipe_for_query | recipes_from_query | single_recipe_query
 
-    query_grammar = optimization_query ^ recipe_query ^ entity_query
+    help_query = HELP("help")
+
+    query_grammar = help_query ^ optimization_query ^ recipe_query ^ entity_query
 
     def __init__(self, db):
         self._db = db
@@ -428,7 +431,9 @@ class QueryParser:
         # print("\"" + raw_query + "\" ==> parsing succeeded:\n",
         #       results, "\n", results.dump(), "\n")
 
-        if "optimization" in results:
+        if "help" in results:
+            return HelpQuery()
+        elif "optimization" in results:
             return self._parse_optimization_query(raw_query, results)
         elif "single-recipe" in results:
             return self._parse_single_recipe_query(raw_query, results)

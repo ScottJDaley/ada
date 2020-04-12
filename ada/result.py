@@ -7,13 +7,58 @@ import ada.emoji
 from ada.result_message import ResultMessage
 from ada.breadcrumbs import Breadcrumbs
 
+class HelpResult:
+    def __str__(self):
+        return """
+ADA is a bot for the videogame Satisfactory.
+
+ADA can be used to get information about items,
+buildings, and recipes. ADA can also be used to
+calculate an optimal production chain. Here are
+some examples of queries that ADA supports:
+
+```
+ada iron rod
+```
+```
+ada recipes for iron rod
+```
+```
+ada recipes for refineries
+```
+
+```
+ada produce 60 iron rods
+```
+```
+ada produce 60 iron rod from ? iron ore
+```
+```
+ada produce ? iron rods from 60 iron ore
+```
+```
+ada produce ? power from 240 crude oil with only
+    fuel generators
+```
+```
+ada produce 60 modular frames without refineries
+```
+"""
+
+    def message(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Help")
+        message.embed.description = str(self)
+        message.content = str(breadcrumbs)
+        return message
+    
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None
+    
 
 class ErrorResult:
     def __init__(self, msg):
         self.__msg = msg
-
-    def has_solution(self):
-        return False
 
     def __str__(self):
         return self.__msg
@@ -21,6 +66,7 @@ class ErrorResult:
     def message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Error")
+        message.embed.description = self.__msg
         message.content = str(breadcrumbs)
         return message
 

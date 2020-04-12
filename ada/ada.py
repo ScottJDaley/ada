@@ -1,8 +1,8 @@
 from ada.db import DB
 from ada.optimizer import Optimizer
-from ada.query import OptimizationQuery, InfoQuery
+from ada.query import OptimizationQuery, InfoQuery, HelpQuery
 from ada.query_parser import QueryParser, QueryParseException
-from ada.result import ErrorResult, InfoResult
+from ada.result import ErrorResult, InfoResult, HelpResult
 
 
 class Ada:
@@ -17,6 +17,8 @@ class Ada:
         except QueryParseException as parse_exception:
             return ErrorResult(str(parse_exception))
 
+        if isinstance(query, HelpQuery):
+            return HelpResult()
         if isinstance(query, OptimizationQuery):
             return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):

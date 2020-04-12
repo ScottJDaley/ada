@@ -1,4 +1,7 @@
 
+class HelpQuery:
+    pass
+
 class InfoQuery:
     def __init__(self, raw_query):
         self.raw_query = raw_query
