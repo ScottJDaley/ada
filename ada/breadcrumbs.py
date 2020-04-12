@@ -24,7 +24,6 @@ class Breadcrumbs:
 
     def add_query(self, query):
         self._queries.append(query)
-        print(self)
 
     def has_prev_query(self):
         return len(self._queries) > 1

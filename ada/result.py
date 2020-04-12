@@ -21,7 +21,7 @@ class ErrorResult:
     def message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Error")
-        message.content = breadcrumbs
+        message.content = str(breadcrumbs)
         return message
 
     def handle_reaction(self, emoji, breadcrumbs):
@@ -76,7 +76,7 @@ class InfoResult:
         message.embed = Embed(title="Matches")
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
-        message.content = breadcrumbs
+        message.content = str(breadcrumbs)
         return message
 
     def message(self, breadcrumbs):
@@ -84,7 +84,7 @@ class InfoResult:
             return self._get_info_page(breadcrumbs)
         message = ResultMessage()
         message.embed = self._vars[0].embed()
-        message.content = breadcrumbs
+        message.content = str(breadcrumbs)
         message.reactions = [ada.emoji.PREVIOUS_PAGE]
         return message
 
@@ -211,7 +211,7 @@ class OptimizationResult:
             return self.__solution_message(breadcrumbs)
         message = ResultMessage()
         message.embed = Embed(title=str(self))
-        message.content = breadcrumbs
+        message.content = str(breadcrumbs)
         return message
 
     def handle_reaction(self, emoji, breadcrumbs):
