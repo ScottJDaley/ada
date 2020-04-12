@@ -1,6 +1,11 @@
 import pulp
 from graphviz import Digraph
 from discord import Embed, File
+import math
+
+import ada.emoji
+from ada.result_message import ResultMessage
+from ada.breadcrumbs import Breadcrumbs
 
 
 class ErrorResult:
@@ -13,36 +18,98 @@ class ErrorResult:
     def __str__(self):
         return self.__msg
 
-    def embed(self):
+    def embed(self, __):
         embed = Embed(title="Error")
         embed.description = str(self)
         return embed
 
 
 class InfoResult:
-    def __init__(self, vars_):
-        self._vars = vars_
+    num_on_page = 9
+
+    def __init__(self, vars_, raw_query):
+        self._vars = sorted(vars_, key=lambda var_: var_.human_readable_name())
+        self._raw_query = raw_query
+        self._add_reaction_selectors = False
 
     def __str__(self):
         if len(self._vars) == 1:
             return self._vars[0].details()
-        return "\n".join([var.human_readable_name() for var in self._vars])
+        var_names = [var.human_readable_name() for var in self._vars]
+        var_names.sort()
+        return "\n".join(var_names)
 
-    def embed(self):
-        if len(self._vars) == 1:
-            return self._vars[0].embed()
+    def _num_pages(self):
+        return math.ceil(len(self._vars) / InfoResult.num_on_page)
 
-        embed = Embed(title="Matches")
-        embed.description = str(self)
-        return embed
+    def _footer(self, page):
+        return "Page " + str(page) + " of " + str(self._num_pages())
+
+    def _get_var_on_page(self, page, index):
+        var_index = page * InfoResult.num_on_page + index
+        return self._vars[var_index]
+
+    def _get_info_page(self, breadcrumbs):
+        var_names = [var.human_readable_name() for var in self._vars]
+        start_index = breadcrumbs.page() * InfoResult.num_on_page
+        last_index = start_index + InfoResult.num_on_page
+
+        vars_on_page = var_names[start_index:last_index]
+
+        out = []
+        message = ResultMessage()
+        for i, var_ in enumerate(vars_on_page):
+            prefix = ""
+            if self._add_reaction_selectors:
+                prefix = ada.emoji.NUM_EMOJI[i+1]
+                message.reactions.append(prefix)
+            out.append("- " + prefix + var_)
+        if not self._add_reaction_selectors:
+            message.reactions = [ada.emoji.PREVIOUS_PAGE,
+                                 ada.emoji.INFO,
+                                 ada.emoji.NEXT_PAGE]
+
+        message.embed = Embed(title="Matches")
+        message.embed.description = "\n".join(out)
+        message.embed.set_footer(text=self._footer(breadcrumbs.page()))
+        message.content = breadcrumbs
+        return message
+
+    def message(self, breadcrumbs):
+        if len(self._vars) > 1:
+            return self._get_info_page(breadcrumbs)
+        message = ResultMessage()
+        message.embed = self._vars[0].embed()
+        message.content = breadcrumbs
+        message.reactions = [ada.emoji.PREVIOUS_PAGE]
+        return message
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        query = None
+        if emoji == ada.emoji.INFO:
+            self._add_reaction_selectors = True
+        elif emoji == ada.emoji.PREVIOUS_PAGE and breadcrumbs.has_prev_query():
+            breadcrumbs.goto_prev_query()
+            query = breadcrumbs.primary_query()
+        elif emoji == ada.emoji.NEXT_PAGE and breadcrumbs.page() < self._num_pages():
+            breadcrumbs.goto_next_page()
+        elif emoji == ada.emoji.PREVIOUS_PAGE and breadcrumbs.page() > 1:
+            breadcrumbs.goto_prev_page()
+        elif emoji in ada.emoji.NUM_EMOJI:
+            index = ada.emoji.NUM_EMOJI.index(emoji) - 1
+            selected_var = self._get_var_on_page(breadcrumbs.page(), index)
+            query = selected_var.human_readable_name()
+            breadcrumbs.add_query(query)
+        return query
 
 
 class OptimizationResult:
-    def __init__(self, db, vars_, prob, status):
+    def __init__(self, db, vars_, prob, status, raw_query):
         self.__db = db
         self.__prob = prob
         self.__vars = vars_
         self.__status = status
+        self._raw_query = raw_query
 
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
@@ -50,37 +117,34 @@ class OptimizationResult:
     def __get_value(self, var):
         return self.__vars[var].value()
 
-    def __get_vars(self, objs, check_value=lambda val: True):
+    def __get_vars(self, objs, check_value=lambda val: True, suffix=""):
         out = []
         for obj in objs:
             var = obj.var()
             if self.__has_value(var) and check_value(self.__get_value(var)):
                 out.append(obj.human_readable_name() +
-                           ": " + str(self.__get_value(var)))
+                           ": " + str(round(self.__get_value(var), 2)) + suffix)
         return out
 
-    def __get_section(self, title, objs, check_value=lambda val: True):
-        found_any = False
+    def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
         out = []
         out.append(title)
-        for obj in objs:
-            var = obj.var()
-            if self.__has_value(var) and check_value(self.__get_value(var)):
-                found_any = True
-                out.append(obj.human_readable_name() +
-                           ": " + str(self.__get_value(var)))
+        vars_ = self.__get_vars(objs, check_value=check_value, suffix=suffix)
+        if len(vars_) == 0:
+            return []
+        out = []
+        out.append(title)
+        out.extend(vars_)
         out.append("")
-        if found_any:
-            return out
-        return []
+        return out
 
     def __string_solution(self):
         out = []
         out.append("=== OPTIMAL SOLUTION FOUND ===\n")
         out.extend(self.__get_section(
-            "INPUT", self.__db.items().values(), check_value=lambda val: val < 0))
+            "INPUT", self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"))
         out.extend(self.__get_section(
-            "OUTPUT", self.__db.items().values(), check_value=lambda val: val > 0))
+            "OUTPUT", self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"))
         # out.extend(self.__get_section("INPUT", [item.input() for item in self.__db.items().values()]))
         # out.extend(self.__get_section("OUTPUT", [item.output() for item in self.__db.items().values()]))
         out.extend(self.__get_section("RECIPES", self.__db.recipes().values()))
@@ -109,25 +173,45 @@ class OptimizationResult:
             return "Solution is unbounded, try adding a constraint"
         return self.__string_solution()
 
-    def __solution_embed(self):
-        embed = Embed(title="Optimization Query")
-        embed.description = "description"
-        inputs = self.__get_vars(self.__db.items().values(), check_value=lambda val: val < 0)
-        embed.add_field(name="Inputs", value="\n".join(inputs), inline=True)
-        outputs = self.__get_vars(self.__db.items().values(), check_value=lambda val: val > 0)
-        embed.add_field(name="Outputs", value="\n".join(outputs), inline=True)
+    def __solution_message(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Optimization Query")
+        message.embed.description = "description"
+        inputs = self.__get_vars(
+            self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
+        message.embed.add_field(
+            name="Inputs", value="\n".join(inputs), inline=True)
+        outputs = self.__get_vars(
+            self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m")
+        message.embed.add_field(
+            name="Outputs", value="\n".join(outputs), inline=True)
         recipes = self.__get_vars(self.__db.recipes().values())
-        embed.add_field(name="Recipes", value="\n".join(recipes), inline=False)
+        message.embed.add_field(
+            name="Recipes", value="\n".join(recipes), inline=False)
         buildings = self.__get_vars(self.__db.crafters().values())
         buildings.extend(self.__get_vars(self.__db.generators().values()))
-        embed.add_field(name="Buildings", value="\n".join(buildings), inline=True)
-        return embed
+        message.embed.add_field(name="Buildings", value="\n".join(
+            buildings), inline=True)
 
-    def embed(self):
+        filename = 'output.gv'
+        filepath = 'output/' + filename
+        self.generate_graph_viz(filepath)
+        file = File(filepath + '.png')
+        message.embed.set_image(url="attachment://" + filename + ".png")
+        message.file = file
+        message.content = breadcrumbs
+        return message
+
+    def message(self, breadcrumbs):
         if self.__status is pulp.LpStatusOptimal:
-            return self.__solution_embed()
-        embed = Embed(title=str(self))
-        return embed
+            return self.__solution_message(breadcrumbs)
+        message = ResultMessage()
+        message.embed = Embed(title=str(self))
+        message.content = breadcrumbs
+        return message
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None
 
     def __add_nodes(self, s, objs):
         for obj in objs:

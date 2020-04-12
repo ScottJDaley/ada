@@ -2,7 +2,7 @@ min-problem:
 MINIMIZE
 -1*unweighted_resources + 0
 SUBJECT TO
-_C1: item:iron_plate >= 60
+_C1: item:iron_rod >= 30
 
 _C2: - item:concrete - 20 recipe:alternate_encased_industrial_pipe
  + 25 recipe:alternate_fine_concrete
@@ -739,7 +739,7 @@ _C133: - alternate_recipes + recipe:alternate_adhered_iron_plate
 
 item:concrete: item:concrete >= 0
 
-item:iron_rod: item:iron_rod >= 0
+item:iron_plate: item:iron_plate >= 0
 
 item:power_shard: item:power_shard >= 0
 

@@ -368,6 +368,7 @@ class Optimizer:
 
         # Solve
         status = prob.solve()
-        result = OptimizationResult(self.__db, self.__variables, prob, status)
+        result = OptimizationResult(
+            self.__db, self.__variables, prob, status, query.raw_query)
 
         return result

@@ -1,6 +1,7 @@
 
 class InfoQuery:
-    def __init__(self):
+    def __init__(self, raw_query):
+        self.raw_query = raw_query
         self.vars = []
 
     def __str__(self):
@@ -10,7 +11,8 @@ class InfoQuery:
 
 
 class OptimizationQuery:
-    def __init__(self):
+    def __init__(self, raw_query):
+        self.raw_query = raw_query
         self.maximize_objective = True
         self.objective_coefficients = {}
         self.eq_constraints = {}

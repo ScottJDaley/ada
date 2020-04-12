@@ -20,5 +20,5 @@ class Ada:
         if isinstance(query, OptimizationQuery):
             return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):
-            return InfoResult(query.vars)
+            return InfoResult(query.vars, query.raw_query)
         return ErrorResult("Unknown query.")

@@ -192,7 +192,6 @@ class QueryParser:
         if expr_parts == typeless_var_parts:
             return True
 
-
         return (re.fullmatch(expr, singular)
                 or re.fullmatch(expr, plural)
                 or re.fullmatch(expr, var.var())
@@ -321,16 +320,16 @@ class QueryParser:
                         + exclude["entity"] + "'.")
             query.eq_constraints.update({var: 0 for var in exclude_vars})
 
-    def _parse_optimization_query(self, parse_results):
-        query = OptimizationQuery()
+    def _parse_optimization_query(self, raw_query, parse_results):
+        query = OptimizationQuery(raw_query)
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
         return query
 
-    def _parse_recipe_for_query(self, parse_results):
-        query = InfoQuery()
+    def _parse_recipe_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
             ["item"])
@@ -352,8 +351,8 @@ class QueryParser:
             query.vars.extend(all_vars)
         return query
 
-    def _parse_recipes_for_query(self, parse_results):
-        query = InfoQuery()
+    def _parse_recipes_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
             ["resource", "item", "crafter", "generator"])
@@ -376,8 +375,8 @@ class QueryParser:
                         query.vars.append(power_recipe)
         return query
 
-    def _parse_recipes_from_query(self, parse_results):
-        query = InfoQuery()
+    def _parse_recipes_from_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
         matches = self._get_matches(parse_results.get("entity"),
                                     ["resource", "item"])
         if len(matches) == 0:
@@ -389,8 +388,8 @@ class QueryParser:
                 query.vars.append(recipe)
         return query
 
-    def _parse_single_recipe_query(self, parse_results):
-        query = InfoQuery()
+    def _parse_single_recipe_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
         matches = self._get_matches(parse_results.get("entity"),
                                     ["recipe"])
         if len(matches) == 0:
@@ -400,8 +399,8 @@ class QueryParser:
         query.vars.extend(matches)
         return query
 
-    def _parse_entity_details(self, parse_results):
-        query = InfoQuery()
+    def _parse_entity_details(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
             ["resource", "item", "crafter",  "generator"])
@@ -430,16 +429,16 @@ class QueryParser:
         #       results, "\n", results.dump(), "\n")
 
         if "optimization" in results:
-            return self._parse_optimization_query(results)
+            return self._parse_optimization_query(raw_query, results)
         elif "single-recipe" in results:
-            return self._parse_single_recipe_query(results)
+            return self._parse_single_recipe_query(raw_query, results)
         elif "recipe-for" in results:
-            return self._parse_recipe_for_query(results)
+            return self._parse_recipe_for_query(raw_query, results)
         elif "recipes-for" in results:
-            return self._parse_recipes_for_query(results)
+            return self._parse_recipes_for_query(raw_query, results)
         elif "recipes-from" in results:
-            return self._parse_recipes_from_query(results)
+            return self._parse_recipes_from_query(raw_query, results)
         elif "entity-details" in results:
-            return self._parse_entity_details(results)
+            return self._parse_entity_details(raw_query, results)
         else:
             raise QueryParseException("Unknown query.")
