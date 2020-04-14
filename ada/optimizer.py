@@ -347,9 +347,11 @@ class Optimizer:
         self.enable_related_recipes(query, prob, debug=False)
 
         # Disable power recipes unless the query specifies something about power
-        # if "power" not in query_vars:
-        #     for power_recipe_var in self.__db.power_recipes():
-        #         prob += self.__variables[power_recipe_var] == 0
+        if not query.has_power_output:
+             for power_recipe_var in self.__db.power_recipes():
+                prob.addConstraint(
+                    self.__variables[power_recipe_var] == 0, power_recipe_var)
+
 
         # Disable geothermal generators since they are "free" energy.
         if "generator:geo-thermal-generator" not in query_vars:

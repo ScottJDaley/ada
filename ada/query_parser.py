@@ -80,7 +80,7 @@ class QueryParser:
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
-    output_literal = (POWER | TICKETS)("literal")
+    output_literal = ((POWER)("power") | TICKETS)("literal")
     output_var = output_literal | entity_expr
 
     input_literal = (
@@ -246,6 +246,9 @@ class QueryParser:
                 query.ge_constraints.update({var: value for var in output_vars})
             if output["strict"]:
                 query.strict_outputs = True
+            if "power" in output:
+                print("has power output")
+                query.has_power_output = True
 
     def _parse_inputs(self, inputs, query):
         if not inputs:
@@ -428,8 +431,8 @@ class QueryParser:
                 "\"" + raw_query + "\" ==> failed parse:\n" + (pe.loc+1)*" " +
                 "^\n" + str(pe))
 
-        # print("\"" + raw_query + "\" ==> parsing succeeded:\n",
-        #       results, "\n", results.dump(), "\n")
+        print("\"" + raw_query + "\" ==> parsing succeeded:\n",
+              results, "\n", results.dump(), "\n")
 
         if "help" in results:
             return HelpQuery()

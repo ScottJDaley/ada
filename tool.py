@@ -23,23 +23,24 @@ class TracePrints(object):
 if DEBUG_PRINTS:
     sys.stdout = TracePrints()
 
-
 async def main():
     ada = Ada()
 
-    if len(sys.argv) > 1:
-        result = await ada.do(" ".join(sys.argv[1:]))
+    async def handle_query(raw_query):
+        result = await ada.do(raw_query)
+        if isinstance(result, OptimizationResult) and result.has_solution():
+            result.generate_graph_viz('output/output.gv')
         print(result)
+
+    if len(sys.argv) > 1:
+        await handle_query(" ".join(sys.argv[1:]))
         return
 
     while True:
         raw_query = input()
         if raw_query == "exit" or raw_query == "quit":
             return
-        result = await ada.do(raw_query)
-        if isinstance(result, OptimizationResult) and result.has_solution():
-            result.generate_graph_viz('output/output.gv')
-        print(result)
+        await handle_query(raw_query)
 
 
 if __name__ == "__main__":

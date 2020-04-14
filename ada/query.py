@@ -27,6 +27,7 @@ class OptimizationQuery:
         self.strict_generators = False
         self.strict_recipes = False
         self.strict_power_recipes = False
+        self.has_power_output = False
 
     def __str__(self):
         out = []

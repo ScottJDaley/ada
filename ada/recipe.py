@@ -51,22 +51,28 @@ class Recipe:
         out = '<'
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += '<TR>'
-        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' + \
+        out += '<TD COLSPAN="3" BGCOLOR="lightgray">' + \
             str(round(amount, 2)) + 'x ' + \
             self.crafter().human_readable_name() + '</TD>'
         out += '</TR>'
         out += '<TR>'
-        out += '<TD COLSPAN="2">' + self.human_readable_name() + '</TD>'
+        out += '<TD COLSPAN="3">' + self.human_readable_name() + '</TD>'
         out += '</TR>'
+
+        def get_component_amount_label(component, recipe_amount):
+            return str(round(amount * component.minute_rate(), 2)) + "/m "
+
         for ingredient in self.ingredients().values():
             out += '<TR>'
             out += '<TD BGCOLOR="moccasin">Input</TD>'
             out += '<TD>' + ingredient.item().human_readable_name() + '</TD>'
+            out += '<TD>' + get_component_amount_label(ingredient, amount) + '</TD>'
             out += '</TR>'
         for product in self.products().values():
             out += '<TR>'
             out += '<TD BGCOLOR="lightblue">Output</TD>'
             out += '<TD>' + product.item().human_readable_name() + '</TD>'
+            out += '<TD>' + get_component_amount_label(product, amount) + '</TD>'
             out += '</TR>'
         out += '</TABLE>>'
         return out

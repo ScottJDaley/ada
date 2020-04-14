@@ -295,16 +295,17 @@ class OptimizationResult:
         if output > 0:
             out += '<TR>'
             out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Power Output</TD>'
-            out += '<TD>' + str(round(abs(output), 2)) + ' MW</TD>'
+            out += '<TD>' + str(round(output, 2)) + ' MW</TD>'
             out += '</TR>'
         out += '<TR>'
         out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Net Power</TD>'
-        out += '<TD>' + str(round(abs(net), 2)) + ' MW</TD>'
+        out += '<TD>' + str(round(net, 2)) + ' MW</TD>'
         out += '</TR>'
         out += '</TABLE>>'
         return out
 
     def generate_graph_viz(self, filename):
+        print(filename)
         s = Digraph('structs', format='png', filename=filename,
                     node_attr={'shape': 'record'})
 
@@ -373,12 +374,21 @@ class OptimizationResult:
         # Connect each source to all sinks of that item
         for item_var, item_sources in sources.items():
             item = self.__db.items()[item_var]
-            for source, _ in item_sources.items():
+            sorted_item_sources = {k: v for k, v in sorted(item_sources.items(),
+                                   key=lambda item: item[1])}
+            for source, source_amount in sorted_item_sources.items():
                 if item_var not in sinks:
                     print("Could not find", item_var, "in sinks")
                     continue
+                total_sink_amount = 0
+                sorted_item_sinks = {k: v for k, v in sorted(sinks[item_var].items(),
+                                     key=lambda item: item[1])}
+                for _, sink_amount in sorted_item_sinks.items():
+                    total_sink_amount += sink_amount
+                multiplier = source_amount / total_sink_amount
                 for sink, sink_amount in sinks[item_var].items():
                     s.edge(source, sink, label=get_edge_label(
-                        item.human_readable_name(), sink_amount))
+                        item.human_readable_name(), multiplier * sink_amount))
 
         s.render()
+        print("done rendering")
