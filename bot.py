@@ -1,423 +1,94 @@
-from dotenv import load_dotenv
-from discord.ext import commands
-from satisfaction import Satisfaction
 import os
 import discord
-import math
-import traceback
-import re
-import query_parser
+import asyncio
+from dotenv import load_dotenv
+from ada.ada import Ada
+from ada.result import OptimizationResult
+from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
 
+CMD_PREFIX = 'ada '
+REACTIONS_DONE = u'\u200B'  # zero-width space
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
-
-satisfaction = Satisfaction()
-
-CMD_PREFIX = '?'
-
-bot = commands.Bot(command_prefix=CMD_PREFIX)
+client = discord.Client()
+ada = Ada()
 
 
-@bot.event
+@client.event
 async def on_ready():
-    print(f'{bot.user.name} has connected to Discord!')
+    print('Connected to Discord as {0.user}'.format(client))
+
+# TODO:
+# item cards should show recipes
+# item cards should allow reactions to select the recipe
+# recipe cards should allow reactions to select the item
 
 
-# @bot.event
-# async def on_error(event, *args, **kwargs):
-#     print('Ignoring exception in command {}:'.format(
-#         ctx.command), file=sys.stderr)
-#     traceback.print_exception(
-#         type(error), error, error.__traceback__, file=sys.stderr)
-
-# @bot.event
-# async def on_error(event, *args, **kwargs):
-#     message = args[0]  # Gets the message object
-#     traceback.print_exception()  # logs the error
-#     await bot.send_message(message.channel, "You caused an error!")
-
-
-# @bot.event
-# async def on_command_error(ctx, error):
-#     if isinstance(error, commands.errors.CheckFailure):
-#         await ctx.send('You do not have the correct role for this command.')
-#     if not isinstance(error, commands.CheckFailure):
-#         await ctx.message.add_reaction(':false:508021839981707304')
-#         await ctx.send("<a:siren:507952050181636098> `Invalid command` <a:siren:507952050181636098>")
-
-
-min_help = """Minimize resource usage to produce something
-
-Finds an optimal production chain that minimizes an objective while satisfying all constraints
-
-Usage:
-    !min [{objective} where] {constraints}
-    {objective} = {item|built-in-objective}
-    {built-in-objective} = 'unweighted-resources' or 'weighted-resources' or 'mean-weighted-resources'
-    {constraints} = {constraint} [and {constraints}]
-    {constraint} = {item-var} {operator} {number}
-    {operator} = '=' or '<=' or '>='
-    {item-var} = {input|output}:{item}
-
-Notes:
- - If the {objective} is omitted, the weighted-resources objective is used by default.
- - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
-
-Examples:
-
-Find the most resource-efficient way to ...
-
-    - produce 60/m iron rods:
-      !min iron-rod = 60
-
-    - produce 60/m modular frames assuming there are 30\m iron rods available as input:
-      !min modular-frame = 60 and input:iron-rod = 30
-
-    - produce 600\m fuel, allowing for rubber as a byproduct:
-      !min fuel = 600 and rubber >= 0
-
-    - produce 60/m iron rods and 120/m iron plates:
-      !min  iron-rod = 60 and iron-plate = 120
-
-Change the objective function:
-
-    - Minimize 60/m iron rods using unweighted resources:
-      !min unweighted-resources where iron-rod = 60
-
-    - Minimize rubber production from a fuel setup:
-      !min rubber where fuel = 600 and crude-oil <= 240 and water >= 0
-"""
-
-max_help = """Maximize production of something
-
-Finds an optimal production chain that maximizes an objective while satisfying all constraints.
-
-Usage:
-    !max {objective} where {constraints}
-    {objective} = {item}
-    {constraints} = {constraint} [and {constraints}]
-    {constraint} = {item-var} {operator} {number}
-    {operator} = '=' or '<=' or '>='
-    {item-var} = {input|output}:{item}
-
-Notes:
- - An {item} can be used in place of an {item-var}. Resource items are interpreted as inputs while non-resource items are interpreted as outputs.
-
-Examples:
-
-Maximize production of ...
-
-    - iron rods with only 60/m of iron ore:
-      !max iron-rod where iron-ore <= 60
-
-    - modular frames with only 60/m of iron ore assuming there are 30\m iron rods available as input:
-      !max modular-frame where iron-ore <= 60 and input:iron-rod = 30
-
-    - fuel from a pure crude oil node, allowing for rubber as a byproduct:
-      !max fuel where crude-oil <= 240 and rubber >= 0 and water >= 0
-"""
-
-items_help = """Print item details
-
-!items
-
-!items iron-rod
-"""
-
-recipes_help = """Print recipes details
-
-!recipes
-
-!recipes recipe:alternate-pure-iron-ingot
-
-!recipes iron-rod
-"""
-
-buildings_help = """Print building details
-
-!buildings
-
-!buildings building:constructor
-"""
-
-
-async def send_message(ctx, msg, file=None):
-    DISCORD_MESSAGE_LIMIT = 2000
-    while len(msg) > DISCORD_MESSAGE_LIMIT:
-        newline_index = msg.rfind('\n', 0, DISCORD_MESSAGE_LIMIT)
-        await ctx.send(msg[:newline_index])
-        msg = msg[newline_index:]
-    await ctx.send(content=msg, file=file)
-
-
-async def send_item_embed(ctx, item):
-    await ctx.send(content='`' + CMD_PREFIX + 'items ' + item.var() + '`', embed=item.embed())
-
-ITEMS_PER_PAGE = 9
-
-NUM_EMOJI = ['0️⃣', '1️⃣', '2️⃣', '3️⃣',
-             '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣']
-
-
-# async def add_num_reactions(message, num):
-#     for i in range(1, num+1):
-#         await message.add_reaction(NUM_EMOJI[i])
-
-
-def first_index(page):
-    return (page - 1) * ITEMS_PER_PAGE
-
-
-def last_index(page, items):
-    return min(first_index(page) + ITEMS_PER_PAGE, len(items))
-
-
-def count_on_page(page, items):
-    return min(ITEMS_PER_PAGE, len(items) - first_index(page))
-
-
-def num_pages(items):
-    return math.ceil(len(items) / ITEMS_PER_PAGE)
-
-
-def create_items_embed(items, page, is_prompt):
-    embed = discord.Embed()
-
-    embed.set_footer(text="Page " + str(page) + " of " + str(num_pages(items)))
-
-    out = []
-    num = 1
-    if is_prompt:
-        out.append("Which item would you like more information about?")
-    for index in range(first_index(page), last_index(page, items)):
-        item = items[index]
-        if is_prompt:
-            out.append(NUM_EMOJI[num] + " - " + item.human_readable_name())
-        else:
-            out.append("- " + item.human_readable_name())
-        num += 1
-    embed.description = '\n'.join(out)
-
-    # for index in range(first_index(page), last_index(page, items)):
-    #     item = items[index]
-    #     embed.add_field(name='`' + item.var() + '`',
-    #                     value=item.human_readable_name(), inline=False)
-    return embed
-
-
-def get_choice(reaction, items):
-    for line in reaction.message.embeds[0].description.splitlines():
-        if not line.startswith(reaction.emoji):
-            continue
-        match = re.match(".*- (.*)", line)
-        item_name = match.group(1)
-        for item in items:
-            if item.human_readable_name() == item_name:
-                return item
-
-
-@bot.event
-async def on_reaction_add(reaction, user):
-    if user == bot.user:
+async def add_reactions(message, reactions):
+    for reaction in reactions:
+        await message.add_reaction(reaction)
+    content = message.content
+    if len(message.embeds) == 0:
         return
-    message = reaction.message
-    content_lines = message.content.splitlines()
-    if len(content_lines) <= 2:
-        print("Content only had", len(content_lines), "lines")
+    embed = message.embeds[0]
+    if not embed.description:
+        embed.description = REACTIONS_DONE
+    else:
+        embed.description = embed.description + REACTIONS_DONE
+    await message.edit(content=content, embed=embed)
+
+
+def are_reactions_done(message):
+    return len(message.embeds) == 0 or message.embeds[0].description.endswith(REACTIONS_DONE)
+
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
         return
-    if not content_lines[0].startswith('```') or not content_lines[2].startswith('```'):
-        print("Content missing code section:\n", content_lines)
+    if not message.content.startswith(CMD_PREFIX):
         return
-    if not content_lines[0][3:].isdigit():
-        print("Page was not a digit: " +
-              content_lines[0][3:] + " content:\n", content_lines)
+    query = message.content[len(CMD_PREFIX):]
+    result = await ada.do(query)
+    result_message = result.message(Breadcrumbs.create(query))
+    reply = await message.channel.send(content=result_message.content,
+                                       embed=result_message.embed,
+                                       file=result_message.file)
+    await add_reactions(reply, result_message.reactions)
+
+
+@client.event
+async def on_raw_reaction_add(payload):
+    user = await client.fetch_user(payload.user_id)
+    if user == client.user:
         return
-    current_page = int(content_lines[0][3:])
-    breadcrumbs = content_lines[1]
-    if not breadcrumbs.startswith(CMD_PREFIX):
-        print("Breadcrumbs did not start with prefix " + CMD_PREFIX)
-        return
-    args = breadcrumbs.split(' ')
-    command = args[0][len(CMD_PREFIX):]
+    channel = await client.fetch_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    emoji = str(payload.emoji)
 
-    if command != 'items':  # TODO: Support other commands here too
-        print("Command is not items, was: " + command)
-        return
+    if not are_reactions_done(message):
+        def check(before, after):
+            return (before.channel == channel and before.id == message.id
+                    and are_reactions_done(after))
+        try:
+            await client.wait_for('message_edit', check=check, timeout=20)
+        except asyncio.TimeoutError:
+            pass
+    try:
+        breadcrumbs = Breadcrumbs.extract(message.content)
+        result = await ada.do(breadcrumbs.primary_query())
+        query = result.handle_reaction(emoji, breadcrumbs)
+        if query:
+            result = await ada.do(query)
 
-    print("content:\n", message.content)
-
-    def check(message):
-        return True
-
-    async def request_input(msg):
-        await message.channel.send(content=msg)
-        input_message = await bot.wait_for('message', check=check)
-        return input_message.content
-
-    if reaction.emoji == '◀️' and len(args) > 1:
-        if '>' not in args:
-            print("No '>' found:", args)
-        for i, arg in enumerate(args):
-            if arg == '>':
-                # Found bread crumbs, so handle back button
-                print("handling back button")
-                result = await satisfaction.items(request_input, *(args[1:i]))
-                items = result.items
-
-                await message.clear_reactions()
-
-                await message.edit(embed=create_items_embed(items, current_page, False),
-                                   content='```' + str(current_page) + '\n' +
-                                   ' '.join(args[0:i]) + '\n```')
-
-                if current_page > 1:
-                    await message.add_reaction('◀️')
-                await message.add_reaction('ℹ️')
-                if current_page < num_pages(items):
-                    await message.add_reaction('▶️')
-
-                return
-
-    # match = re.match("Page ([0-9]+) of ([0-9]+)",
-    #                  message.embeds[0].footer.text)
-    # current_page = int(match.group(1))
-    # num_pages = int(match.group(2))
-
-    result = await satisfaction.items(request_input, *args[1:])
-    items = result.items
-
-    if reaction.emoji in NUM_EMOJI:
-        item = get_choice(reaction, items)
+        result_message = result.message(breadcrumbs)
         await message.clear_reactions()
-        await message.edit(embed=item.embed(), content='```' + str(current_page) + '\n' + breadcrumbs + ' > ' + item.var() + '\n```')
-        await message.add_reaction('◀️')
-        return
-
-    if reaction.emoji == 'ℹ️':
-        await message.clear_reactions()
-        await message.edit(embed=create_items_embed(items, current_page, True))
-        for i in range(1, count_on_page(current_page, items) + 1):
-            await message.add_reaction(NUM_EMOJI[i])
-        return
-
-    if reaction.emoji == '◀️':
-        if current_page <= 1:
-            return
-        page = current_page - 1
-    elif reaction.emoji == '▶️':
-        if current_page >= num_pages(items):
-            return
-        page = current_page + 1
-
-    await message.clear_reactions()
-    await message.edit(embed=create_items_embed(items, page, False),
-                       content='```' + str(page) + '\n' +
-                       breadcrumbs + '\n```')
-
-    if page > 1:
-        await message.add_reaction('◀️')
-    await message.add_reaction('ℹ️')
-    if page < num_pages(items):
-        await message.add_reaction('▶️')
+        await message.edit(content=result_message.content,
+                           embed=result_message.embed)
+        await add_reactions(message, result_message.reactions)
+    except BreadcrumbsException as extraction_error:
+        print(extraction_error)
 
 
-class Information(commands.Cog):
-    """Informational commands"""
-
-    def __init__(self, bot):
-        self.__bot = bot
-
-    async def handle_items_cmd(self, ctx, page, *args):
-        def check(msg):
-            return True
-
-        async def request_input(msg):
-            await send_message(ctx, msg)
-            input_message = await self.__bot.wait_for('message', check=check)
-            return input_message.content
-
-        result = await satisfaction.items(request_input, *args)
-        items = result.items
-        if len(items) == 1:
-            await send_item_embed(ctx, items[0])
-            return
-
-        embed = create_items_embed(items, page, False)
-        if len(result.normalized_args) > 0:
-            content = '```' + str(page) + '\n' + CMD_PREFIX + \
-                'items ' + result.normalized_args + '\n```'
-        else:
-            content = '```' + str(page) + '\n' + CMD_PREFIX + 'items\n```'
-        msg = await ctx.send(content=content, embed=embed)
-
-        if page > 1:
-            await msg.add_reaction('◀️')
-        await msg.add_reaction('ℹ️')
-        if page < num_pages(items):
-            await msg.add_reaction('▶️')
-
-    @commands.command(pass_context=True, help=items_help)
-    async def items(self, ctx, *args):
-        await self.handle_items_cmd(ctx, 1, *args)
-
-    @commands.command(pass_context=True, help=recipes_help)
-    async def recipes(self, ctx, *args):
-        await send_message(ctx, satisfaction.recipes(*args))
-
-    @commands.command(pass_context=True, help=buildings_help)
-    async def buildings(self, ctx, *args):
-        await send_message(ctx, satisfaction.buildings(*args))
-
-    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await ctx.send('An error occurred: {}'.format(str(error)))
-
-
-class Optimization(commands.Cog):
-    """Optimization commands"""
-
-    def __init__(self, bot):
-        self.__bot = bot
-
-    @commands.command(pass_context=True, help=min_help)
-    async def min(self, ctx, *args):
-        def check(msg):
-            return True
-
-        async def request_input(msg):
-            await send_message(ctx, msg)
-            input_message = await self.__bot.wait_for('message', check=check)
-            return input_message.content
-        result = await satisfaction.min(request_input, *args)
-        file = None
-        if result.has_solution():
-            filename = 'output.gv'
-            result.generate_graph_viz(filename)
-            file = discord.File(filename + '.png')
-        await send_message(ctx, str(result), file)
-
-    @commands.command(pass_context=True, help=max_help)
-    async def max(self, ctx, *args):
-        def check(msg):
-            return True
-
-        async def request_input(msg):
-            await send_message(ctx, msg)
-            input_message = await self.__bot.wait_for('message', check=check)
-            return input_message.content
-        result = await satisfaction.max(request_input, *args)
-        file = None
-        if result.has_solution():
-            filename = 'output.gv'
-            result.generate_graph_viz(filename)
-            file = discord.File(filename + '.png')
-        await send_message(ctx, str(result), file)
-
-    async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        await ctx.send('An error occurred: {}'.format(str(error)))
-
-
-bot.add_cog(Information(bot))
-bot.add_cog(Optimization(bot))
-
-bot.run(token)
+client.run(token)

@@ -1,3 +1,4 @@
+from discord import Embed
 
 
 class PowerRecipe:
@@ -16,7 +17,8 @@ class PowerRecipe:
         out = '<'
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += '<TR>'
-        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' +  str(round(amount, 2)) + 'x'
+        out += '<TD COLSPAN="2" BGCOLOR="lightgray">' + \
+            str(round(amount, 2)) + 'x'
         out += '<BR/>' + self.generator().human_readable_name() + '</TD>'
         out += '</TR>'
         out += '<TR>'
@@ -34,14 +36,29 @@ class PowerRecipe:
         out.append("  var: " + self.var())
         out.append("  generator: " + self.__generator.human_readable_name())
         out.append("  fuel:")
-        out.append("    " + self.fuel_minute_rate() + " " + self.__fuel_item.human_readable_name() + "/m")
+        out.append("    " + self.fuel_minute_rate() + " " +
+                   self.__fuel_item.human_readable_name() + "/m")
         out.append("  power:")
         out.append("    " + self.__generator.power_production())
         out.append("")
         return '\n'.join(out)
 
+    def embed(self):
+        embed = Embed(title=self.human_readable_name())
+        embed.description = "Produces power from " + \
+            self.fuel_item().human_readable_name()
+
+        embed.add_field(name="Fuel Type",
+                        value=self.fuel_item().human_readable_name(),
+                        inline=True)
+        embed.add_field(name="Fuel Rate",
+                        value=(self.fuel_minute_rate() + "/minute"))
+        embed.add_field(name="Power",
+                        value=(self.__generator.power_production() + " MW"))
+        return embed
+
     def fuel_minute_rate(self):
-         # Example:
+        # Example:
         # 75 MW power production from generator
         # = 75 MJ/s
         # = 75 * 60 = 4500 MJ/m

@@ -1,0 +1,1279 @@
+min-problem:
+MINIMIZE
+-1*unweighted_resources + 0
+SUBJECT TO
+_C1: item:iron_rod >= 30
+
+_C2: - item:concrete - 20 recipe:alternate_encased_industrial_pipe
+ + 25 recipe:alternate_fine_concrete
+ - 20.625 recipe:alternate_heavy_encased_frame
+ + 45 recipe:alternate_rubber_concrete + 80 recipe:alternate_wet_concrete
+ + 15 recipe:concrete - 30 recipe:encased_industrial_beam
+ - 9 recipe:encased_uranium_cell = 0
+
+_C3: - item:iron_plate - 11.25 recipe:alternate_adhered_iron_plate
+ - 90 recipe:alternate_bolted_iron_plate
+ + 75 recipe:alternate_coated_iron_plate
+ + 45 recipe:alternate_steel_coated_plate
+ - 18.75 recipe:alternate_stitched_iron_plate - 22.5 recipe:beacon
+ + 20 recipe:iron_plate - 30 recipe:reinforced_iron_plate = 0
+
+_C4: - item:iron_rod + 48 recipe:alternate_steel_rod - 7.5 recipe:beacon
+ + 15 recipe:iron_rod - 12 recipe:modular_frame - 20 recipe:rotor
+ - 10 recipe:screw - 15 recipe:spiked_rebar = 0
+
+_C5: - item:power_shard + 6 recipe:power_shard_(1) + 8 recipe:power_shard_(2)
+ + 15 recipe:power_shard_(5) = 0
+
+_C6: - item:packaged_fuel + 60 recipe:alternate_diluted_packaged_fuel
+ + 40 recipe:packaged_fuel - 60 recipe:unpackage_fuel = 0
+
+_C7: - item:iodine_infused_filter + 3.75 recipe:iodine_infused_filter = 0
+
+_C8: - item:spiked_rebar + 15 recipe:spiked_rebar = 0
+
+_C9: - item:cartridge + 15 recipe:cartridge = 0
+
+_C10: - item:hub_parts = 0
+
+_C11: - item:wire - 75 recipe:alternate_automated_speed_wiring
+ + 120 recipe:alternate_caterium_wire - 37.5 recipe:alternate_coated_cable
+ + 90 recipe:alternate_fused_wire - 45 recipe:alternate_insulated_cable
+ + 22.5 recipe:alternate_iron_wire - 30 recipe:alternate_steel_rotor
+ - 37.5 recipe:alternate_stitched_iron_plate - 30 recipe:battery
+ - 112.5 recipe:beacon - 60 recipe:cable - 40 recipe:stator + 30 recipe:wire
+ = 0
+
+_C12: - item:filter + 7.5 recipe:filter - 3.75 recipe:iodine_infused_filter
+ = 0
+
+_C13: - item:cable + 67.5 recipe:alternate_coated_cable
+ + 100 recipe:alternate_insulated_cable
+ + 27.5 recipe:alternate_quickwire_cable - 50 recipe:automated_wiring
+ - 15 recipe:beacon + 30 recipe:cable - 22.5 recipe:computer
+ - 14 recipe:crystal_oscillator - 37.5 recipe:high_speed_connector = 0
+
+_C14: - item:reinforced_iron_plate + 3.75 recipe:alternate_adhered_iron_plate
+ - 7.5 recipe:alternate_bolted_frame + 15 recipe:alternate_bolted_iron_plate
+ - 2.5 recipe:alternate_plastic_smart_plating
+ - 2 recipe:alternate_steeled_frame
+ + 5.625 recipe:alternate_stitched_iron_plate - 2.5 recipe:crystal_oscillator
+ - 3 recipe:modular_frame + 5 recipe:reinforced_iron_plate
+ - 2 recipe:smart_plating = 0
+
+_C15: - item:copper_ingot - 22.5 recipe:alclad_aluminum_sheet
+ + 100 recipe:alternate_copper_alloy_ingot
+ - 37.5 recipe:alternate_fused_quckwire - 12 recipe:alternate_fused_wire
+ + 37.5 recipe:alternate_pure_copper_ingot
+ - 22.5 recipe:alternate_steamed_copper_sheet + 30 recipe:copper_ingot
+ - 20 recipe:copper_sheet - 15 recipe:wire = 0
+
+_C16: - item:screw - 140 recipe:alternate_bolted_frame
+ - 250 recipe:alternate_bolted_iron_plate + 50 recipe:alternate_casted_screw
+ - 195 recipe:alternate_copper_rotor
+ - 390 recipe:alternate_heavy_flexible_frame
+ + 260 recipe:alternate_steel_screw - 130 recipe:computer
+ - 200 recipe:heavy_modular_frame - 60 recipe:reinforced_iron_plate
+ - 100 recipe:rotor + 40 recipe:screw = 0
+
+_C17: - item:smart_plating + 5 recipe:alternate_plastic_smart_plating
+ - 2 recipe:modular_engine + 2 recipe:smart_plating = 0
+
+_C18: - item:versatile_framework + 7.5 recipe:alternate_flexible_framework
+ + 5 recipe:versatile_framework = 0
+
+_C19: - item:automated_wiring - 7.5 recipe:adaptive_control_unit
+ + 7.5 recipe:alternate_automated_speed_wiring + 2.5 recipe:automated_wiring
+ = 0
+
+_C20: - item:modular_engine + recipe:modular_engine = 0
+
+_C21: - item:adaptive_control_unit + recipe:adaptive_control_unit = 0
+
+_C22: - item:iron_ingot - 12.5 recipe:alternate_casted_screw
+ - 50 recipe:alternate_coated_iron_plate
+ + 50 recipe:alternate_iron_alloy_ingot - 12.5 recipe:alternate_iron_wire
+ + 65 recipe:alternate_pure_iron_ingot - 40 recipe:alternate_solid_steel_ingot
+ + 30 recipe:iron_ingot - 30 recipe:iron_plate - 15 recipe:iron_rod = 0
+
+_C23: - item:alclad_aluminum_sheet + 30 recipe:alclad_aluminum_sheet
+ - 37.5 recipe:alternate_heat_exchanger - 15 recipe:battery
+ - 40 recipe:heat_sink = 0
+
+_C24: - item:motor + 7.5 recipe:alternate_rigour_motor
+ - 6.5625 recipe:alternate_turbo_rigour_motor - 2 recipe:modular_engine
+ + 5 recipe:motor - 7.5 recipe:turbo_motor = 0
+
+_C25: - item:rubber - 3.75 recipe:alternate_adhered_iron_plate
+ - 45 recipe:alternate_caterium_computer
+ - 30 recipe:alternate_electrode_circuit_board
+ - 30 recipe:alternate_flexible_framework
+ - 75 recipe:alternate_heavy_flexible_frame
+ - 30 recipe:alternate_insulated_cable
+ - 13.125 recipe:alternate_insulated_crystal_oscillator
+ - 5 recipe:alternate_quickwire_cable - 30 recipe:alternate_recycled_plastic
+ + 60 recipe:alternate_recycled_rubber - 10 recipe:alternate_rubber_concrete
+ - 30 recipe:cartridge - 15 recipe:filter - 70 recipe:heat_sink
+ - 7.5 recipe:iodine_infused_filter - 15 recipe:modular_engine
+ - 40 recipe:radio_control_unit + 20 recipe:residual_rubber + 20 recipe:rubber
+ - 45 recipe:turbo_motor = 0
+
+_C26: - item:circuit_board - 5 recipe:adaptive_control_unit
+ + 8.75 recipe:alternate_caterium_circuit_board
+ - 26.25 recipe:alternate_caterium_computer
+ - 7.5 recipe:alternate_crystal_computer
+ + 5 recipe:alternate_electrode_circuit_board
+ + 12.5 recipe:alternate_silicone_circuit_board
+ - 3 recipe:alternate_silicone_high_speed_connector + 7.5 recipe:circuit_board
+ - 25 recipe:computer - 3.75 recipe:high_speed_connector = 0
+
+_C27: - item:copper_sheet - 25 recipe:a_i_limiter
+ - 22.5 recipe:alternate_copper_rotor - 56.25 recipe:alternate_heat_exchanger
+ - 27.5 recipe:alternate_silicone_circuit_board
+ + 22.5 recipe:alternate_steamed_copper_sheet - 15 recipe:circuit_board
+ + 10 recipe:copper_sheet = 0
+
+_C28: - item:plastic - 12.5 recipe:alternate_caterium_circuit_board
+ - 10 recipe:alternate_coated_iron_plate
+ - 7.5 recipe:alternate_plastic_smart_plating
+ + 60 recipe:alternate_recycled_plastic - 30 recipe:alternate_recycled_rubber
+ - 5 recipe:alternate_steel_coated_plate - 15 recipe:battery
+ - 30 recipe:circuit_board - 45 recipe:computer - 30 recipe:empty_canister
+ + 20 recipe:plastic + 20 recipe:residual_plastic - 52.5 recipe:supercomputer
+ = 0
+
+_C29: - item:encased_industrial_beam
+ + 4 recipe:alternate_encased_industrial_pipe
+ - 9.375 recipe:alternate_heavy_encased_frame
+ - 11.25 recipe:alternate_heavy_flexible_frame
+ + 6 recipe:encased_industrial_beam - 10 recipe:heavy_modular_frame
+ - 1.2 recipe:nuclear_fuel_rod = 0
+
+_C30: - item:steel_pipe - 8 recipe:alternate_crystal_beacon
+ - 28 recipe:alternate_encased_industrial_pipe
+ - 33.75 recipe:alternate_heavy_encased_frame
+ - 16 recipe:alternate_quickwire_stator - 12 recipe:alternate_seismic_nobelisk
+ - 10 recipe:alternate_steel_rotor - 10 recipe:alternate_steeled_frame
+ - 30 recipe:cartridge - 30 recipe:heavy_modular_frame - 30 recipe:nobelisk
+ - 15 recipe:stator + 20 recipe:steel_pipe = 0
+
+_C31: - item:fuel - 15 power_recipe:fuel
+ - 30 recipe:alternate_recycled_plastic - 30 recipe:alternate_recycled_rubber
+ + 40 recipe:fuel - 40 recipe:packaged_fuel + 40 recipe:residual_fuel
+ - 22.5 recipe:turbofuel + 60 recipe:unpackage_fuel = 0
+
+_C32: - item:polymer_resin + 20 recipe:alternate_heavy_oil_residue
+ - 80 recipe:alternate_polyester_fabric + 130 recipe:alternate_polymer_resin
+ + 30 recipe:fuel - 60 recipe:residual_plastic - 40 recipe:residual_rubber = 0
+
+_C33: - item:heavy_oil_residue - 15 recipe:alternate_coated_cable
+ - 30 recipe:alternate_diluted_packaged_fuel
+ + 40 recipe:alternate_heavy_oil_residue + 20 recipe:alternate_polymer_resin
+ - 37.5 recipe:alternate_turbo_heavy_fuel
+ - 30 recipe:packaged_heavy_oil_residue - 40 recipe:petroleum_coke
+ + 10 recipe:plastic - 60 recipe:residual_fuel + 20 recipe:rubber
+ + 20 recipe:unpackage_heavy_oil_residue = 0
+
+_C34: - item:petroleum_coke - 25 power_recipe:petroleum_coke
+ - 75 recipe:alternate_coke_steel_ingot
+ - 45 recipe:alternate_electrode_circuit_board - 60 recipe:aluminum_scrap
+ + 120 recipe:petroleum_coke = 0
+
+_C35: - item:modular_frame + 5 recipe:alternate_bolted_frame
+ - 3.75 recipe:alternate_flexible_framework
+ - 7.5 recipe:alternate_heavy_encased_frame
+ - 18.75 recipe:alternate_heavy_flexible_frame
+ + 3 recipe:alternate_steeled_frame - 10 recipe:heavy_modular_frame
+ + 2 recipe:modular_frame - 2.5 recipe:versatile_framework = 0
+
+_C36: - item:rotor + 11.25 recipe:alternate_copper_rotor
+ - 2.5 recipe:alternate_plastic_smart_plating
+ - 3.75 recipe:alternate_rigour_motor + 5 recipe:alternate_steel_rotor
+ - 10 recipe:motor + 4 recipe:rotor - 2 recipe:smart_plating = 0
+
+_C37: - item:steel_ingot + 100 recipe:alternate_coke_steel_ingot
+ + 37.5 recipe:alternate_compacted_steel_ingot
+ + 60 recipe:alternate_solid_steel_ingot
+ - 7.5 recipe:alternate_steel_coated_plate - 12 recipe:alternate_steel_rod
+ - 60 recipe:steel_beam + 45 recipe:steel_ingot - 30 recipe:steel_pipe = 0
+
+_C38: - item:alumina_solution - 90 recipe:alternate_electrode___aluminum_scrap
+ + 80 recipe:alumina_solution - 240 recipe:aluminum_scrap = 0
+
+_C39: - item:aluminum_scrap + 150 recipe:alternate_electrode___aluminum_scrap
+ - 144 recipe:alternate_pure_aluminum_ingot - 240 recipe:aluminum_ingot
+ + 360 recipe:aluminum_scrap = 0
+
+_C40: - item:aluminum_ingot - 60 recipe:alclad_aluminum_sheet
+ + 36 recipe:alternate_pure_aluminum_ingot + 80 recipe:aluminum_ingot = 0
+
+_C41: - item:silica + 26.25 recipe:alternate_cheap_silica
+ - 7.5 recipe:alternate_fine_concrete
+ - 22.5 recipe:alternate_infused_uranium_cell
+ - 27.5 recipe:alternate_silicone_circuit_board
+ - 37.5 recipe:alternate_silicone_high_speed_connector
+ + 20 recipe:alumina_solution - 140 recipe:aluminum_ingot + 37.5 recipe:silica
+ = 0
+
+_C42: - item:computer - recipe:adaptive_control_unit
+ + 3.75 recipe:alternate_caterium_computer
+ + 2.8125 recipe:alternate_crystal_computer + 2.5 recipe:computer
+ - 2.5 recipe:radio_control_unit - 3.75 recipe:supercomputer = 0
+
+_C43: - item:heavy_modular_frame - recipe:adaptive_control_unit
+ + 2.8125 recipe:alternate_heavy_encased_frame
+ + 3.75 recipe:alternate_heavy_flexible_frame + 2 recipe:heavy_modular_frame
+ = 0
+
+_C44: - item:steel_beam - 2 recipe:alternate_crystal_beacon
+ - 22.5 recipe:alternate_flexible_framework - 5 recipe:alternate_steel_screw
+ - 24 recipe:encased_industrial_beam + 15 recipe:steel_beam
+ - 30 recipe:versatile_framework = 0
+
+_C45: - item:caterium_ingot - 15 recipe:alternate_caterium_wire
+ - 7.5 recipe:alternate_fused_quckwire - 3 recipe:alternate_fused_wire
+ + 12 recipe:alternate_pure_caterium_ingot + 15 recipe:caterium_ingot
+ - 12 recipe:quickwire = 0
+
+_C46: - item:high_speed_connector
+ - 1.875 recipe:alternate_automated_speed_wiring
+ - 5 recipe:alternate_electromagnetic_connection_rod
+ + 3 recipe:alternate_silicone_high_speed_connector
+ + 3.75 recipe:high_speed_connector - 5.625 recipe:supercomputer = 0
+
+_C47: - item:stator - 3.75 recipe:alternate_automated_speed_wiring
+ - 10 recipe:alternate_electromagnetic_connection_rod
+ + 8 recipe:alternate_quickwire_stator - 3.75 recipe:alternate_rigour_motor
+ - 6.5625 recipe:alternate_turbo_rigour_motor - 2.5 recipe:automated_wiring
+ - 6 recipe:electromagnetic_control_rod - 10 recipe:motor + 5 recipe:stator
+ = 0
+
+_C48: - item:a_i_limiter + 5 recipe:a_i_limiter
+ - 1.875 recipe:alternate_insulated_crystal_oscillator
+ - 8.4375 recipe:alternate_turbo_rigour_motor
+ - 4 recipe:electromagnetic_control_rod - 3.75 recipe:supercomputer = 0
+
+_C49: - item:quickwire - 100 recipe:a_i_limiter
+ - 37.5 recipe:alternate_caterium_circuit_board
+ - 105 recipe:alternate_caterium_computer + 90 recipe:alternate_fused_quckwire
+ - 37.5 recipe:alternate_infused_uranium_cell
+ - 7.5 recipe:alternate_quickwire_cable - 60 recipe:alternate_quickwire_stator
+ - 90 recipe:alternate_silicone_high_speed_connector
+ - 210 recipe:high_speed_connector - 30 recipe:iodine_infused_filter
+ + 60 recipe:quickwire = 0
+
+_C50: - item:quartz_crystal
+ - 18.75 recipe:alternate_insulated_crystal_oscillator
+ + 52.5 recipe:alternate_pure_quartz_crystal
+ - 37.5 recipe:alternate_radio_control_system - 18 recipe:crystal_oscillator
+ + 22.5 recipe:quartz_crystal = 0
+
+_C51: - item:turbofuel - 4.5 power_recipe:turbofuel
+ + 30 recipe:alternate_turbo_heavy_fuel - 20 recipe:packaged_turbofuel
+ + 18.75 recipe:turbofuel + 20 recipe:unpackage_turbo_fuel = 0
+
+_C52: - item:empty_canister + 60 recipe:empty_canister
+ - 40 recipe:packaged_fuel - 30 recipe:packaged_heavy_oil_residue
+ - 40 recipe:packaged_liquid_biofuel - 30 recipe:packaged_oil
+ - 20 recipe:packaged_turbofuel - 60 recipe:packaged_water
+ + 60 recipe:unpackage_fuel + 20 recipe:unpackage_heavy_oil_residue
+ + 60 recipe:unpackage_liquid_biofuel + 60 recipe:unpackage_oil
+ + 20 recipe:unpackage_turbo_fuel + 120 recipe:unpackage_water = 0
+
+_C53: - item:packaged_turbofuel + 20 recipe:packaged_turbofuel
+ - 20 recipe:unpackage_turbo_fuel = 0
+
+_C54: - item:crystal_oscillator - 0.5 recipe:alternate_crystal_beacon
+ - 2.8125 recipe:alternate_crystal_computer
+ + 1.875 recipe:alternate_insulated_crystal_oscillator
+ - 0.6 recipe:alternate_nuclear_fuel_unit - 1.25 recipe:alternate_rigour_motor
+ - 1.5 recipe:alternate_seismic_nobelisk + recipe:crystal_oscillator
+ - 2.5 recipe:radio_control_unit = 0
+
+_C55: - item:electromagnetic_control_rod
+ + 10 recipe:alternate_electromagnetic_connection_rod
+ - 2 recipe:alternate_nuclear_fuel_unit + 4 recipe:electromagnetic_control_rod
+ - 2 recipe:nuclear_fuel_rod = 0
+
+_C56: - item:supercomputer - 1.25 recipe:alternate_radio_control_system
+ + 1.875 recipe:supercomputer = 0
+
+_C57: - item:sulfuric_acid + 100 recipe:sulfuric_acid
+ - 80 recipe:uranium_pellet = 0
+
+_C58: - item:black_powder + 15 recipe:alternate_fine_black_powder
+ - 12 recipe:alternate_seismic_nobelisk + 7.5 recipe:black_powder
+ - 30 recipe:cartridge - 15 recipe:nobelisk = 0
+
+_C59: - item:heat_sink + 13.125 recipe:alternate_heat_exchanger
+ - 12.5 recipe:alternate_radio_control_system + 10 recipe:heat_sink
+ - 10 recipe:radio_control_unit - 7.5 recipe:turbo_motor = 0
+
+_C60: - item:turbo_motor + 2.8125 recipe:alternate_turbo_rigour_motor
+ + 1.875 recipe:turbo_motor = 0
+
+_C61: - item:battery + 5.625 recipe:battery = 0
+
+_C62: - item:radio_control_unit + 3.75 recipe:alternate_radio_control_system
+ - 4.6875 recipe:alternate_turbo_rigour_motor + 2.5 recipe:radio_control_unit
+ - 3.75 recipe:turbo_motor = 0
+
+_C63: - item:nobelisk + 6 recipe:alternate_seismic_nobelisk
+ + 3 recipe:nobelisk = 0
+
+_C64: - item:green_power_slug - 6 recipe:power_shard_(1) = 0
+
+_C65: - item:packaged_heavy_oil_residue + 30 recipe:packaged_heavy_oil_residue
+ - 20 recipe:unpackage_heavy_oil_residue = 0
+
+_C66: - item:color_cartridge + 75 recipe:color_cartridge = 0
+
+_C67: - item:yellow_power_slug - 4 recipe:power_shard_(2) = 0
+
+_C68: - item:purple_power_slug - 3 recipe:power_shard_(5) = 0
+
+_C69: - item:solid_biofuel - 4 power_recipe:solid_biofuel
+ - 90 recipe:liquid_biofuel + 60 recipe:solid_biofuel = 0
+
+_C70: - item:biomass - 10 power_recipe:biomass - 37.5 recipe:alternate_biocoal
+ + 1500 recipe:biomass_(alien_carapace) + 1500 recipe:biomass_(alien_organs)
+ + 60 recipe:biomass_(leaves) + 150 recipe:biomass_(mycelia)
+ + 300 recipe:biomass_(wood) - 75 recipe:fabric - 120 recipe:solid_biofuel = 0
+
+_C71: - item:leaves - 120 power_recipe:leaves - 120 recipe:biomass_(leaves)
+ = 0
+
+_C72: - item:wood - 18 power_recipe:wood - 15 recipe:alternate_charcoal
+ - 60 recipe:biomass_(wood) = 0
+
+_C73: - item:fabric - 120 power_recipe:fabric
+ + 5 recipe:alternate_polyester_fabric + 15 recipe:fabric - 15 recipe:filter
+ = 0
+
+_C74: - item:mycelia - 90 power_recipe:mycelia - 150 recipe:biomass_(mycelia)
+ - 15 recipe:fabric = 0
+
+_C75: - item:liquid_biofuel - 2.4 power_recipe:liquid_biofuel
+ + 60 recipe:liquid_biofuel - 40 recipe:packaged_liquid_biofuel
+ + 60 recipe:unpackage_liquid_biofuel = 0
+
+_C76: - item:packaged_liquid_biofuel
+ - 2.4 power_recipe:packaged_liquid_biofuel
+ + 40 recipe:packaged_liquid_biofuel - 60 recipe:unpackage_liquid_biofuel = 0
+
+_C77: - item:alien_carapace - 7.2 power_recipe:alien_carapace
+ - 15 recipe:biomass_(alien_carapace) = 0
+
+_C78: - item:alien_organs - 7.2 power_recipe:alien_organs
+ - 7.5 recipe:biomass_(alien_organs) = 0
+
+_C79: - item:flower_petals - 18 power_recipe:flower_petals
+ - 37.5 recipe:color_cartridge = 0
+
+_C80: - item:chainsaw = 0
+
+_C81: - item:factory_cart = 0
+
+_C82: - item:hazmat_suit = 0
+
+_C83: - item:jetpack = 0
+
+_C84: - item:blade_runners = 0
+
+_C85: - item:rebar_gun = 0
+
+_C86: - item:rifle = 0
+
+_C87: - item:xeno_zapper = 0
+
+_C88: - item:xeno_basher = 0
+
+_C89: - item:portable_miner = 0
+
+_C90: - item:object_scanner = 0
+
+_C91: - item:gas_mask = 0
+
+_C92: - item:color_gun = 0
+
+_C93: - item:nobelisk_detonator = 0
+
+_C94: 30 recipe:alternate_electrode___aluminum_scrap
+ - 50 recipe:alternate_polyester_fabric
+ - 24 recipe:alternate_pure_caterium_ingot
+ - 10 recipe:alternate_pure_copper_ingot - 20 recipe:alternate_pure_iron_ingot
+ - 37.5 recipe:alternate_pure_quartz_crystal
+ - 22.5 recipe:alternate_steamed_copper_sheet
+ - 100 recipe:alternate_wet_concrete - 100 recipe:alumina_solution
+ + 60 recipe:aluminum_scrap - 45 recipe:liquid_biofuel
+ - 60 recipe:packaged_water - 20 recipe:residual_plastic
+ - 40 recipe:residual_rubber - 50 recipe:sulfuric_acid
+ + 120 recipe:unpackage_water - resource:water = 0
+
+_C95: - 75 recipe:alternate_coke_steel_ingot
+ - 22.5 recipe:alternate_compacted_steel_ingot
+ - 25 recipe:alternate_copper_alloy_ingot
+ - 20 recipe:alternate_iron_alloy_ingot - 35 recipe:alternate_pure_iron_ingot
+ - 30 recipe:iron_ingot - 45 recipe:steel_ingot - resource:iron_ore = 0
+
+_C96: - 50 recipe:alternate_copper_alloy_ingot
+ - 20 recipe:alternate_iron_alloy_ingot
+ - 15 recipe:alternate_pure_copper_ingot - 30 recipe:copper_ingot
+ - resource:copper_ore = 0
+
+_C97: - 18.75 recipe:alternate_cheap_silica
+ - 30 recipe:alternate_fine_concrete - 50 recipe:alternate_rubber_concrete
+ - 120 recipe:alternate_wet_concrete - 45 recipe:concrete - resource:limestone
+ = 0
+
+_C98: - 15 power_recipe:coal + 45 recipe:alternate_biocoal
+ + 150 recipe:alternate_charcoal - 25 recipe:alternate_compacted_coal
+ - 30 recipe:alternate_electrode___aluminum_scrap
+ - 40 recipe:alternate_solid_steel_ingot - 7.5 recipe:black_powder
+ - 37.5 recipe:filter - 45 recipe:steel_ingot - resource:coal = 0
+
+_C99: - 30 recipe:alternate_heavy_oil_residue
+ - 60 recipe:alternate_polymer_resin - 60 recipe:fuel - 30 recipe:packaged_oil
+ - 30 recipe:plastic - 30 recipe:rubber + 60 recipe:unpackage_oil
+ - resource:crude_oil = 0
+
+_C100: - 70 recipe:alumina_solution - resource:bauxite = 0
+
+_C101: - 24 recipe:alternate_pure_caterium_ingot - 45 recipe:caterium_ingot
+ - resource:caterium_ore = 0
+
+_C102: - 50 recipe:uranium_pellet - resource:uranium = 0
+
+_C103: - 11.25 recipe:alternate_cheap_silica
+ - 67.5 recipe:alternate_pure_quartz_crystal - 37.5 recipe:quartz_crystal
+ - 22.5 recipe:silica - resource:raw_quartz = 0
+
+_C104: - 25 recipe:alternate_compacted_coal
+ - 7.5 recipe:alternate_fine_black_powder
+ - 22.5 recipe:alternate_infused_uranium_cell - 37.5 recipe:battery
+ - 15 recipe:black_powder - 50 recipe:sulfuric_acid - resource:sulfur = 0
+
+_C105: - item:packaged_water - 60 recipe:alternate_diluted_packaged_fuel
+ + 60 recipe:packaged_water - 120 recipe:unpackage_water = 0
+
+_C106: - item:compacted_coal - 7.14285714286 power_recipe:compacted_coal
+ + 25 recipe:alternate_compacted_coal
+ - 11.25 recipe:alternate_compacted_steel_ingot
+ - 3.75 recipe:alternate_fine_black_powder
+ - 30 recipe:alternate_turbo_heavy_fuel - 15 recipe:turbofuel = 0
+
+_C107: - item:encased_uranium_cell
+ + 17.5 recipe:alternate_infused_uranium_cell
+ - 10 recipe:alternate_nuclear_fuel_unit + 10 recipe:encased_uranium_cell
+ - 10 recipe:nuclear_fuel_rod = 0
+
+_C108: - item:uranium_pellet - 20 recipe:alternate_infused_uranium_cell
+ - 40 recipe:encased_uranium_cell + 50 recipe:uranium_pellet = 0
+
+_C109: - item:packaged_oil + 30 recipe:packaged_oil - 60 recipe:unpackage_oil
+ = 0
+
+_C110: - item:beacon + 10 recipe:alternate_crystal_beacon
+ - 1.2 recipe:alternate_nuclear_fuel_unit + 7.5 recipe:beacon
+ - 3 recipe:cartridge = 0
+
+_C111: - item:paleberry = 0
+
+_C112: - item:bacon_agaric = 0
+
+_C113: - item:beryl_nut = 0
+
+_C114: - item:medicinal_inhaler = 0
+
+_C115: - item:parachute = 0
+
+_C116: - item:nuclear_fuel_rod - 0.2 power_recipe:nuclear_fuel_rod
+ + 0.6 recipe:alternate_nuclear_fuel_unit + 0.4 recipe:nuclear_fuel_rod = 0
+
+_C117: - item:nuclear_waste = 0
+
+_C118: - crafter:constructor + recipe:alternate_biocoal
+ + recipe:alternate_casted_screw + recipe:alternate_caterium_wire
+ + recipe:alternate_charcoal + recipe:alternate_iron_wire
+ + recipe:alternate_steel_rod + recipe:alternate_steel_screw
+ + recipe:biomass_(alien_carapace) + recipe:biomass_(alien_organs)
+ + recipe:biomass_(leaves) + recipe:biomass_(mycelia) + recipe:biomass_(wood)
+ + recipe:cable + recipe:color_cartridge + recipe:concrete
+ + recipe:copper_sheet + recipe:empty_canister + recipe:iron_plate
+ + recipe:iron_rod + recipe:power_shard_(1) + recipe:power_shard_(2)
+ + recipe:power_shard_(5) + recipe:quartz_crystal + recipe:quickwire
+ + recipe:screw + recipe:silica + recipe:solid_biofuel + recipe:spiked_rebar
+ + recipe:steel_beam + recipe:steel_pipe + recipe:wire = 0
+
+_C119: - crafter:smelter + recipe:alternate_pure_aluminum_ingot
+ + recipe:caterium_ingot + recipe:copper_ingot + recipe:iron_ingot = 0
+
+_C120: - crafter:refinery + recipe:alternate_coated_cable
+ + recipe:alternate_diluted_packaged_fuel
+ + recipe:alternate_electrode___aluminum_scrap
+ + recipe:alternate_heavy_oil_residue + recipe:alternate_polyester_fabric
+ + recipe:alternate_polymer_resin + recipe:alternate_pure_caterium_ingot
+ + recipe:alternate_pure_copper_ingot + recipe:alternate_pure_iron_ingot
+ + recipe:alternate_pure_quartz_crystal + recipe:alternate_recycled_plastic
+ + recipe:alternate_recycled_rubber + recipe:alternate_steamed_copper_sheet
+ + recipe:alternate_turbo_heavy_fuel + recipe:alternate_wet_concrete
+ + recipe:alumina_solution + recipe:aluminum_scrap + recipe:fuel
+ + recipe:liquid_biofuel + recipe:packaged_fuel
+ + recipe:packaged_heavy_oil_residue + recipe:packaged_liquid_biofuel
+ + recipe:packaged_oil + recipe:packaged_turbofuel + recipe:packaged_water
+ + recipe:petroleum_coke + recipe:plastic + recipe:residual_fuel
+ + recipe:residual_plastic + recipe:residual_rubber + recipe:rubber
+ + recipe:sulfuric_acid + recipe:turbofuel + recipe:unpackage_fuel
+ + recipe:unpackage_heavy_oil_residue + recipe:unpackage_liquid_biofuel
+ + recipe:unpackage_oil + recipe:unpackage_turbo_fuel + recipe:unpackage_water
+ + recipe:uranium_pellet = 0
+
+_C121: - crafter:assembler + recipe:a_i_limiter + recipe:alclad_aluminum_sheet
+ + recipe:alternate_adhered_iron_plate + recipe:alternate_bolted_frame
+ + recipe:alternate_bolted_iron_plate
+ + recipe:alternate_caterium_circuit_board + recipe:alternate_cheap_silica
+ + recipe:alternate_coated_iron_plate + recipe:alternate_compacted_coal
+ + recipe:alternate_copper_rotor + recipe:alternate_crystal_computer
+ + recipe:alternate_electrode_circuit_board
+ + recipe:alternate_electromagnetic_connection_rod
+ + recipe:alternate_encased_industrial_pipe
+ + recipe:alternate_fine_black_powder + recipe:alternate_fine_concrete
+ + recipe:alternate_fused_quckwire + recipe:alternate_fused_wire
+ + recipe:alternate_heat_exchanger + recipe:alternate_insulated_cable
+ + recipe:alternate_quickwire_cable + recipe:alternate_quickwire_stator
+ + recipe:alternate_rubber_concrete + recipe:alternate_silicone_circuit_board
+ + recipe:alternate_steel_coated_plate + recipe:alternate_steel_rotor
+ + recipe:alternate_steeled_frame + recipe:alternate_stitched_iron_plate
+ + recipe:automated_wiring + recipe:black_powder + recipe:circuit_board
+ + recipe:electromagnetic_control_rod + recipe:encased_industrial_beam
+ + recipe:encased_uranium_cell + recipe:fabric + recipe:heat_sink
+ + recipe:modular_frame + recipe:motor + recipe:nobelisk
+ + recipe:reinforced_iron_plate + recipe:rotor + recipe:smart_plating
+ + recipe:stator + recipe:versatile_framework = 0
+
+_C122: - crafter:manufacturer + recipe:adaptive_control_unit
+ + recipe:alternate_automated_speed_wiring
+ + recipe:alternate_caterium_computer + recipe:alternate_crystal_beacon
+ + recipe:alternate_flexible_framework + recipe:alternate_heavy_encased_frame
+ + recipe:alternate_heavy_flexible_frame
+ + recipe:alternate_infused_uranium_cell
+ + recipe:alternate_insulated_crystal_oscillator
+ + recipe:alternate_nuclear_fuel_unit + recipe:alternate_plastic_smart_plating
+ + recipe:alternate_radio_control_system + recipe:alternate_rigour_motor
+ + recipe:alternate_seismic_nobelisk
+ + recipe:alternate_silicone_high_speed_connector
+ + recipe:alternate_turbo_rigour_motor + recipe:battery + recipe:beacon
+ + recipe:cartridge + recipe:computer + recipe:crystal_oscillator
+ + recipe:filter + recipe:heavy_modular_frame + recipe:high_speed_connector
+ + recipe:iodine_infused_filter + recipe:modular_engine
+ + recipe:nuclear_fuel_rod + recipe:radio_control_unit + recipe:supercomputer
+ + recipe:turbo_motor = 0
+
+_C123: - crafter:foundry + recipe:alternate_coke_steel_ingot
+ + recipe:alternate_compacted_steel_ingot
+ + recipe:alternate_copper_alloy_ingot + recipe:alternate_iron_alloy_ingot
+ + recipe:alternate_solid_steel_ingot + recipe:aluminum_ingot
+ + recipe:steel_ingot = 0
+
+_C124: - generator:fuel_generator + power_recipe:fuel + power_recipe:turbofuel
+ = 0
+
+_C125: - generator:biomass_burner + power_recipe:alien_carapace
+ + power_recipe:alien_organs + power_recipe:biomass + power_recipe:fabric
+ + power_recipe:flower_petals + power_recipe:leaves
+ + power_recipe:liquid_biofuel + power_recipe:mycelia
+ + power_recipe:packaged_liquid_biofuel + power_recipe:solid_biofuel
+ + power_recipe:wood = 0
+
+_C126: - generator:coal_generator + power_recipe:coal
+ + power_recipe:compacted_coal + power_recipe:petroleum_coke = 0
+
+_C127: - generator:nuclear_power_plant + power_recipe:nuclear_fuel_rod = 0
+
+_C128: - generator:geo_thermal_generator = 0
+
+_C129: 30 generator:biomass_burner + 75 generator:coal_generator
+ + 150 generator:fuel_generator + 200 generator:geo_thermal_generator
+ + 2500 generator:nuclear_power_plant - power - 15 recipe:a_i_limiter
+ - 55 recipe:adaptive_control_unit - 15 recipe:alclad_aluminum_sheet
+ - 15 recipe:alternate_adhered_iron_plate
+ - 55 recipe:alternate_automated_speed_wiring - 4 recipe:alternate_biocoal
+ - 15 recipe:alternate_bolted_frame - 15 recipe:alternate_bolted_iron_plate
+ - 4 recipe:alternate_casted_screw
+ - 15 recipe:alternate_caterium_circuit_board
+ - 55 recipe:alternate_caterium_computer - 4 recipe:alternate_caterium_wire
+ - 4 recipe:alternate_charcoal - 15 recipe:alternate_cheap_silica
+ - 30 recipe:alternate_coated_cable - 15 recipe:alternate_coated_iron_plate
+ - 16 recipe:alternate_coke_steel_ingot - 15 recipe:alternate_compacted_coal
+ - 16 recipe:alternate_compacted_steel_ingot
+ - 16 recipe:alternate_copper_alloy_ingot - 15 recipe:alternate_copper_rotor
+ - 55 recipe:alternate_crystal_beacon - 15 recipe:alternate_crystal_computer
+ - 30 recipe:alternate_diluted_packaged_fuel
+ - 30 recipe:alternate_electrode___aluminum_scrap
+ - 15 recipe:alternate_electrode_circuit_board
+ - 15 recipe:alternate_electromagnetic_connection_rod
+ - 15 recipe:alternate_encased_industrial_pipe
+ - 15 recipe:alternate_fine_black_powder - 15 recipe:alternate_fine_concrete
+ - 55 recipe:alternate_flexible_framework - 15 recipe:alternate_fused_quckwire
+ - 15 recipe:alternate_fused_wire - 15 recipe:alternate_heat_exchanger
+ - 55 recipe:alternate_heavy_encased_frame
+ - 55 recipe:alternate_heavy_flexible_frame
+ - 30 recipe:alternate_heavy_oil_residue
+ - 55 recipe:alternate_infused_uranium_cell
+ - 15 recipe:alternate_insulated_cable
+ - 55 recipe:alternate_insulated_crystal_oscillator
+ - 16 recipe:alternate_iron_alloy_ingot - 4 recipe:alternate_iron_wire
+ - 55 recipe:alternate_nuclear_fuel_unit
+ - 55 recipe:alternate_plastic_smart_plating
+ - 30 recipe:alternate_polyester_fabric - 30 recipe:alternate_polymer_resin
+ - 4 recipe:alternate_pure_aluminum_ingot
+ - 30 recipe:alternate_pure_caterium_ingot
+ - 30 recipe:alternate_pure_copper_ingot - 30 recipe:alternate_pure_iron_ingot
+ - 30 recipe:alternate_pure_quartz_crystal
+ - 15 recipe:alternate_quickwire_cable - 15 recipe:alternate_quickwire_stator
+ - 55 recipe:alternate_radio_control_system
+ - 30 recipe:alternate_recycled_plastic - 30 recipe:alternate_recycled_rubber
+ - 55 recipe:alternate_rigour_motor - 15 recipe:alternate_rubber_concrete
+ - 55 recipe:alternate_seismic_nobelisk
+ - 15 recipe:alternate_silicone_circuit_board
+ - 55 recipe:alternate_silicone_high_speed_connector
+ - 16 recipe:alternate_solid_steel_ingot
+ - 30 recipe:alternate_steamed_copper_sheet
+ - 15 recipe:alternate_steel_coated_plate - 4 recipe:alternate_steel_rod
+ - 15 recipe:alternate_steel_rotor - 4 recipe:alternate_steel_screw
+ - 15 recipe:alternate_steeled_frame - 15 recipe:alternate_stitched_iron_plate
+ - 30 recipe:alternate_turbo_heavy_fuel
+ - 55 recipe:alternate_turbo_rigour_motor - 30 recipe:alternate_wet_concrete
+ - 30 recipe:alumina_solution - 16 recipe:aluminum_ingot
+ - 30 recipe:aluminum_scrap - 15 recipe:automated_wiring - 55 recipe:battery
+ - 55 recipe:beacon - 4 recipe:biomass_(alien_carapace)
+ - 4 recipe:biomass_(alien_organs) - 4 recipe:biomass_(leaves)
+ - 4 recipe:biomass_(mycelia) - 4 recipe:biomass_(wood)
+ - 15 recipe:black_powder - 4 recipe:cable - 55 recipe:cartridge
+ - 4 recipe:caterium_ingot - 15 recipe:circuit_board
+ - 4 recipe:color_cartridge - 55 recipe:computer - 4 recipe:concrete
+ - 4 recipe:copper_ingot - 4 recipe:copper_sheet
+ - 55 recipe:crystal_oscillator - 15 recipe:electromagnetic_control_rod
+ - 4 recipe:empty_canister - 15 recipe:encased_industrial_beam
+ - 15 recipe:encased_uranium_cell - 15 recipe:fabric - 55 recipe:filter
+ - 30 recipe:fuel - 15 recipe:heat_sink - 55 recipe:heavy_modular_frame
+ - 55 recipe:high_speed_connector - 55 recipe:iodine_infused_filter
+ - 4 recipe:iron_ingot - 4 recipe:iron_plate - 4 recipe:iron_rod
+ - 30 recipe:liquid_biofuel - 55 recipe:modular_engine
+ - 15 recipe:modular_frame - 15 recipe:motor - 15 recipe:nobelisk
+ - 55 recipe:nuclear_fuel_rod - 30 recipe:packaged_fuel
+ - 30 recipe:packaged_heavy_oil_residue - 30 recipe:packaged_liquid_biofuel
+ - 30 recipe:packaged_oil - 30 recipe:packaged_turbofuel
+ - 30 recipe:packaged_water - 30 recipe:petroleum_coke - 30 recipe:plastic
+ - 4 recipe:power_shard_(1) - 4 recipe:power_shard_(2)
+ - 4 recipe:power_shard_(5) - 4 recipe:quartz_crystal - 4 recipe:quickwire
+ - 55 recipe:radio_control_unit - 15 recipe:reinforced_iron_plate
+ - 30 recipe:residual_fuel - 30 recipe:residual_plastic
+ - 30 recipe:residual_rubber - 15 recipe:rotor - 30 recipe:rubber
+ - 4 recipe:screw - 4 recipe:silica - 15 recipe:smart_plating
+ - 4 recipe:solid_biofuel - 4 recipe:spiked_rebar - 15 recipe:stator
+ - 4 recipe:steel_beam - 16 recipe:steel_ingot - 4 recipe:steel_pipe
+ - 30 recipe:sulfuric_acid - 55 recipe:supercomputer - 55 recipe:turbo_motor
+ - 30 recipe:turbofuel - 30 recipe:unpackage_fuel
+ - 30 recipe:unpackage_heavy_oil_residue - 30 recipe:unpackage_liquid_biofuel
+ - 30 recipe:unpackage_oil - 30 recipe:unpackage_turbo_fuel
+ - 30 recipe:unpackage_water - 30 recipe:uranium_pellet
+ - 15 recipe:versatile_framework - 4 recipe:wire = 0
+
+_C130: resource:bauxite + resource:caterium_ore + resource:coal
+ + resource:copper_ore + resource:crude_oil + resource:iron_ore
+ + resource:limestone + resource:raw_quartz + resource:sulfur
+ + resource:uranium + 0 resource:water - unweighted_resources = 0
+
+_C131: 8.48 resource:bauxite + 6.36 resource:caterium_ore + 2.95 resource:coal
+ + 3.29 resource:copper_ore + 4.31 resource:crude_oil + resource:iron_ore
+ + 1.47 resource:limestone + 6.36 resource:raw_quartz + 13.33 resource:sulfur
+ + 46.67 resource:uranium + 0 resource:water - weighted_resources = 0
+
+_C132: - mean_weighted_resources + 2.91 resource:bauxite
+ + 2.52 resource:caterium_ore + 1.72 resource:coal + 1.81 resource:copper_ore
+ + 2.08 resource:crude_oil + resource:iron_ore + 1.21 resource:limestone
+ + 2.52 resource:raw_quartz + 3.65 resource:sulfur + 6.83 resource:uranium
+ + 0 resource:water = 0
+
+_C133: - alternate_recipes + recipe:alternate_adhered_iron_plate
+ + recipe:alternate_automated_speed_wiring + recipe:alternate_biocoal
+ + recipe:alternate_bolted_frame + recipe:alternate_bolted_iron_plate
+ + recipe:alternate_casted_screw + recipe:alternate_caterium_circuit_board
+ + recipe:alternate_caterium_computer + recipe:alternate_caterium_wire
+ + recipe:alternate_charcoal + recipe:alternate_cheap_silica
+ + recipe:alternate_coated_cable + recipe:alternate_coated_iron_plate
+ + recipe:alternate_coke_steel_ingot + recipe:alternate_compacted_coal
+ + recipe:alternate_compacted_steel_ingot
+ + recipe:alternate_copper_alloy_ingot + recipe:alternate_copper_rotor
+ + recipe:alternate_crystal_beacon + recipe:alternate_crystal_computer
+ + recipe:alternate_diluted_packaged_fuel
+ + recipe:alternate_electrode___aluminum_scrap
+ + recipe:alternate_electrode_circuit_board
+ + recipe:alternate_electromagnetic_connection_rod
+ + recipe:alternate_encased_industrial_pipe
+ + recipe:alternate_fine_black_powder + recipe:alternate_fine_concrete
+ + recipe:alternate_flexible_framework + recipe:alternate_fused_quckwire
+ + recipe:alternate_fused_wire + recipe:alternate_heat_exchanger
+ + recipe:alternate_heavy_encased_frame
+ + recipe:alternate_heavy_flexible_frame + recipe:alternate_heavy_oil_residue
+ + recipe:alternate_infused_uranium_cell + recipe:alternate_insulated_cable
+ + recipe:alternate_insulated_crystal_oscillator
+ + recipe:alternate_iron_alloy_ingot + recipe:alternate_iron_wire
+ + recipe:alternate_nuclear_fuel_unit + recipe:alternate_plastic_smart_plating
+ + recipe:alternate_polyester_fabric + recipe:alternate_polymer_resin
+ + recipe:alternate_pure_aluminum_ingot + recipe:alternate_pure_caterium_ingot
+ + recipe:alternate_pure_copper_ingot + recipe:alternate_pure_iron_ingot
+ + recipe:alternate_pure_quartz_crystal + recipe:alternate_quickwire_cable
+ + recipe:alternate_quickwire_stator + recipe:alternate_radio_control_system
+ + recipe:alternate_recycled_plastic + recipe:alternate_recycled_rubber
+ + recipe:alternate_rigour_motor + recipe:alternate_rubber_concrete
+ + recipe:alternate_seismic_nobelisk + recipe:alternate_silicone_circuit_board
+ + recipe:alternate_silicone_high_speed_connector
+ + recipe:alternate_solid_steel_ingot + recipe:alternate_steamed_copper_sheet
+ + recipe:alternate_steel_coated_plate + recipe:alternate_steel_rod
+ + recipe:alternate_steel_rotor + recipe:alternate_steel_screw
+ + recipe:alternate_steeled_frame + recipe:alternate_stitched_iron_plate
+ + recipe:alternate_turbo_heavy_fuel + recipe:alternate_turbo_rigour_motor
+ + recipe:alternate_wet_concrete = 0
+
+item:concrete: item:concrete >= 0
+
+item:iron_plate: item:iron_plate >= 0
+
+item:power_shard: item:power_shard >= 0
+
+item:packaged_fuel: item:packaged_fuel >= 0
+
+item:iodine_infused_filter: item:iodine_infused_filter >= 0
+
+item:spiked_rebar: item:spiked_rebar >= 0
+
+item:cartridge: item:cartridge >= 0
+
+item:hub_parts: item:hub_parts >= 0
+
+item:wire: item:wire >= 0
+
+item:filter: item:filter >= 0
+
+item:cable: item:cable >= 0
+
+item:reinforced_iron_plate: item:reinforced_iron_plate >= 0
+
+item:copper_ingot: item:copper_ingot >= 0
+
+item:screw: item:screw >= 0
+
+item:smart_plating: item:smart_plating >= 0
+
+item:versatile_framework: item:versatile_framework >= 0
+
+item:automated_wiring: item:automated_wiring >= 0
+
+item:modular_engine: item:modular_engine >= 0
+
+item:adaptive_control_unit: item:adaptive_control_unit >= 0
+
+item:iron_ingot: item:iron_ingot >= 0
+
+item:alclad_aluminum_sheet: item:alclad_aluminum_sheet >= 0
+
+item:motor: item:motor >= 0
+
+item:rubber: item:rubber >= 0
+
+item:circuit_board: item:circuit_board >= 0
+
+item:copper_sheet: item:copper_sheet >= 0
+
+item:plastic: item:plastic >= 0
+
+item:encased_industrial_beam: item:encased_industrial_beam >= 0
+
+item:steel_pipe: item:steel_pipe >= 0
+
+item:fuel: item:fuel >= 0
+
+item:polymer_resin: item:polymer_resin >= 0
+
+item:heavy_oil_residue: item:heavy_oil_residue >= 0
+
+item:petroleum_coke: item:petroleum_coke >= 0
+
+item:modular_frame: item:modular_frame >= 0
+
+item:rotor: item:rotor >= 0
+
+item:steel_ingot: item:steel_ingot >= 0
+
+item:alumina_solution: item:alumina_solution >= 0
+
+item:aluminum_scrap: item:aluminum_scrap >= 0
+
+item:aluminum_ingot: item:aluminum_ingot >= 0
+
+item:silica: item:silica >= 0
+
+item:computer: item:computer >= 0
+
+item:heavy_modular_frame: item:heavy_modular_frame >= 0
+
+item:steel_beam: item:steel_beam >= 0
+
+item:caterium_ingot: item:caterium_ingot >= 0
+
+item:high_speed_connector: item:high_speed_connector >= 0
+
+item:stator: item:stator >= 0
+
+item:a_i_limiter: item:a_i_limiter >= 0
+
+item:quickwire: item:quickwire >= 0
+
+item:quartz_crystal: item:quartz_crystal >= 0
+
+item:turbofuel: item:turbofuel >= 0
+
+item:empty_canister: item:empty_canister >= 0
+
+item:packaged_turbofuel: item:packaged_turbofuel >= 0
+
+item:crystal_oscillator: item:crystal_oscillator >= 0
+
+item:electromagnetic_control_rod: item:electromagnetic_control_rod >= 0
+
+item:supercomputer: item:supercomputer >= 0
+
+item:sulfuric_acid: item:sulfuric_acid >= 0
+
+item:black_powder: item:black_powder >= 0
+
+item:heat_sink: item:heat_sink >= 0
+
+item:turbo_motor: item:turbo_motor >= 0
+
+item:battery: item:battery >= 0
+
+item:radio_control_unit: item:radio_control_unit >= 0
+
+item:nobelisk: item:nobelisk >= 0
+
+item:green_power_slug: item:green_power_slug >= 0
+
+item:packaged_heavy_oil_residue: item:packaged_heavy_oil_residue >= 0
+
+item:color_cartridge: item:color_cartridge >= 0
+
+item:yellow_power_slug: item:yellow_power_slug >= 0
+
+item:purple_power_slug: item:purple_power_slug >= 0
+
+item:solid_biofuel: item:solid_biofuel >= 0
+
+item:biomass: item:biomass >= 0
+
+item:leaves: item:leaves >= 0
+
+item:wood: item:wood >= 0
+
+item:fabric: item:fabric >= 0
+
+item:mycelia: item:mycelia >= 0
+
+item:liquid_biofuel: item:liquid_biofuel >= 0
+
+item:packaged_liquid_biofuel: item:packaged_liquid_biofuel >= 0
+
+item:alien_carapace: item:alien_carapace >= 0
+
+item:alien_organs: item:alien_organs >= 0
+
+item:flower_petals: item:flower_petals >= 0
+
+item:chainsaw: item:chainsaw >= 0
+
+item:factory_cart: item:factory_cart >= 0
+
+item:hazmat_suit: item:hazmat_suit >= 0
+
+item:jetpack: item:jetpack >= 0
+
+item:blade_runners: item:blade_runners >= 0
+
+item:rebar_gun: item:rebar_gun >= 0
+
+item:rifle: item:rifle >= 0
+
+item:xeno_zapper: item:xeno_zapper >= 0
+
+item:xeno_basher: item:xeno_basher >= 0
+
+item:portable_miner: item:portable_miner >= 0
+
+item:object_scanner: item:object_scanner >= 0
+
+item:gas_mask: item:gas_mask >= 0
+
+item:color_gun: item:color_gun >= 0
+
+item:nobelisk_detonator: item:nobelisk_detonator >= 0
+
+resource:water: resource:water <= 0
+
+resource:iron_ore: resource:iron_ore <= 0
+
+resource:copper_ore: resource:copper_ore <= 0
+
+resource:limestone: resource:limestone <= 0
+
+resource:coal: resource:coal <= 0
+
+resource:crude_oil: resource:crude_oil <= 0
+
+resource:bauxite: resource:bauxite <= 0
+
+resource:caterium_ore: resource:caterium_ore <= 0
+
+resource:uranium: resource:uranium <= 0
+
+resource:raw_quartz: resource:raw_quartz <= 0
+
+resource:sulfur: resource:sulfur <= 0
+
+item:packaged_water: item:packaged_water >= 0
+
+item:compacted_coal: item:compacted_coal >= 0
+
+item:encased_uranium_cell: item:encased_uranium_cell >= 0
+
+item:uranium_pellet: item:uranium_pellet >= 0
+
+item:packaged_oil: item:packaged_oil >= 0
+
+item:beacon: item:beacon >= 0
+
+item:paleberry: item:paleberry >= 0
+
+item:bacon_agaric: item:bacon_agaric >= 0
+
+item:beryl_nut: item:beryl_nut >= 0
+
+item:medicinal_inhaler: item:medicinal_inhaler >= 0
+
+item:parachute: item:parachute >= 0
+
+item:nuclear_fuel_rod: item:nuclear_fuel_rod >= 0
+
+item:nuclear_waste: item:nuclear_waste >= 0
+
+_C134: generator:geo_thermal_generator = 0
+
+_C135: generator:biomass_burner = 0
+
+VARIABLES
+alternate_recipes Continuous
+crafter:assembler Continuous
+crafter:constructor Continuous
+crafter:foundry Continuous
+crafter:manufacturer Continuous
+crafter:refinery Continuous
+crafter:smelter Continuous
+generator:biomass_burner Continuous
+generator:coal_generator Continuous
+generator:fuel_generator Continuous
+generator:geo_thermal_generator Continuous
+generator:nuclear_power_plant Continuous
+item:a_i_limiter free Continuous
+item:adaptive_control_unit free Continuous
+item:alclad_aluminum_sheet free Continuous
+item:alien_carapace free Continuous
+item:alien_organs free Continuous
+item:alumina_solution free Continuous
+item:aluminum_ingot free Continuous
+item:aluminum_scrap free Continuous
+item:automated_wiring free Continuous
+item:bacon_agaric free Continuous
+item:battery free Continuous
+item:beacon free Continuous
+item:beryl_nut free Continuous
+item:biomass free Continuous
+item:black_powder free Continuous
+item:blade_runners free Continuous
+item:cable free Continuous
+item:cartridge free Continuous
+item:caterium_ingot free Continuous
+item:chainsaw free Continuous
+item:circuit_board free Continuous
+item:color_cartridge free Continuous
+item:color_gun free Continuous
+item:compacted_coal free Continuous
+item:computer free Continuous
+item:concrete free Continuous
+item:copper_ingot free Continuous
+item:copper_sheet free Continuous
+item:crystal_oscillator free Continuous
+item:electromagnetic_control_rod free Continuous
+item:empty_canister free Continuous
+item:encased_industrial_beam free Continuous
+item:encased_uranium_cell free Continuous
+item:fabric free Continuous
+item:factory_cart free Continuous
+item:filter free Continuous
+item:flower_petals free Continuous
+item:fuel free Continuous
+item:gas_mask free Continuous
+item:green_power_slug free Continuous
+item:hazmat_suit free Continuous
+item:heat_sink free Continuous
+item:heavy_modular_frame free Continuous
+item:heavy_oil_residue free Continuous
+item:high_speed_connector free Continuous
+item:hub_parts free Continuous
+item:iodine_infused_filter free Continuous
+item:iron_ingot free Continuous
+item:iron_plate free Continuous
+item:iron_rod free Continuous
+item:jetpack free Continuous
+item:leaves free Continuous
+item:liquid_biofuel free Continuous
+item:medicinal_inhaler free Continuous
+item:modular_engine free Continuous
+item:modular_frame free Continuous
+item:motor free Continuous
+item:mycelia free Continuous
+item:nobelisk free Continuous
+item:nobelisk_detonator free Continuous
+item:nuclear_fuel_rod free Continuous
+item:nuclear_waste free Continuous
+item:object_scanner free Continuous
+item:packaged_fuel free Continuous
+item:packaged_heavy_oil_residue free Continuous
+item:packaged_liquid_biofuel free Continuous
+item:packaged_oil free Continuous
+item:packaged_turbofuel free Continuous
+item:packaged_water free Continuous
+item:paleberry free Continuous
+item:parachute free Continuous
+item:petroleum_coke free Continuous
+item:plastic free Continuous
+item:polymer_resin free Continuous
+item:portable_miner free Continuous
+item:power_shard free Continuous
+item:purple_power_slug free Continuous
+item:quartz_crystal free Continuous
+item:quickwire free Continuous
+item:radio_control_unit free Continuous
+item:rebar_gun free Continuous
+item:reinforced_iron_plate free Continuous
+item:rifle free Continuous
+item:rotor free Continuous
+item:rubber free Continuous
+item:screw free Continuous
+item:silica free Continuous
+item:smart_plating free Continuous
+item:solid_biofuel free Continuous
+item:spiked_rebar free Continuous
+item:stator free Continuous
+item:steel_beam free Continuous
+item:steel_ingot free Continuous
+item:steel_pipe free Continuous
+item:sulfuric_acid free Continuous
+item:supercomputer free Continuous
+item:turbo_motor free Continuous
+item:turbofuel free Continuous
+item:uranium_pellet free Continuous
+item:versatile_framework free Continuous
+item:wire free Continuous
+item:wood free Continuous
+item:xeno_basher free Continuous
+item:xeno_zapper free Continuous
+item:yellow_power_slug free Continuous
+mean_weighted_resources free Continuous
+power free Continuous
+power_recipe:alien_carapace Continuous
+power_recipe:alien_organs Continuous
+power_recipe:biomass Continuous
+power_recipe:coal Continuous
+power_recipe:compacted_coal Continuous
+power_recipe:fabric Continuous
+power_recipe:flower_petals Continuous
+power_recipe:fuel Continuous
+power_recipe:leaves Continuous
+power_recipe:liquid_biofuel Continuous
+power_recipe:mycelia Continuous
+power_recipe:nuclear_fuel_rod Continuous
+power_recipe:packaged_liquid_biofuel Continuous
+power_recipe:petroleum_coke Continuous
+power_recipe:solid_biofuel Continuous
+power_recipe:turbofuel Continuous
+power_recipe:wood Continuous
+recipe:a_i_limiter Continuous
+recipe:adaptive_control_unit Continuous
+recipe:alclad_aluminum_sheet Continuous
+recipe:alternate_adhered_iron_plate Continuous
+recipe:alternate_automated_speed_wiring Continuous
+recipe:alternate_biocoal Continuous
+recipe:alternate_bolted_frame Continuous
+recipe:alternate_bolted_iron_plate Continuous
+recipe:alternate_casted_screw Continuous
+recipe:alternate_caterium_circuit_board Continuous
+recipe:alternate_caterium_computer Continuous
+recipe:alternate_caterium_wire Continuous
+recipe:alternate_charcoal Continuous
+recipe:alternate_cheap_silica Continuous
+recipe:alternate_coated_cable Continuous
+recipe:alternate_coated_iron_plate Continuous
+recipe:alternate_coke_steel_ingot Continuous
+recipe:alternate_compacted_coal Continuous
+recipe:alternate_compacted_steel_ingot Continuous
+recipe:alternate_copper_alloy_ingot Continuous
+recipe:alternate_copper_rotor Continuous
+recipe:alternate_crystal_beacon Continuous
+recipe:alternate_crystal_computer Continuous
+recipe:alternate_diluted_packaged_fuel Continuous
+recipe:alternate_electrode___aluminum_scrap Continuous
+recipe:alternate_electrode_circuit_board Continuous
+recipe:alternate_electromagnetic_connection_rod Continuous
+recipe:alternate_encased_industrial_pipe Continuous
+recipe:alternate_fine_black_powder Continuous
+recipe:alternate_fine_concrete Continuous
+recipe:alternate_flexible_framework Continuous
+recipe:alternate_fused_quckwire Continuous
+recipe:alternate_fused_wire Continuous
+recipe:alternate_heat_exchanger Continuous
+recipe:alternate_heavy_encased_frame Continuous
+recipe:alternate_heavy_flexible_frame Continuous
+recipe:alternate_heavy_oil_residue Continuous
+recipe:alternate_infused_uranium_cell Continuous
+recipe:alternate_insulated_cable Continuous
+recipe:alternate_insulated_crystal_oscillator Continuous
+recipe:alternate_iron_alloy_ingot Continuous
+recipe:alternate_iron_wire Continuous
+recipe:alternate_nuclear_fuel_unit Continuous
+recipe:alternate_plastic_smart_plating Continuous
+recipe:alternate_polyester_fabric Continuous
+recipe:alternate_polymer_resin Continuous
+recipe:alternate_pure_aluminum_ingot Continuous
+recipe:alternate_pure_caterium_ingot Continuous
+recipe:alternate_pure_copper_ingot Continuous
+recipe:alternate_pure_iron_ingot Continuous
+recipe:alternate_pure_quartz_crystal Continuous
+recipe:alternate_quickwire_cable Continuous
+recipe:alternate_quickwire_stator Continuous
+recipe:alternate_radio_control_system Continuous
+recipe:alternate_recycled_plastic Continuous
+recipe:alternate_recycled_rubber Continuous
+recipe:alternate_rigour_motor Continuous
+recipe:alternate_rubber_concrete Continuous
+recipe:alternate_seismic_nobelisk Continuous
+recipe:alternate_silicone_circuit_board Continuous
+recipe:alternate_silicone_high_speed_connector Continuous
+recipe:alternate_solid_steel_ingot Continuous
+recipe:alternate_steamed_copper_sheet Continuous
+recipe:alternate_steel_coated_plate Continuous
+recipe:alternate_steel_rod Continuous
+recipe:alternate_steel_rotor Continuous
+recipe:alternate_steel_screw Continuous
+recipe:alternate_steeled_frame Continuous
+recipe:alternate_stitched_iron_plate Continuous
+recipe:alternate_turbo_heavy_fuel Continuous
+recipe:alternate_turbo_rigour_motor Continuous
+recipe:alternate_wet_concrete Continuous
+recipe:alumina_solution Continuous
+recipe:aluminum_ingot Continuous
+recipe:aluminum_scrap Continuous
+recipe:automated_wiring Continuous
+recipe:battery Continuous
+recipe:beacon Continuous
+recipe:biomass_(alien_carapace) Continuous
+recipe:biomass_(alien_organs) Continuous
+recipe:biomass_(leaves) Continuous
+recipe:biomass_(mycelia) Continuous
+recipe:biomass_(wood) Continuous
+recipe:black_powder Continuous
+recipe:cable Continuous
+recipe:cartridge Continuous
+recipe:caterium_ingot Continuous
+recipe:circuit_board Continuous
+recipe:color_cartridge Continuous
+recipe:computer Continuous
+recipe:concrete Continuous
+recipe:copper_ingot Continuous
+recipe:copper_sheet Continuous
+recipe:crystal_oscillator Continuous
+recipe:electromagnetic_control_rod Continuous
+recipe:empty_canister Continuous
+recipe:encased_industrial_beam Continuous
+recipe:encased_uranium_cell Continuous
+recipe:fabric Continuous
+recipe:filter Continuous
+recipe:fuel Continuous
+recipe:heat_sink Continuous
+recipe:heavy_modular_frame Continuous
+recipe:high_speed_connector Continuous
+recipe:iodine_infused_filter Continuous
+recipe:iron_ingot Continuous
+recipe:iron_plate Continuous
+recipe:iron_rod Continuous
+recipe:liquid_biofuel Continuous
+recipe:modular_engine Continuous
+recipe:modular_frame Continuous
+recipe:motor Continuous
+recipe:nobelisk Continuous
+recipe:nuclear_fuel_rod Continuous
+recipe:packaged_fuel Continuous
+recipe:packaged_heavy_oil_residue Continuous
+recipe:packaged_liquid_biofuel Continuous
+recipe:packaged_oil Continuous
+recipe:packaged_turbofuel Continuous
+recipe:packaged_water Continuous
+recipe:petroleum_coke Continuous
+recipe:plastic Continuous
+recipe:power_shard_(1) Continuous
+recipe:power_shard_(2) Continuous
+recipe:power_shard_(5) Continuous
+recipe:quartz_crystal Continuous
+recipe:quickwire Continuous
+recipe:radio_control_unit Continuous
+recipe:reinforced_iron_plate Continuous
+recipe:residual_fuel Continuous
+recipe:residual_plastic Continuous
+recipe:residual_rubber Continuous
+recipe:rotor Continuous
+recipe:rubber Continuous
+recipe:screw Continuous
+recipe:silica Continuous
+recipe:smart_plating Continuous
+recipe:solid_biofuel Continuous
+recipe:spiked_rebar Continuous
+recipe:stator Continuous
+recipe:steel_beam Continuous
+recipe:steel_ingot Continuous
+recipe:steel_pipe Continuous
+recipe:sulfuric_acid Continuous
+recipe:supercomputer Continuous
+recipe:turbo_motor Continuous
+recipe:turbofuel Continuous
+recipe:unpackage_fuel Continuous
+recipe:unpackage_heavy_oil_residue Continuous
+recipe:unpackage_liquid_biofuel Continuous
+recipe:unpackage_oil Continuous
+recipe:unpackage_turbo_fuel Continuous
+recipe:unpackage_water Continuous
+recipe:uranium_pellet Continuous
+recipe:versatile_framework Continuous
+recipe:wire Continuous
+resource:bauxite free Continuous
+resource:caterium_ore free Continuous
+resource:coal free Continuous
+resource:copper_ore free Continuous
+resource:crude_oil free Continuous
+resource:iron_ore free Continuous
+resource:limestone free Continuous
+resource:raw_quartz free Continuous
+resource:sulfur free Continuous
+resource:uranium free Continuous
+resource:water free Continuous
+unweighted_resources free Continuous
+weighted_resources free Continuous
