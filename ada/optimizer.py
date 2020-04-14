@@ -255,8 +255,9 @@ class Optimizer:
                 else:
                     connected_recipes = []
                     stack = [output_var]
-                    print("\nChecking connection from",
-                          input_var, "to", output_var)
+                    if debug:
+                        print("\nChecking connection from",
+                            input_var, "to", output_var)
                     if check(input_var, output_var, connected_recipes, stack):
                         enabled_recipes.extend(connected_recipes)
 
@@ -294,7 +295,7 @@ class Optimizer:
             prob += self.__variables[var] <= bound
 
         # Display the problem before all recipes are added
-        print(prob)
+        # print(prob)
 
         # Add constraints for all item, crafter, and power equalities
         for exp in self.__equalities:

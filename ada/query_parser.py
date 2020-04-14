@@ -431,8 +431,8 @@ class QueryParser:
                 "\"" + raw_query + "\" ==> failed parse:\n" + (pe.loc+1)*" " +
                 "^\n" + str(pe))
 
-        print("\"" + raw_query + "\" ==> parsing succeeded:\n",
-              results, "\n", results.dump(), "\n")
+        # print("\"" + raw_query + "\" ==> parsing succeeded:\n",
+        #       results, "\n", results.dump(), "\n")
 
         if "help" in results:
             return HelpQuery()

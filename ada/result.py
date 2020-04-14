@@ -305,7 +305,6 @@ class OptimizationResult:
         return out
 
     def generate_graph_viz(self, filename):
-        print(filename)
         s = Digraph('structs', format='png', filename=filename,
                     node_attr={'shape': 'record'})
 
@@ -374,16 +373,12 @@ class OptimizationResult:
         # Connect each source to all sinks of that item
         for item_var, item_sources in sources.items():
             item = self.__db.items()[item_var]
-            sorted_item_sources = {k: v for k, v in sorted(item_sources.items(),
-                                   key=lambda item: item[1])}
-            for source, source_amount in sorted_item_sources.items():
-                if item_var not in sinks:
-                    print("Could not find", item_var, "in sinks")
-                    continue
+            if item_var not in sinks:
+                print("Could not find", item_var, "in sinks")
+                continue
+            for source, source_amount in item_sources.items():
                 total_sink_amount = 0
-                sorted_item_sinks = {k: v for k, v in sorted(sinks[item_var].items(),
-                                     key=lambda item: item[1])}
-                for _, sink_amount in sorted_item_sinks.items():
+                for _, sink_amount in sinks[item_var].items():
                     total_sink_amount += sink_amount
                 multiplier = source_amount / total_sink_amount
                 for sink, sink_amount in sinks[item_var].items():
@@ -391,4 +386,3 @@ class OptimizationResult:
                         item.human_readable_name(), multiplier * sink_amount))
 
         s.render()
-        print("done rendering")
