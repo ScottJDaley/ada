@@ -43,6 +43,8 @@ ada produce ? power from 240 crude oil with only
 ```
 ada produce 60 modular frames without refineries
 ```
+
+For more information and examples, see [the GitHub page](https://github.com/ScottJDaley/ada).
 """
 
     def message(self, breadcrumbs):
