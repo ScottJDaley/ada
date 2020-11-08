@@ -121,5 +121,4 @@ outputs, and adhere to any given constraints.
 **TODO**
 
 ## Acknowledgements
-- The JSON data used by this program comes from [Greeny's SatisfactoryTools](https://github.com/greeny/SatisfactoryTools)
 - Images are taken from the [Official Satisfactory Wiki](https://satisfactory.gamepedia.com/Satisfactory_Wiki).
