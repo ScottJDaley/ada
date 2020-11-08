@@ -61,7 +61,7 @@ git clone https://github.com/ScottJDaley/ada.git
 
 6. Move inside the repo
 ```console
-cd satisfoptimizer
+cd ada
 ```
 
 6. Install python packages
@@ -92,8 +92,9 @@ echo "DISCORD_TOKEN={token from discord developer portal}" > .env
    *Replace {discord bot token} with the token generated for the bot from the Discord developer portal.*
    
 3. Double click `bot.py` to run the bot.
-4. The bot should be able to respond to commands in Discord after a few seconds.
-5. Press enter in the terminal to shut down the bot.
+4. Invite the bot to your server using a link generated from OAuth2 page on https://discord.com/developers/applications.
+5. The bot should be able to respond to commands in Discord after a few seconds.
+6. Press enter in the terminal to shut down the bot.
 
 ## Query Syntax
 
