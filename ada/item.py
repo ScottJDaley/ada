@@ -59,7 +59,9 @@ class Item:
         if self.__data["mStackSize"] in STACK_SIZES:
             return STACK_SIZES[self.__data["mStackSize"]]
         return -1
-        
+    
+    def sink_value(self):
+        return int(self.__data["mResourceSinkPoints"])
 
     def is_resource(self):
         return self.__is_resource
@@ -71,7 +73,7 @@ class Item:
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  stack size: " + str(self.stack_size()))
-        out.append("  sink value: " + str(self.__data["mResourceSinkPoints"]))
+        out.append("  sink value: " + str(self.sink_value()))
         out.append(self.__data["mDescription"])
         out.append("")
         return '\n'.join(out)
@@ -89,6 +91,5 @@ class Item:
         embed.url = self.wiki()
         embed.set_thumbnail(url=self.thumb())
         embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
-        embed.add_field(name="Sink Value",
-                        value=str(self.__sink_value), inline=True)
+        embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
         return embed
