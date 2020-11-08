@@ -1,27 +1,36 @@
 from discord import Embed
 import ada.image_fetcher
 
+def parse_list(raw):
+    return raw[1:-1].split(',')
 
 class Generator:
-    def __init__(self, building_data, generator_data, db):
-        self.__building_data = building_data
-        self.__generator_data = generator_data
+    def __init__(self, data, db):
+        self.__data = data
 
         self.__fuel_items = []
-        for item_class_name in generator_data["fuel"]:
-            self.__fuel_items.append(db.item_from_class_name(item_class_name))
+        if "mDefaultFuelClasses" not in data:
+            return
+        for fuel_class in parse_list(data["mDefaultFuelClasses"]):
+            fuel_class_name = fuel_class.split('.')[1]
+            fuel_items = db.items_from_native_class_name(fuel_class_name)
+            if fuel_items is not None:
+                self.__fuel_items.extend(fuel_items)
+            else:
+                self.__fuel_items.append(db.item_from_class_name(fuel_class_name))
+                
 
     def var(self):
-        return "generator:" + self.__building_data["slug"]
+        return "generator:" + self.__data["mDisplayName"].lower().replace(' ', '-')
 
     def human_readable_name(self):
-        return self.__building_data["name"]
+        return self.__data["mDisplayName"]
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(' ', '_')
 
     def power_production(self):
-        return self.__generator_data["powerProduction"]
+        return float(self.__data["mPowerProduction"])
 
     def fuel_items(self):
         return self.__fuel_items
@@ -34,7 +43,7 @@ class Generator:
         out.append("  fuel types:")
         for fuel_item in self.__fuel_items:
             out.append("    " + fuel_item.human_readable_name())
-        out.append(self.__building_data["description"])
+        out.append(self.__data["mDescription"])
         out.append("")
         return '\n'.join(out)
 
@@ -47,7 +56,7 @@ class Generator:
 
     def embed(self):
         embed = Embed(title=self.human_readable_name())
-        embed.description = self.__generator_data["description"]
+        embed.description = self.__data["mDescription"]
         embed.url = self.wiki()
         embed.set_thumbnail(url=self.thumb())
         embed.add_field(name="Power Production", value=(

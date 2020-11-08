@@ -356,7 +356,7 @@ class Optimizer:
 
         # Disable geothermal generators since they are "free" energy.
         if "generator:geo-thermal-generator" not in query_vars:
-            prob += self.__variables["generator:geo-thermal-generator"] == 0
+            prob += self.__variables["generator:geothermal-generator"] == 0
 
         # Disable biomasss burners since they cannot be automated.
         if "generator:biomass-burner" not in query_vars:
