@@ -3,7 +3,7 @@ from discord import Embed
 def parse_list(raw):
     if raw.startswith('(('):
         return raw[2:-2].split('),(')
-    return [raw[1:-1]]
+    return raw[1:-1].split(',')
 
 def parse_recipe_item(raw):
     components = raw.split(',')
@@ -47,6 +47,7 @@ class Recipe:
             crafter = db.crafter_from_class_name(producer_class_name)
             if crafter is not None:
                 self.__crafter = crafter
+                break
         if self.__crafter is None:
             return
 
