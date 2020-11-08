@@ -5,6 +5,8 @@
 
 ADA is a Discord bot for the Satisfactory video game.
 
+**[Invite to Server](https://discord.com/api/oauth2/authorize?client_id=687148652732743710&permissions=124992&scope=bot)**
+
 With ADA, you can browse information about items, recipes, and buildings within Discord.
 
 ![alt text](/images/examples/item_info.png "Item Info")
