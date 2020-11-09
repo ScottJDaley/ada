@@ -136,6 +136,11 @@ pip3 install -r requirements.txt
 ```console
 echo "DISCORD_TOKEN={token from discord developer portal}" > .env
 ```
+
+8. Start the bot
+```
+python3 bot.py
+```
  
 ### How to run
 
