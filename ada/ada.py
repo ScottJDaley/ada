@@ -12,6 +12,7 @@ class Ada:
         self.__opt = Optimizer(self.__db)
 
     async def do(self, raw_query):
+        print("Query: " + raw_query + "\n")
         try:
             query = self.__parser.parse(raw_query)
         except QueryParseException as parse_exception:

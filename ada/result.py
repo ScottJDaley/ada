@@ -183,7 +183,7 @@ class OptimizationResult:
             var = obj.var()
             if self.__has_value(var) and check_value(self.__get_value(var)):
                 out.append(obj.human_readable_name() +
-                           ": " + str(round(self.__get_value(var), 2)) + suffix)
+                           ": " + str(round(abs(self.__get_value(var)), 2)) + suffix)
         return out
 
     def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
