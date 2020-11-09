@@ -84,16 +84,38 @@ outputs, and adhere to any given constraints.
 
 ### Windows Installation
 
-*TODO*
+1. Download python 3 from https://www.python.org/downloads/
 
-1. Install python modules
-```console
-pip install -r requirements.txt
-```
+2. Download Microsoft C++ Build Tools from https://visualstudio.microsoft.com/visual-cpp-build-tools/. Just select "C++ build tools" from the options under "Workloads".
 
-2. Install GraphViz:
+3. Install GraphViz:
  - Download from: https://www.graphviz.org/download/
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
+ 
+4. Run the following as admin to configure GraphViz:
+```
+dot -c
+```
+
+5. Clone repo (in directory of you choosing)
+```console
+git clone https://github.com/ScottJDaley/ada.git
+```
+
+6. Move inside the repo
+```console
+cd ada
+```
+
+7. Install python modules
+```console
+py -m pip install -r requirements.txt
+```
+
+8. Start the bot
+```
+py bot.py
+```
  
 ### Linux Installation
 
@@ -127,17 +149,17 @@ git clone https://github.com/ScottJDaley/ada.git
 cd ada
 ```
 
-6. Install python packages
+7. Install python packages
 ```console
 pip3 install -r requirements.txt
 ```
 
-7. Set up Discord bot
+8. Set up Discord bot
 ```console
 echo "DISCORD_TOKEN={token from discord developer portal}" > .env
 ```
 
-8. Start the bot
+9. Start the bot
 ```
 python3 bot.py
 ```
