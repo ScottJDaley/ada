@@ -12,11 +12,11 @@ With ADA, you can browse information about items, recipes, and buildings within 
 
 ![alt text](/images/examples/item_info.png "Item Info")
 
-![alt text](/images/examples/recipes_for.png "Item Info")
+![alt text](/images/examples/recipes_for.png "Recipes For")
 
 You can also ask ADA to calculate an optimal production chains and produce visualizations.
 
-![alt text](/images/examples/optimization.png "Item Info")
+![alt text](/images/examples/optimization.png "Optimization")
 
 ADA is also available as a command line tool.
 
