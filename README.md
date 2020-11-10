@@ -1,4 +1,5 @@
 # ADA
+![alt text](/images/checkmark.png "ADA")
 >I am ADA, also known as Artificial Directory and Assistant, tasked to support pioneers, such as you, in their mission.
 >
 > ~ *ADA*
