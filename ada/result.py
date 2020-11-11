@@ -263,7 +263,7 @@ class OptimizationResult:
         file = File(filepath + '.png')
         # The image already shows up from the attached file, so no need to place it in the embed as well.
         # message.embed.set_image(url="attachment://" + filename + ".png")
-        # message.file = file
+        message.file = file
         message.content = breadcrumbs
         return message
 
