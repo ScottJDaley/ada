@@ -237,9 +237,7 @@ class OptimizationResult:
     def __solution_message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Optimization Query")
-        # This makes the embed too long.
-        # message.embed.description = str(self.__query)
-        message.embed.description = " "
+        message.embed.description = str(self.__query)
         inputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
         if len(inputs) > 0:

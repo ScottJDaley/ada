@@ -243,7 +243,7 @@ class QueryParser:
             elif value == "_":
                 query.ge_constraints.update({var: 0 for var in output_vars})
             else:
-                query.ge_constraints.update({var: value for var in output_vars})
+                query.eq_constraints.update({var: value for var in output_vars})
             if output["strict"]:
                 query.strict_outputs = True
             if "power" in output:
