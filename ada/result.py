@@ -164,12 +164,12 @@ class InfoResult:
 
 
 class OptimizationResult:
-    def __init__(self, db, vars_, prob, status, raw_query):
+    def __init__(self, db, vars_, prob, status, query):
         self.__db = db
         self.__prob = prob
         self.__vars = vars_
         self.__status = status
-        self._raw_query = raw_query
+        self.__query = query
 
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
@@ -200,6 +200,7 @@ class OptimizationResult:
 
     def __string_solution(self):
         out = []
+        out.append(str(self.__query))
         out.append("=== OPTIMAL SOLUTION FOUND ===\n")
         out.extend(self.__get_section(
             "INPUT", self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"))
@@ -236,7 +237,7 @@ class OptimizationResult:
     def __solution_message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Optimization Query")
-        message.embed.description = "description"
+        message.embed.description = str(self.__query)
         inputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
         if len(inputs) > 0:
