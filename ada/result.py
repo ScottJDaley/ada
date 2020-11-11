@@ -226,11 +226,11 @@ class OptimizationResult:
         if self.__status is pulp.LpStatusNotSolved:
             return "No solution has been found."
         if self.__status is pulp.LpStatusUndefined:
-            return "Not solution has been found."
+            return "No solution has been found."
         if self.__status is pulp.LpStatusInfeasible:
             return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)"
         if self.__status is pulp.LpStatusUnbounded:
-            return "Solution is unbounded, try adding a constraint"
+            return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()
 
     def __solution_message(self, breadcrumbs):
@@ -239,19 +239,23 @@ class OptimizationResult:
         message.embed.description = "description"
         inputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
-        message.embed.add_field(
-            name="Inputs", value="\n".join(inputs), inline=True)
+        if len(inputs) > 0:
+            message.embed.add_field(
+                name="Inputs", value="\n".join(inputs), inline=True)
         outputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m")
-        message.embed.add_field(
-            name="Outputs", value="\n".join(outputs), inline=True)
+        if len(outputs) > 0:
+            message.embed.add_field(
+                name="Outputs", value="\n".join(outputs), inline=True)
         recipes = self.__get_vars(self.__db.recipes().values())
-        message.embed.add_field(
-            name="Recipes", value="\n".join(recipes), inline=False)
+        if len(recipes) > 0:
+            message.embed.add_field(
+                name="Recipes", value="\n".join(recipes), inline=False)
         buildings = self.__get_vars(self.__db.crafters().values())
         buildings.extend(self.__get_vars(self.__db.generators().values()))
-        message.embed.add_field(name="Buildings", value="\n".join(
-            buildings), inline=True)
+        if len(buildings) > 0:
+            message.embed.add_field(name="Buildings", value="\n".join(
+                buildings), inline=True)
 
         filename = 'output.gv'
         filepath = 'output/' + filename
