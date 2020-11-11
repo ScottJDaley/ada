@@ -261,8 +261,9 @@ class OptimizationResult:
         filepath = 'output/' + filename
         self.generate_graph_viz(filepath)
         file = File(filepath + '.png')
-        message.embed.set_image(url="attachment://" + filename + ".png")
-        message.file = file
+        # The image already shows up from the attached file, so no need to place it in the embed as well.
+        # message.embed.set_image(url="attachment://" + filename + ".png")
+        # message.file = file
         message.content = breadcrumbs
         return message
 
