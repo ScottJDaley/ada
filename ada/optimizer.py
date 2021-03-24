@@ -358,7 +358,7 @@ class Optimizer:
         # print(prob)
 
         # Write out complete problem to file
-        with open('problem.txt', 'w') as f:
+        with open('output\problem.txt', 'w') as f:
             f.write(str(prob))
 
         # Solve
