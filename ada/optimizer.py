@@ -6,6 +6,7 @@ UNWEIGHTED_RESOURCES = "unweighted-resources"
 WEIGHTED_RESOURCES = "weighted-resources"
 MEAN_WEIGHTED_RESOURCES = "mean-weighted-resources"
 ALTERNATE_RECIPES = "alternate-recipes"
+BYPRODUCTS = "byproducts"
 
 
 class Optimizer:
@@ -37,15 +38,6 @@ class Optimizer:
             MEAN_WEIGHTED_RESOURCES)
         self.__variables[ALTERNATE_RECIPES] = pulp.LpVariable(
             ALTERNATE_RECIPES, lowBound=0)
-
-        self.__byproducts = [
-            "item:fuel:output",
-            "item:polymer-resin:output",
-            "item:plastic:output",
-            "item:heavy-oil-residue:output",
-            "item:rubber:output",
-            "item:silica:output",
-        ]
 
         self.__equalities = []
 

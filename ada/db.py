@@ -1,3 +1,6 @@
+# JSON data should be copied from {Install Directory}\CommunityResources\Docs\Docs.json
+# into data\Docs.json
+
 import json
 from ada.crafter import Crafter
 from ada.generator import Generator
@@ -10,6 +13,7 @@ RESOURCE_CLASSES = [
 ]
 ITEM_CLASSES = [
     "Class'/Script/FactoryGame.FGItemDescriptor'",
+    "Class'/Script/FactoryGame.FGEquipmentDescriptor'",
     "Class'/Script/FactoryGame.FGItemDescriptorBiomass'",
     "Class'/Script/FactoryGame.FGItemDescriptorNuclearFuel'",
     "Class'/Script/FactoryGame.FGConsumableDescriptor'",
@@ -101,6 +105,8 @@ class DB:
         self.__power_recipes_by_fuel = {}
         for generator in self.__generators.values():
             for fuel_item in generator.fuel_items():
+                if fuel_item.energy_value() <= 0:
+                    continue
                 power_recipe = PowerRecipe(fuel_item, generator)
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe

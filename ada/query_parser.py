@@ -90,8 +90,9 @@ class QueryParser:
     include_literal = SPACE("literal")
     include_var = include_literal | entity_expr
 
-    exclude_literal = (alternate_recipes_kw | BYPRODUCTS)("literal")
-    exclude_var = exclude_literal | entity_expr
+    exclude_literal = alternate_recipes_kw("literal")
+    byproducts = BYPRODUCTS("byproducts")
+    exclude_var = exclude_literal | byproducts | entity_expr
 
     objective_value = QUESTION_MARK
     any_value = Optional(ANY | UNDERSCORE).setParseAction(replaceWith('_'))
@@ -324,6 +325,8 @@ class QueryParser:
                     raise QueryParseException(
                         "Could not parse recipe, power recipe, crafter, or generator expression '"
                         + exclude["entity"] + "'.")
+            if "byproducts" in exclude:
+                query.strict_outputs = True
             query.eq_constraints.update({var: 0 for var in exclude_vars})
 
     def _parse_optimization_query(self, raw_query, parse_results):
