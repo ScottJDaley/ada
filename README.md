@@ -6,6 +6,8 @@
 
 ADA is a Discord bot for the Satisfactory video game.
 
+> :warning: **ADA is not currently hosted.** You will need to host it yourself to add the bot to your discord server. I am working on setting up new hosting.
+
 [![Discord Bots](https://top.gg/api/widget/687148652732743710.svg)](https://top.gg/bot/687148652732743710)
 
 
