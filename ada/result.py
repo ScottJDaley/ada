@@ -170,6 +170,13 @@ class OptimizationResult:
         self.__vars = vars_
         self.__status = status
         self.__query = query
+        # TODO: Use these in the functions below
+        self.__inputs = {item.var():-self.__get_value(item.var()) for item in self.__db.items().values() if self.__has_value(item.var()) and self.__get_value(item.var()) < 0}
+        self.__outputs = {item.var():self.__get_value(item.var()) for item in self.__db.items().values() if self.__has_value(item.var()) and self.__get_value(item.var()) > 0}
+        self.__recipes = {recipe.var():self.__get_value(recipe.var()) for recipe in self.__db.recipes().values() if self.__has_value(recipe.var())}
+        self.__crafters = {crafter.var():self.__get_value(crafter.var()) for crafter in self.__db.crafters().values() if self.__has_value(crafter.var())}
+        self.__generators = {generator.var():self.__get_value(generator.var()) for generator in self.__db.generators().values() if self.__has_value(generator.var())}
+        self.__net_power = self.__get_value("power") if self.__has_value("power") else 0
 
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
