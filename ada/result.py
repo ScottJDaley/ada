@@ -396,3 +396,20 @@ class OptimizationResult:
                         item.human_readable_name(), multiplier * sink_amount))
 
         s.render()
+
+class RecipeCompareResult:
+    def __init__(self, msg):
+        self.__msg = msg
+
+    def __str__(self):
+        return self.__msg
+
+    def message(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Error")
+        message.embed.description = self.__msg
+        message.content = str(breadcrumbs)
+        return message
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None

@@ -16,7 +16,7 @@ from pyparsing import (
     Combine,
     ParseException,
 )
-from ada.query import OptimizationQuery, InfoQuery, HelpQuery
+from ada.query import OptimizationQuery, InfoQuery, HelpQuery, RecipeCompareQuery
 
 
 PRODUCE = CaselessKeyword('produce')
@@ -47,6 +47,7 @@ RECIPE = CaselessKeyword('recipe')
 BYPRODUCTS = CaselessKeyword('byproducts')
 FOR = CaselessKeyword('for')
 HELP = CaselessKeyword('help')
+COMPARE = CaselessKeyword('compare')
 QUESTION_MARK = Literal('?')
 UNDERSCORE = Literal('_')
 ZERO = Literal('0')
@@ -154,7 +155,9 @@ class QueryParser:
 
     help_query = HELP("help")
 
-    query_grammar = help_query ^ optimization_query ^ recipe_query ^ entity_query
+    compare_recipe_query = (Suppress(COMPARE) + Suppress(RECIPE) + entity_expr)("recipe-compare")
+
+    query_grammar = help_query ^ optimization_query ^ recipe_query ^ compare_recipe_query ^ entity_query
 
     def __init__(self, db):
         self._db = db
@@ -408,6 +411,21 @@ class QueryParser:
         query.vars.extend(matches)
         return query
 
+    def _parse_recipe_compare_query(self, raw_query, parse_results):
+        query = RecipeCompareQuery(raw_query)
+        matches = self._get_matches(parse_results.get("entity"),
+                                    ["recipe"])
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse compare recipe expression '"
+                + parse_results.get("entity") + "'.")
+        elif len(matches) > 1:
+            raise QueryParseException(
+                "Multiple recipes were matched:\n   "
+                + "\n   ".join([match.human_readable_name() for match in matches]) + "\nPlease repeat the command with a more specific recipe.")
+        query.base_recipe = matches[0]
+        return query
+
     def _parse_entity_details(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
@@ -449,6 +467,8 @@ class QueryParser:
             return self._parse_recipes_for_query(raw_query, results)
         elif "recipes-from" in results:
             return self._parse_recipes_from_query(raw_query, results)
+        elif "recipe-compare" in results:
+            return self._parse_recipe_compare_query(raw_query, results)
         elif "entity-details" in results:
             return self._parse_entity_details(raw_query, results)
         else:
