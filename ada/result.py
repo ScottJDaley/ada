@@ -7,6 +7,7 @@ import ada.emoji
 from ada.result_message import ResultMessage
 from ada.breadcrumbs import Breadcrumbs
 
+
 class HelpResult:
     def __str__(self):
         return """
@@ -53,10 +54,10 @@ For more information and examples, see [the GitHub page](https://github.com/Scot
         message.embed.description = str(self)
         message.content = str(breadcrumbs)
         return message
-    
+
     def handle_reaction(self, emoji, breadcrumbs):
         return None
-    
+
 
 class ErrorResult:
     def __init__(self, msg):
@@ -119,12 +120,13 @@ class InfoResult:
         if not self._add_reaction_selectors:
             message.reactions = []
             if breadcrumbs.page() > 1:
-                 message.reactions.append(ada.emoji.PREVIOUS_PAGE)
+                message.reactions.append(ada.emoji.PREVIOUS_PAGE)
             message.reactions.append(ada.emoji.INFO)
             if breadcrumbs.page() < self._num_pages():
-                 message.reactions.append(ada.emoji.NEXT_PAGE)
-            
-        message.embed = Embed(title="Found " + str(len(self._vars)) + " matches:")
+                message.reactions.append(ada.emoji.NEXT_PAGE)
+
+        message.embed = Embed(
+            title="Found " + str(len(self._vars)) + " matches:")
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
@@ -170,13 +172,53 @@ class OptimizationResult:
         self.__vars = vars_
         self.__status = status
         self.__query = query
+        # Dictionaries from var -> (obj, value)
         # TODO: Use these in the functions below
-        self.__inputs = {item.var():-self.__get_value(item.var()) for item in self.__db.items().values() if self.__has_value(item.var()) and self.__get_value(item.var()) < 0}
-        self.__outputs = {item.var():self.__get_value(item.var()) for item in self.__db.items().values() if self.__has_value(item.var()) and self.__get_value(item.var()) > 0}
-        self.__recipes = {recipe.var():self.__get_value(recipe.var()) for recipe in self.__db.recipes().values() if self.__has_value(recipe.var())}
-        self.__crafters = {crafter.var():self.__get_value(crafter.var()) for crafter in self.__db.crafters().values() if self.__has_value(crafter.var())}
-        self.__generators = {generator.var():self.__get_value(generator.var()) for generator in self.__db.generators().values() if self.__has_value(generator.var())}
-        self.__net_power = self.__get_value("power") if self.__has_value("power") else 0
+        self.__inputs = {
+            item.var(): (item, -self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) < 0
+        }
+        self.__outputs = {
+            item.var(): (item, self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) > 0
+        }
+        self.__recipes = {
+            recipe.var(): (recipe, self.__get_value(recipe.var()))
+            for recipe in self.__db.recipes().values()
+            if self.__has_value(recipe.var())
+        }
+        self.__crafters = {
+            crafter.var(): (crafter, self.__get_value(crafter.var()))
+            for crafter in self.__db.crafters().values()
+            if self.__has_value(crafter.var())
+        }
+        self.__generators = {
+            generator.var(): (generator, self.__get_value(generator.var()))
+            for generator in self.__db.generators().values()
+            if self.__has_value(generator.var())
+        }
+        self.__net_power = self.__get_value(
+            "power") if self.__has_value("power") else 0
+
+    def inputs(self):
+        return self.__inputs
+
+    def outputs(self):
+        return self.__outputs
+
+    def recipes(self):
+        return self.__recipes
+
+    def crafters(self):
+        return self.__crafters
+
+    def generators(self):
+        return self.__generators
+
+    def net_power(self):
+        return self.__net_power
 
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
@@ -403,6 +445,7 @@ class OptimizationResult:
                         item.human_readable_name(), multiplier * sink_amount))
 
         s.render()
+
 
 class RecipeCompareResult:
     def __init__(self, msg):
