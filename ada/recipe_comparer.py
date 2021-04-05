@@ -1,83 +1,80 @@
-from typing import NamedTuple
 from ada.query import OptimizationQuery
 from ada.result import RecipeCompareResult
 
 
 class RecipeComparer:
-    class ProductionStats(NamedTuple):
-        power_consumption: float
-        inputs: dict
-        step_count: int
+    class ProductionStats:
+        def __init__(self, inputs, power_consumption, step_count):
+            self.inputs = inputs
+            self.power_consumption = power_consumption
+            self.step_count = step_count
 
-    class RecipeStatsOld:
-        def __init__(self, recipe, opt):
-            # run the query
-            self.__recipe = recipe
-            self.__opt = opt
+        def __str__(self):
+            out = []
+            out.append("")
+            out.append("INPUTS:")
+            for (_input, value) in self.inputs.values():
+                out.append("  " + _input.human_readable_name() +
+                           ": " + str(value) + "/m")
+            out.append("POWER CONSUMPTION:")
+            out.append("  " + str(self.power_consumption) + " MW")
+            out.append("PROCESSING STEPS: ")
+            out.append("  " + str(self.step_count))
+            return '\n'.join(out)
 
-            # self.__query = OptimizationQuery("")
-            # self.__query.maximize_objective = False
-            # self.__query.objective_coefficients = {"unweighted-resources": -1}
-            # self.__query.eq_constraints[product.var()] = 1
-            # for blacklisted in recipe_blacklist:
-            #     self.__query.eq_constraints[blacklisted.var()] = 0
+    class RecipeStats:
+        def __init__(self, base, default, optimal):
+            self.base = base
+            self.default = default
+            self.optimal = optimal
 
-        def recipe(self):
-            return self.__recipe
-
-        def default_power_consumption(self):
-            return -self.__default_result.net_power() + self.__recipe.crafter().power_consumption()
-
-        def optimal_power_consumption(self):
-            return -self.__optimal_result.net_power() + self.__recipe.crafter().power_consumption()
-
-        def default_raw_inputs(self):
-            return self.__default_result.inputs()
-
-        def optimal_raw_inputs(self):
-            return self.__optimal_result.inputs()
-
-        def default_step_count(self):
-            return len(self.__default_result.recipes()) + len(self.default_raw_inputs()) + 1
-
-        def optimal_step_count(self):
-            return len(self.__optimal_result.recipes()) + len(self.optimal_raw_inputs()) + 1
-
-        async def compute(self):
-            # We first want to figure out how much of the ingredients we need to produce
-            # 1 of the products using this recipe.
-
-            # We should also keep track of any other products and the power required for
-            # this recipe.
-
-            # First, how many of the desired product does this recipe produce?
-            # product_amount = 0
-            # other_product_amounts = {}
-            # for product_var, product in self.__recipe.products().items():
-            #     if product_var == self.__product.var():
-            #         product_amount = product.amount()
-            #     else:
-            #         other_product_amounts[product_var] = product.amount()
-
-            query = OptimizationQuery("")
-            query.maximize_objective = False
-            query.objective_coefficients = {"unweighted-resources": -1}
-            for ingredient_var, ingredient in self.__recipe.ingredients().items():
-                query.eq_constraints[ingredient_var] = ingredient.minute_rate()
-
-            self.__optimal_result = await self.__opt.optimize(query)
-
-            # Run again, this time disallowing alternate recipes.
-            query.eq_constraints["alternate-recipes"] = 0
-            self.__default_result = await self.__opt.optimize(query)
-
-            print(self.__optimal_result)
+        def __str__(self):
+            out = []
+            out.append("")
+            out.append("Base:")
+            out.append(str(self.base))
+            out.append("")
+            out.append(
+                "From raw (optimal productivity without alternate recipes)")
+            out.append(str(self.default))
+            out.append("")
+            out.append(
+                "From raw (optimal productivity with alternate recipes): ")
+            out.append(str(self.optimal))
+            return '\n'.join(out)
 
     def __init__(self, db, opt):
         self.__db = db
         self.__opt = opt
 
-    async def compute_recipe_stats(self, recipe, exclude_alternate_recipes):
+    def scaled_production_stats(self, stats, scalar):
+        return self.ProductionStats(
+            {
+                input_var: (item, value * scalar)
+                for input_var, (item, value) in stats.inputs.items()
+            },
+            stats.power_consumption * scalar,
+            stats.step_count
+        )
+
+    def scaled_recipe_stats(self, stats, scalar):
+        return self.RecipeStats(
+            self.scaled_production_stats(stats.base, scalar),
+            self.scaled_production_stats(stats.default, scalar),
+            self.scaled_production_stats(stats.optimal, scalar),
+        )
+
+    def get_base_stats(self, recipe):
+        return self.ProductionStats(
+            {
+                ingredient.item().var(): (ingredient.item(), ingredient.minute_rate())
+                for ingredient in recipe.ingredients().values()
+            },
+            recipe.crafter().power_consumption(),
+            1
+        )
+
+    async def compute_production_stats(self, recipe, exclude_alternate_recipes):
         query = OptimizationQuery("")
         query.maximize_objective = False
         query.objective_coefficients = {"unweighted-resources": -1}
@@ -92,137 +89,21 @@ class RecipeComparer:
 
         result = await self.__opt.optimize(query)
 
-        print(optimal_result)
+        print(result)
 
-        default_stats = ProductionStats(
-            "power_consumption", -result.net_power() +
-            recipe.crafter().power_consumption(),
-            "inputs", result.inputs(),
-            "step_count", len(result.recipes()) +
-            len(result.inputs()) + 1
+        return self.ProductionStats(
+            result.inputs(),
+            -result.net_power() + recipe.crafter().power_consumption(),
+            len(result.recipes()) + len(result.inputs()) + 1
         )
 
+    async def compute_recipe_stats(self, recipe):
+        base_stats = self.get_base_stats(recipe)
+        default_stats = await self.compute_production_stats(recipe, True)
+        optimal_stats = await self.compute_production_stats(recipe, False)
+        return self.RecipeStats(base_stats, default_stats, optimal_stats)
+
     async def compare(self, query):
-        print("called compare() with query: '" + str(query) + "'")
-
-        base_stats = self.RecipeStatsOld(query.base_recipe, self.__opt)
-        await base_stats.compute()
-
-        print("=== Overall Stats ===")
-
-        print("\nINPUTS:")
-        print("Base:")
-        for ingredient in query.base_recipe.ingredients().values():
-            print(" ", ingredient.item().human_readable_name() +
-                  ":", ingredient.minute_rate(), "/m")
-        print("From raw (optimal productivity without alternate recipes):")
-        for (_input, value) in base_stats.default_raw_inputs().values():
-            print(" ", _input.human_readable_name() + ":", value, "/m")
-        print("From raw (optimal productivity with alternate recipes):")
-        for (_input, value) in base_stats.optimal_raw_inputs().values():
-            print(" ", _input.human_readable_name() + ":", value, "/m")
-
-        print("\nPOWER CONSUMPTION:")
-        print("Base:", query.base_recipe.crafter().power_consumption(), "MW")
-        print("From raw (optimal productivity without alternate recipes):",
-              base_stats.default_power_consumption(), "MW")
-        print("From raw (optimal productivity with alternate recipes):",
-              base_stats.optimal_power_consumption(), "MW")
-
-        print("\nPROCESSING STEPS:")
-        print("From raw (optimal productivity without alternate recipes):",
-              base_stats.default_step_count())
-        print("From raw (optimal productivity with alternate recipes):",
-              base_stats.optimal_step_count())
-
-        print("\n")
-
-        for product in query.base_recipe.products().values():
-            print("=== Evaluating for",
-                  product.item().human_readable_name(), "product ===")
-
-            product_minute_rate = product.minute_rate()
-
-            print("\nINPUTS:")
-            print("Base:")
-            for ingredient in query.base_recipe.ingredients().values():
-                print(" ", ingredient.item().human_readable_name() +
-                      ":", ingredient.minute_rate() / product_minute_rate)
-            print("From raw (optimal productivity without alternate recipes):")
-            for (_input, value) in base_stats.default_raw_inputs().values():
-                print(" ", _input.human_readable_name() +
-                      ":", value / product_minute_rate)
-            print("From raw (optimal productivity with alternate recipes):")
-            for (_input, value) in base_stats.optimal_raw_inputs().values():
-                print(" ", _input.human_readable_name() +
-                      ":", value / product_minute_rate)
-
-            print("\nPOWER CONSUMPTION:")
-            print("Base:", query.base_recipe.crafter(
-            ).power_consumption() / product_minute_rate, "MW")
-            print("From raw (optimal productivity without alternate recipes):",
-                  base_stats.default_power_consumption() / product_minute_rate, "MW")
-            print("From raw (optimal productivity with alternate recipes):",
-                  base_stats.optimal_power_consumption() / product_minute_rate, "MW")
-
-            print("\nPROCESSING STEPS:")
-            print("From raw (optimal productivity without alternate recipes):",
-                  base_stats.default_step_count())
-            print("From raw (optimal productivity with alternate recipes):",
-                  base_stats.optimal_step_count())
-
-            print("\n")
-
-            related_recipes = []
-            for related_recipe in self.__db.recipes_for_product(product.item().var()):
-                if related_recipe.var() == query.base_recipe.var():
-                    continue
-                print("Found related recipe: " +
-                      related_recipe.human_readable_name())
-                related_recipes.append(related_recipe)
-
-                related_stats = self.RecipeStatsOld(related_recipe, self.__opt)
-                await related_stats.compute()
-
-                related_product_minute_rate = 1
-                for related_product in related_recipe.products().values():
-                    if related_product.item().var() == product.item().var():
-                        related_product_minute_rate = related_product.minute_rate()
-
-                print("\nINPUTS:")
-                print("Base:")
-                for ingredient in related_recipe.ingredients().values():
-                    print(" ", ingredient.item().human_readable_name() +
-                          ":", ingredient.minute_rate() / related_product_minute_rate)
-                print("From raw (optimal productivity without alternate recipes):")
-                for (_input, value) in related_stats.default_raw_inputs().values():
-                    print(" ", _input.human_readable_name() +
-                          ":", value / related_product_minute_rate)
-                print("From raw (optimal productivity with alternate recipes):")
-                for (_input, value) in related_stats.optimal_raw_inputs().values():
-                    print(" ", _input.human_readable_name() +
-                          ":", value / related_product_minute_rate)
-
-                print("\nPOWER CONSUMPTION:")
-                print("Base:", related_recipe.crafter(
-                ).power_consumption() / related_product_minute_rate, "MW")
-                print("From raw (optimal productivity without alternate recipes):",
-                      related_stats.default_power_consumption() / related_product_minute_rate, "MW")
-                print("From raw (optimal productivity with alternate recipes):",
-                      related_stats.optimal_power_consumption() / related_product_minute_rate, "MW")
-
-                print("\nPROCESSING STEPS:")
-                print("From raw (optimal productivity without alternate recipes):",
-                      related_stats.default_step_count())
-                print("From raw (optimal productivity with alternate recipes):",
-                      related_stats.optimal_step_count())
-
-                print("\n")
-
-        #     base_stats = self.RecipeStats(query.base_recipe, self.__opt)
-        #     await base_stats.compute()
-
-        #     continue  # TODO: Not yet supporting multiple products.
 
         # For the base and each related recipe we want to run an optimization query to produce
         # one of the product. We also need to disable all related recipes to force this candidate
@@ -230,5 +111,35 @@ class RecipeComparer:
 
         # The goal is to get, for each candidate recipe, the ingredients, any other products,
         # the raw resources, total power, physical space required, number of steps, etc.
+
+        print("=== Base Stats ===")
+        base_stats = await self.compute_recipe_stats(query.base_recipe)
+        print(base_stats)
+
+        for product in query.base_recipe.products().values():
+            print("=== Evaluating for",
+                  product.item().human_readable_name(), "product ===")
+
+            print("=== Base Stats Normalized ===")
+            base_stats_normalized = self.scaled_recipe_stats(
+                base_stats, 1 / product.minute_rate())
+            print(base_stats_normalized)
+
+            for related_recipe in self.__db.recipes_for_product(product.item().var()):
+                if related_recipe.var() == query.base_recipe.var():
+                    continue
+                print("\nFound related recipe: " +
+                      related_recipe.human_readable_name())
+
+                related_product_minute_rate = 1
+                for related_product in related_recipe.products().values():
+                    if related_product.item().var() == product.item().var():
+                        related_product_minute_rate = related_product.minute_rate()
+
+                print("=== Related Base Stats Normalized ===")
+                related_stats = await self.compute_recipe_stats(related_recipe)
+                related_stats_normalized = self.scaled_recipe_stats(
+                    related_stats, 1 / related_product_minute_rate)
+                print(related_stats_normalized)
 
         return RecipeCompareResult("compare result")
