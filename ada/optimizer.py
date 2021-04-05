@@ -1,4 +1,5 @@
 import pulp
+import os
 from ada.result import OptimizationResult
 
 POWER = "power"
@@ -151,7 +152,8 @@ class Optimizer:
             if recipe.is_alternate():
                 alternate_coeffs[self.__variables[recipe.var()]] = 1
         alternate_coeffs[self.__variables[ALTERNATE_RECIPES]] = -1
-        self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
+        self.__equalities.append(
+            pulp.LpAffineExpression(alternate_coeffs) == 0)
 
     def enable_related_recipes(self, query, prob, debug=False):
         query_vars = query.query_vars()
@@ -249,7 +251,7 @@ class Optimizer:
                     stack = [output_var]
                     if debug:
                         print("\nChecking connection from",
-                            input_var, "to", output_var)
+                              input_var, "to", output_var)
                     if check(input_var, output_var, connected_recipes, stack):
                         enabled_recipes.extend(connected_recipes)
 
@@ -341,10 +343,9 @@ class Optimizer:
 
         # Disable power recipes unless the query specifies something about power
         if not query.has_power_output:
-             for power_recipe_var in self.__db.power_recipes():
+            for power_recipe_var in self.__db.power_recipes():
                 prob.addConstraint(
                     self.__variables[power_recipe_var] == 0, power_recipe_var)
-
 
         # Disable geothermal generators since they are "free" energy.
         if "generator:geo-thermal-generator" not in query_vars:
@@ -358,7 +359,9 @@ class Optimizer:
         # print(prob)
 
         # Write out complete problem to file
-        with open('output\problem.txt', 'w') as f:
+        filename = 'output\problem.txt'
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as f:
             f.write(str(prob))
 
         # Solve
