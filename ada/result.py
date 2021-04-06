@@ -452,6 +452,21 @@ class RecipeCompareResult:
         self.__msg = msg
 
     def __str__(self):
+
+        # We want something like this:
+        # Comparing Recipe: Iron Rod
+        #
+        # Recipe: Alternate: Steel Rod
+        #   Productivity:
+        #     Unweighted w/o alternates: +25%
+        #     Unweighted w/ alternates:  +55%
+        #     Weighted w/o alternates:   +33%
+        #     Weighted w/ alternates:    +60%
+        #   Power Consumption:
+        #     -33%
+        #   Complexity:
+        #     +40%
+
         return self.__msg
 
     def message(self, breadcrumbs):
