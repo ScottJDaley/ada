@@ -7,23 +7,26 @@ class Crafter:
         self.__data = data
 
     def var(self):
-        return "crafter:" + self.__data["slug"]
+        return "crafter:" + self.__data["mDisplayName"].lower().replace(' ', '-')
+    
+    def class_name(self):
+        return self.__data["ClassName"]
 
     def human_readable_name(self):
-        return self.__data["name"]
+        return self.__data["mDisplayName"]
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(' ', '_')
 
     def power_consumption(self):
-        return self.__data["metadata"]["powerConsumption"]
+        return float(self.__data["mPowerConsumption"])
 
     def details(self):
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  power consumption: " +
                    str(self.power_consumption()) + " MW")
-        out.append(self.__data["description"])
+        out.append(self.__data["mDescription"])
         out.append("")
         return '\n'.join(out)
 
@@ -36,7 +39,7 @@ class Crafter:
 
     def embed(self):
         embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["description"]
+        embed.description = self.__data["mDescription"]
         embed.url = self.wiki()
         embed.set_thumbnail(url=self.thumb())
         embed.add_field(name="Power Consumption", value=(

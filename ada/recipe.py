@@ -1,5 +1,18 @@
 from discord import Embed
 
+def parse_list(raw):
+    if raw.startswith('(('):
+        return raw[2:-2].split('),(')
+    return raw[1:-1].split(',')
+
+def parse_recipe_item(raw):
+    components = raw.split(',')
+    component_map = {}
+    for component in components:
+        key_value = component.split('=')
+        component_map[key_value[0]] = key_value[1]
+    class_name = component_map['ItemClass'].split('.')[1][:-2]
+    return class_name, int(component_map['Amount'])
 
 class Recipe:
     class RecipeItem:
@@ -25,27 +38,45 @@ class Recipe:
         self.__data = data
         self.__db = db
 
+        self.__crafter = None
+        if len(data["mProducedIn"]) == 0:
+            return
+        producers = parse_list(data["mProducedIn"])
+        for producer in producers:
+            producer_class_name = producer.split('.')[1]
+            crafter = db.crafter_from_class_name(producer_class_name)
+            if crafter is not None:
+                self.__crafter = crafter
+                break
+        if self.__crafter is None:
+            return
+
         # item var => recipe item
         self.__ingredients = {}
         self.__products = {}
-        for ingredient in data["ingredients"]:
-            item = db.item_from_class_name(ingredient["item"])
+        for ingredient in parse_list(data["mIngredients"]):
+            class_name, amount = parse_recipe_item(ingredient)
+            item = db.item_from_class_name(class_name)
+            if item.is_liquid():
+                amount = int(amount / 1000)
             self.__ingredients[item.var()] = self.RecipeItem(
-                item, ingredient["amount"], data["time"])
-        for product in data["products"]:
-            item = db.item_from_class_name(product["item"])
+                item, amount, float(data["mManufactoringDuration"]))
+        for product in parse_list(data["mProduct"]):
+            class_name, amount = parse_recipe_item(product)
+            item = db.item_from_class_name(class_name)
+            if item.is_liquid():
+                amount = int(amount / 1000)
             self.__products[item.var()] = self.RecipeItem(
-                item, product["amount"], data["time"])
-        # if len(self.__products) > 1:
-        #     print("Found multi-product recipe:", self.var())
-        #     print("  ", self.__products.keys())
-        self.__crafter = db.crafter_from_class_name(data["producedIn"][0])
+                item, amount, float(data["mManufactoringDuration"]))
+
+    def slug(self):
+        return self.__data["mDisplayName"].lower().replace(' ', '-').replace(':','')
 
     def var(self):
-        return "recipe:" + self.__data["slug"]
+        return "recipe:" + self.slug()
 
     def viz_name(self):
-        return "recipe-" + self.__data["slug"]
+        return "recipe-" + self.slug()
 
     def viz_label(self, amount):
         out = '<'
@@ -78,12 +109,12 @@ class Recipe:
         return out
 
     def human_readable_name(self):
-        return "Recipe: " + self.__data["name"]
+        return "Recipe: " + self.__data["mDisplayName"]
 
     def details(self):
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
-        out.append("  time: " + str(self.__data["time"]) + "s")
+        out.append("  time: " + str(float(self.__data["mManufactoringDuration"])) + "s")
         out.append("  crafted in: " + self.crafter().human_readable_name())
         out.append("  ingredients:")
         for ingredient in self.__ingredients.values():
@@ -105,7 +136,7 @@ class Recipe:
                               for pro in self.products().values()])
         embed.add_field(name="Products", value=products, inline=True)
         embed.add_field(name="Crafting Time",
-                        value=str(self.__data["time"]) + " seconds",
+                        value=str(float(self.__data["mManufactoringDuration"])) + " seconds",
                         inline=True)
         embed.add_field(name="Building",
                         value=self.crafter().human_readable_name(),
@@ -128,4 +159,7 @@ class Recipe:
         return self.__crafter
 
     def is_alternate(self):
-        return self.__data["alternate"]
+        return self.__data["mDisplayName"].startswith("Alternate: ")
+
+    def is_craftable_in_building(self):
+        return self.__crafter is not None

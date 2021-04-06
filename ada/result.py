@@ -7,6 +7,7 @@ import ada.emoji
 from ada.result_message import ResultMessage
 from ada.breadcrumbs import Breadcrumbs
 
+
 class HelpResult:
     def __str__(self):
         return """
@@ -43,6 +44,8 @@ ada produce ? power from 240 crude oil with only
 ```
 ada produce 60 modular frames without refineries
 ```
+
+For more information and examples, see [the GitHub page](https://github.com/ScottJDaley/ada).
 """
 
     def message(self, breadcrumbs):
@@ -51,10 +54,10 @@ ada produce 60 modular frames without refineries
         message.embed.description = str(self)
         message.content = str(breadcrumbs)
         return message
-    
+
     def handle_reaction(self, emoji, breadcrumbs):
         return None
-    
+
 
 class ErrorResult:
     def __init__(self, msg):
@@ -117,12 +120,13 @@ class InfoResult:
         if not self._add_reaction_selectors:
             message.reactions = []
             if breadcrumbs.page() > 1:
-                 message.reactions.append(ada.emoji.PREVIOUS_PAGE)
+                message.reactions.append(ada.emoji.PREVIOUS_PAGE)
             message.reactions.append(ada.emoji.INFO)
             if breadcrumbs.page() < self._num_pages():
-                 message.reactions.append(ada.emoji.NEXT_PAGE)
-            
-        message.embed = Embed(title="Found " + str(len(self._vars)) + " matches:")
+                message.reactions.append(ada.emoji.NEXT_PAGE)
+
+        message.embed = Embed(
+            title="Found " + str(len(self._vars)) + " matches:")
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
@@ -162,12 +166,59 @@ class InfoResult:
 
 
 class OptimizationResult:
-    def __init__(self, db, vars_, prob, status, raw_query):
+    def __init__(self, db, vars_, prob, status, query):
         self.__db = db
         self.__prob = prob
         self.__vars = vars_
         self.__status = status
-        self._raw_query = raw_query
+        self.__query = query
+        # Dictionaries from var -> (obj, value)
+        # TODO: Use these in the functions below
+        self.__inputs = {
+            item.var(): (item, -self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) < 0
+        }
+        self.__outputs = {
+            item.var(): (item, self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) > 0
+        }
+        self.__recipes = {
+            recipe.var(): (recipe, self.__get_value(recipe.var()))
+            for recipe in self.__db.recipes().values()
+            if self.__has_value(recipe.var())
+        }
+        self.__crafters = {
+            crafter.var(): (crafter, self.__get_value(crafter.var()))
+            for crafter in self.__db.crafters().values()
+            if self.__has_value(crafter.var())
+        }
+        self.__generators = {
+            generator.var(): (generator, self.__get_value(generator.var()))
+            for generator in self.__db.generators().values()
+            if self.__has_value(generator.var())
+        }
+        self.__net_power = self.__get_value(
+            "power") if self.__has_value("power") else 0
+
+    def inputs(self):
+        return self.__inputs
+
+    def outputs(self):
+        return self.__outputs
+
+    def recipes(self):
+        return self.__recipes
+
+    def crafters(self):
+        return self.__crafters
+
+    def generators(self):
+        return self.__generators
+
+    def net_power(self):
+        return self.__net_power
 
     def __has_value(self, var):
         return self.__vars[var].value() and self.__vars[var].value() != 0
@@ -181,7 +232,7 @@ class OptimizationResult:
             var = obj.var()
             if self.__has_value(var) and check_value(self.__get_value(var)):
                 out.append(obj.human_readable_name() +
-                           ": " + str(round(self.__get_value(var), 2)) + suffix)
+                           ": " + str(round(abs(self.__get_value(var)), 2)) + suffix)
         return out
 
     def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
@@ -198,6 +249,7 @@ class OptimizationResult:
 
     def __string_solution(self):
         out = []
+        out.append(str(self.__query))
         out.append("=== OPTIMAL SOLUTION FOUND ===\n")
         out.extend(self.__get_section(
             "INPUT", self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"))
@@ -224,38 +276,45 @@ class OptimizationResult:
         if self.__status is pulp.LpStatusNotSolved:
             return "No solution has been found."
         if self.__status is pulp.LpStatusUndefined:
-            return "Not solution has been found."
+            return "No solution has been found."
         if self.__status is pulp.LpStatusInfeasible:
             return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)"
         if self.__status is pulp.LpStatusUnbounded:
-            return "Solution is unbounded, try adding a constraint"
+            return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()
 
     def __solution_message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Optimization Query")
-        message.embed.description = "description"
+        # We don't include the parsed query in case this puts the embed over the character limit
+        # message.embed.description = str(self.__query)
+        message.embed.description = " "
         inputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
-        message.embed.add_field(
-            name="Inputs", value="\n".join(inputs), inline=True)
+        if len(inputs) > 0:
+            message.embed.add_field(
+                name="Inputs", value="\n".join(inputs), inline=True)
         outputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m")
-        message.embed.add_field(
-            name="Outputs", value="\n".join(outputs), inline=True)
+        if len(outputs) > 0:
+            message.embed.add_field(
+                name="Outputs", value="\n".join(outputs), inline=True)
         recipes = self.__get_vars(self.__db.recipes().values())
-        message.embed.add_field(
-            name="Recipes", value="\n".join(recipes), inline=False)
+        if len(recipes) > 0:
+            message.embed.add_field(
+                name="Recipes", value="\n".join(recipes), inline=False)
         buildings = self.__get_vars(self.__db.crafters().values())
         buildings.extend(self.__get_vars(self.__db.generators().values()))
-        message.embed.add_field(name="Buildings", value="\n".join(
-            buildings), inline=True)
+        if len(buildings) > 0:
+            message.embed.add_field(name="Buildings", value="\n".join(
+                buildings), inline=True)
 
         filename = 'output.gv'
         filepath = 'output/' + filename
         self.generate_graph_viz(filepath)
         file = File(filepath + '.png')
-        message.embed.set_image(url="attachment://" + filename + ".png")
+        # The image already shows up from the attached file, so no need to place it in the embed as well.
+        # message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = breadcrumbs
         return message
@@ -386,3 +445,21 @@ class OptimizationResult:
                         item.human_readable_name(), multiplier * sink_amount))
 
         s.render()
+
+
+class RecipeCompareResult:
+    def __init__(self, msg):
+        self.__msg = msg
+
+    def __str__(self):
+        return self.__msg
+
+    def message(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Error")
+        message.embed.description = self.__msg
+        message.content = str(breadcrumbs)
+        return message
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None

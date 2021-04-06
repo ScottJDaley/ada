@@ -1,4 +1,5 @@
 import pulp
+import os
 from ada.result import OptimizationResult
 
 POWER = "power"
@@ -6,6 +7,7 @@ UNWEIGHTED_RESOURCES = "unweighted-resources"
 WEIGHTED_RESOURCES = "weighted-resources"
 MEAN_WEIGHTED_RESOURCES = "mean-weighted-resources"
 ALTERNATE_RECIPES = "alternate-recipes"
+BYPRODUCTS = "byproducts"
 
 
 class Optimizer:
@@ -37,15 +39,6 @@ class Optimizer:
             MEAN_WEIGHTED_RESOURCES)
         self.__variables[ALTERNATE_RECIPES] = pulp.LpVariable(
             ALTERNATE_RECIPES, lowBound=0)
-
-        self.__byproducts = [
-            "item:fuel:output",
-            "item:polymer-resin:output",
-            "item:plastic:output",
-            "item:heavy-oil-residue:output",
-            "item:rubber:output",
-            "item:silica:output",
-        ]
 
         self.__equalities = []
 
@@ -159,7 +152,8 @@ class Optimizer:
             if recipe.is_alternate():
                 alternate_coeffs[self.__variables[recipe.var()]] = 1
         alternate_coeffs[self.__variables[ALTERNATE_RECIPES]] = -1
-        self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
+        self.__equalities.append(
+            pulp.LpAffineExpression(alternate_coeffs) == 0)
 
     def enable_related_recipes(self, query, prob, debug=False):
         query_vars = query.query_vars()
@@ -257,7 +251,7 @@ class Optimizer:
                     stack = [output_var]
                     if debug:
                         print("\nChecking connection from",
-                            input_var, "to", output_var)
+                              input_var, "to", output_var)
                     if check(input_var, output_var, connected_recipes, stack):
                         enabled_recipes.extend(connected_recipes)
 
@@ -349,14 +343,13 @@ class Optimizer:
 
         # Disable power recipes unless the query specifies something about power
         if not query.has_power_output:
-             for power_recipe_var in self.__db.power_recipes():
+            for power_recipe_var in self.__db.power_recipes():
                 prob.addConstraint(
                     self.__variables[power_recipe_var] == 0, power_recipe_var)
 
-
         # Disable geothermal generators since they are "free" energy.
         if "generator:geo-thermal-generator" not in query_vars:
-            prob += self.__variables["generator:geo-thermal-generator"] == 0
+            prob += self.__variables["generator:geothermal-generator"] == 0
 
         # Disable biomasss burners since they cannot be automated.
         if "generator:biomass-burner" not in query_vars:
@@ -366,12 +359,14 @@ class Optimizer:
         # print(prob)
 
         # Write out complete problem to file
-        with open('problem.txt', 'w') as f:
+        filename = 'output\problem.txt'
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, 'w') as f:
             f.write(str(prob))
 
         # Solve
         status = prob.solve()
         result = OptimizationResult(
-            self.__db, self.__variables, prob, status, query.raw_query)
+            self.__db, self.__variables, prob, status, query)
 
         return result

@@ -79,3 +79,11 @@ class OptimizationQuery:
         for var in self.le_constraints:
             query_vars.append(var)
         return query_vars
+
+class RecipeCompareQuery:
+    def __init__(self, raw_query):
+        self.raw_query = raw_query
+        self.base_recipe = None
+
+    def __str__(self):
+        return self.raw_query
