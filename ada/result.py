@@ -457,15 +457,44 @@ class RecipeCompareResult:
         # Comparing Recipe: Iron Rod
         #
         # Recipe: Alternate: Steel Rod
-        #   Productivity:
-        #     Unweighted w/o alternates: +25%
-        #     Unweighted w/ alternates:  +55%
-        #     Weighted w/o alternates:   +33%
-        #     Weighted w/ alternates:    +60%
-        #   Power Consumption:
-        #     -33%
-        #   Complexity:
-        #     +40%
+        #   To make 1 Iron Rod per minute:
+        #     INPUTS:
+        #       Steel Ingot: 0.25/m
+        #     POWER CONSUMPTION:
+        #       0.083 MW
+        #
+        #   Compared to Recipe: Iron Rod
+        #     Resource Requirements:
+        #       Unweighted w/o alternates:
+        #         Coal: +100%
+        #         Iron Ore: -20%
+        #       Unweighted w/ alternates:
+        #         Water: -67.5%
+        #         Iron Ore: +11%%
+        #         Crude Oil: + 100%
+        #       Weighted w/o alternates:
+        #         Water: -67.5%
+        #         Iron Ore: +11%%
+        #         Crude Oil: + 100%
+        #       Weighted w/ alternates:
+        #         Water: -67.5%
+        #         Iron Ore: +11%%
+        #         Crude Oil: + 100%
+        #     Productivity:
+        #       Unweighted w/o alternates: +25%
+        #       Unweighted w/ alternates:  +55%
+        #       Weighted w/o alternates:   +33%
+        #       Weighted w/ alternates:    +60%
+        #     Power Consumption:
+        #       Unweighted w/o alternates: +25%
+        #       Unweighted w/ alternates:  +55%
+        #       Weighted w/o alternates:   +33%
+        #       Weighted w/ alternates:    +60%
+        #     Complexity:
+        #       Unweighted w/o alternates: +25%
+        #       Unweighted w/ alternates:  +55%
+        #       Weighted w/o alternates:   +33%
+        #       Weighted w/ alternates:    +60%
 
         return self.__msg
 
