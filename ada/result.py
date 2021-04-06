@@ -496,6 +496,20 @@ class RecipeCompareResult:
         #       Weighted w/o alternates:   +33%
         #       Weighted w/ alternates:    +60%
 
+        # TODO: Actually, let's do something like this instead
+
+        # Recipe: Alternate: Steel Rod
+        #   Inputs:
+        #     Iron Ore: -20%
+        #     Coal: +100%
+        #     Water: +67%
+        #     Crude Oil: +100%
+        #   total Resource Requirements:
+        #     unweighted: -25%
+        #     weighted: -40%
+        #   Power Consumption: -25%
+        #   Complexity: -25%
+
         return self.__msg
 
     def message(self, breadcrumbs):
