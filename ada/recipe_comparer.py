@@ -48,8 +48,8 @@ class RecipeComparer:
             }
 
             def get_delta_percentage(new, old):
-                delta_percentage = 100
-                if old != 0:
+                delta_percentage = "NEW"
+                if old is not None and old != 0:
                     delta_percentage = ((new / old) - 1) * 100
                 return delta_percentage
 
@@ -66,7 +66,7 @@ class RecipeComparer:
 
             comp_resources_total = 0
             for input_var, (_input, value) in comp_production_stats.inputs.items():
-                base_value = 0
+                base_value = None
                 if input_var in base_production_stats.inputs:
                     _, base_value = base_production_stats.inputs[input_var]
                 self.resources[input_var] = (
@@ -89,12 +89,10 @@ class RecipeComparer:
             )
 
     class RecipeStats:
-        def __init__(self, base, unweighted_default, unweighted_optimal, weighted_default, weighted_optimal):
+        def __init__(self, base, unweighted_stats, weighted_stats):
             self.base = base
-            self.unweighted_default = unweighted_default
-            self.unweighted_optimal = unweighted_optimal
-            self.weighted_default = weighted_default
-            self.weighted_optimal = weighted_optimal
+            self.unweighted_stats = unweighted_stats
+            self.weighted_stats = weighted_stats
 
         def __str__(self):
             out = []
@@ -102,50 +100,40 @@ class RecipeComparer:
             out.append("Base:")
             out.append(str(self.base))
             out.append("")
-            out.append("Unweighted w/o alternates")
-            out.append(str(self.unweighted_default))
+            out.append("Unweighted")
+            out.append(str(self.unweighted_stats))
             out.append("")
-            out.append("Unweighted w/ alternates")
-            out.append(str(self.unweighted_optimal))
-            out.append("")
-            out.append("Weighted w/o alternates")
-            out.append(str(self.weighted_default))
-            out.append("")
-            out.append("Weighted w/ alternates")
-            out.append(str(self.weighted_optimal))
+            out.append("Weighted")
+            out.append(str(self.weighted_stats))
             return '\n'.join(out)
 
     class RecipeCompStats:
         def __init__(self, base_stats, comp_stats):
-            self.unweighted_default = RecipeComparer.ProductionCompStats(
-                base_stats.unweighted_default, comp_stats.unweighted_default, False
+            self.unweighted_comp_stats = RecipeComparer.ProductionCompStats(
+                base_stats.unweighted_stats, comp_stats.unweighted_stats, False
             )
-            self.unweighted_optimal = RecipeComparer.ProductionCompStats(
-                base_stats.unweighted_optimal, comp_stats.unweighted_optimal, False
-            )
-            self.weighted_default = RecipeComparer.ProductionCompStats(
-                base_stats.weighted_default, comp_stats.weighted_default, True
-            )
-            self.weighted_optimal = RecipeComparer.ProductionCompStats(
-                base_stats.weighted_optimal, comp_stats.weighted_optimal, True
+            self.weighted_comp_stats = RecipeComparer.ProductionCompStats(
+                base_stats.weighted_stats, comp_stats.weighted_stats, True
             )
 
         def to_string(self, indent=0):
             def get_percentage_str(percentage):
+                if isinstance(percentage, str):
+                    return percentage
                 percentage_string = str(round(percentage, 2))
                 if percentage > 0:
                     percentage_string = "+" + percentage_string
                 return percentage_string + "%"
 
             out = []
-            # out.append(indent * '  ' + "Resource Requirements:")
-            # indent += 1
+            out.append(indent * '  ' + "Inputs:")
+            indent += 1
             # out.append(indent * '  ' + "Unweighted w/o alternates:")
             # indent += 1
-            # for _, (resource, percentage) in self.unweighted_default.resources.items():
-            #     out.append(indent*'  ' + resource.human_readable_name() +
-            #                ": " + get_percentage_str(percentage))
-            # indent -= 1
+            for _, (resource, percentage) in self.unweighted_comp_stats.resources.items():
+                out.append(indent*'  ' + resource.human_readable_name() +
+                           ": " + get_percentage_str(percentage))
+            indent -= 1
             # out.append(indent * '  ' + "Unweighted w/ alternates:")
             # indent += 1
             # for _, (resource, percentage) in self.unweighted_optimal.resources.items():
@@ -164,44 +152,42 @@ class RecipeComparer:
             #     out.append(indent*'  ' + resource.human_readable_name() +
             #                ": " + get_percentage_str(percentage))
             # indent -= 2
-            out.append(indent * '  ' + "Resource Requirements:")
+            out.append(indent * '  ' + "Total Resource Requirements:")
             indent += 1
-            out.append(indent * '  ' + "Unweighted w/o alternates: " +
-                       get_percentage_str(self.unweighted_default.resource_requirements))
-            out.append(indent * '  ' + "Unweighted w/ alternates: " +
-                       get_percentage_str(self.unweighted_optimal.resource_requirements))
-            out.append(indent * '  ' + "Weighted w/o alternates: " +
-                       get_percentage_str(self.weighted_default.resource_requirements))
-            out.append(indent * '  ' + "Weighted w/ alternates: " +
-                       get_percentage_str(self.weighted_optimal.resource_requirements))
+            out.append(indent * '  ' + "Unweighted: " +
+                       get_percentage_str(self.unweighted_comp_stats.resource_requirements))
+            out.append(indent * '  ' + "Weighted: " +
+                       get_percentage_str(self.weighted_comp_stats.resource_requirements))
             indent -= 1
-            out.append(indent * '  ' + "Power Consumption:")
-            indent += 1
-            out.append(indent * '  ' + "Unweighted w/o alternates: " +
-                       get_percentage_str(self.unweighted_default.power_consumption))
-            out.append(indent * '  ' + "Unweighted w/ alternates: " +
-                       get_percentage_str(self.unweighted_optimal.power_consumption))
-            out.append(indent * '  ' + "Weighted w/o alternates: " +
-                       get_percentage_str(self.weighted_default.power_consumption))
-            out.append(indent * '  ' + "Weighted w/ alternates: " +
-                       get_percentage_str(self.weighted_optimal.power_consumption))
-            indent -= 1
-            out.append(indent * '  ' + "Complexity:")
-            indent += 1
-            out.append(indent * '  ' + "Unweighted w/o alternates: " +
-                       get_percentage_str(self.unweighted_default.complexity))
-            out.append(indent * '  ' + "Unweighted w/ alternates: " +
-                       get_percentage_str(self.unweighted_optimal.complexity))
-            out.append(indent * '  ' + "Weighted w/o alternates: " +
-                       get_percentage_str(self.weighted_default.complexity))
-            out.append(indent * '  ' + "Weighted w/ alternates: " +
-                       get_percentage_str(self.weighted_optimal.complexity))
+            out.append(indent * '  ' + "Power Consumption: " +
+                       get_percentage_str(self.unweighted_comp_stats.power_consumption))
+            # indent += 1
+            # out.append(indent * '  ' + "Unweighted w/o alternates: " +
+            #            get_percentage_str(self.unweighted_comp_stats.power_consumption))
+            # out.append(indent * '  ' + "Unweighted w/ alternates: " +
+            #            get_percentage_str(self.unweighted_optimal.power_consumption))
+            # out.append(indent * '  ' + "Weighted w/o alternates: " +
+            #            get_percentage_str(self.weighted_default.power_consumption))
+            # out.append(indent * '  ' + "Weighted w/ alternates: " +
+            #            get_percentage_str(self.weighted_optimal.power_consumption))
+            # indent -= 1
+            out.append(indent * '  ' + "Complexity: " +
+                       get_percentage_str(self.unweighted_comp_stats.complexity))
+            # indent += 1
+            # out.append(indent * '  ' + "Unweighted w/o alternates: " +
+            #            get_percentage_str(self.unweighted_comp_stats.complexity))
+            # out.append(indent * '  ' + "Unweighted w/ alternates: " +
+            #            get_percentage_str(self.unweighted_optimal.complexity))
+            # out.append(indent * '  ' + "Weighted w/o alternates: " +
+            #            get_percentage_str(self.weighted_default.complexity))
+            # out.append(indent * '  ' + "Weighted w/ alternates: " +
+            #            get_percentage_str(self.weighted_optimal.complexity))
             return '\n'.join(out)
 
         def __str__(self):
             return self.to_string()
 
-    class RelateRecipeStats:
+    class RelatedRecipeStats:
         def __init__(self, recipe, product_item, recipe_stats, recipe_comp_stats):
             self.recipe = recipe
             self.product_item = product_item
@@ -255,10 +241,8 @@ class RecipeComparer:
     def scaled_recipe_stats(self, stats, scalar):
         return self.RecipeStats(
             self.scaled_production_stats(stats.base, scalar),
-            self.scaled_production_stats(stats.unweighted_default, scalar),
-            self.scaled_production_stats(stats.unweighted_optimal, scalar),
-            self.scaled_production_stats(stats.weighted_default, scalar),
-            self.scaled_production_stats(stats.weighted_optimal, scalar),
+            self.scaled_production_stats(stats.unweighted_stats, scalar),
+            self.scaled_production_stats(stats.weighted_stats, scalar),
         )
 
     def get_base_stats(self, recipe):
@@ -305,16 +289,12 @@ class RecipeComparer:
 
     async def compute_recipe_stats(self, recipe):
         base_stats = self.get_base_stats(recipe)
-        unweighted_default_stats = await self.compute_production_stats(recipe, False, False)
-        unweighted_optimal_stats = await self.compute_production_stats(recipe, False, True)
-        weighted_default_stats = await self.compute_production_stats(recipe, True, False)
-        weighted_optimal_stats = await self.compute_production_stats(recipe, True, True)
+        unweighted_stats = await self.compute_production_stats(recipe, False, False)
+        weighted_stats = await self.compute_production_stats(recipe, True, False)
         return self.RecipeStats(
             base_stats,
-            unweighted_default_stats,
-            unweighted_optimal_stats,
-            weighted_default_stats,
-            weighted_optimal_stats
+            unweighted_stats,
+            weighted_stats,
         )
 
     async def compare(self, query):
@@ -362,7 +342,7 @@ class RecipeComparer:
                 #     related_recipe, related_stats_normalized)
                 comp_stats = self.RecipeCompStats(
                     base_stats_normalized, related_stats_normalized)
-                related_recipe_stats.append(self.RelateRecipeStats(
+                related_recipe_stats.append(self.RelatedRecipeStats(
                     related_recipe, product.item(), related_stats_normalized, comp_stats))
 
             product_stats[product.item().var()] = (
@@ -371,6 +351,7 @@ class RecipeComparer:
 
             recipe_comparison_stats = self.RecipeComparison(
                 query.base_recipe, product_stats)
+
             print()
             print()
             print(recipe_comparison_stats)
