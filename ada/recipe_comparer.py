@@ -195,7 +195,11 @@ class RecipeComparer:
 
         def __str__(self):
             out = []
-            out.append(self.recipe.human_readable_name())
+            out.append("To make 1 " + self.product_item.human_readable_name() +
+                       " with " + self.recipe.human_readable_name())
+            out.append(str(self.recipe_stats.base))
+            out.append("")
+            out.append("Relative Statistics:")
             out.append(self.recipe_comp_stats.to_string(1))
             return '\n'.join(out)
 
@@ -211,7 +215,9 @@ class RecipeComparer:
                        self.base_recipe.human_readable_name() + " ===")
             out.append("")
             for product_item_var, (product_item, normalized_stats, related_stats) in self.product_stats.items():
-                out.append("For " + product_item.human_readable_name())
+                out.append("To make 1 " + product_item.human_readable_name() +
+                           " with " + self.base_recipe.human_readable_name())
+                out.append(str(normalized_stats.base))
                 for related_recipe_stats in related_stats:
                     out.append("")
                     out.append(str(related_recipe_stats))
@@ -334,4 +340,4 @@ class RecipeComparer:
 
             print(recipe_comparison_stats)
 
-        return RecipeCompareResult("compare result")
+        return RecipeCompareResult(recipe_comparison_stats)

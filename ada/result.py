@@ -1,6 +1,7 @@
 import pulp
 from graphviz import Digraph
 from discord import Embed, File
+from tabulate import tabulate
 import math
 
 import ada.emoji
@@ -448,8 +449,8 @@ class OptimizationResult:
 
 
 class RecipeCompareResult:
-    def __init__(self, msg):
-        self.__msg = msg
+    def __init__(self, stats):
+        self.__stats = stats
 
     def __str__(self):
 
@@ -510,12 +511,30 @@ class RecipeCompareResult:
         #   Power Consumption: -25%
         #   Complexity: -25%
 
-        return self.__msg
+        # TODO: NVM, this:
+
+        # === OVERALL STATS ===
+        #                               | Unweighted | Weighted  | Power       |            |
+        #  Recipe                       | Resources  | Resources | Consumption | Complexity |
+        #  -----------------------------|------------|-----------|-------------|------------|
+        #  Recipe: Iron Rod             |            |           |             |            |
+        #  -----------------------------|------------|-----------|-------------|------------|
+        #  Recipe: Alternate: Steel Rod |  -50%      |  -1.25%   |  -56%       |  +33%      |
+        #
+        # === RAW INPUTS ===
+        #                               | Iron          |              |             |            |
+        #  Recipe                       | Ore           | Coal         |             |   Power    |
+        #  -----------------------------|---------------|--------------|-------------|------------|
+        #  Recipe: Iron Rod             | 0.75/m        |              |             |   0.27 MW  |
+        #  -----------------------------|---------------|--------------|-------------|------------|
+        #  Recipe: Alternate: Steel Rod | 0.25/m (-75%) | 0.45/m (NEW) |             |   1.2 MW   |
+
+        return str(self.__stats)
 
     def message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Error")
-        message.embed.description = self.__msg
+        message.embed.description = str(self.__stats)
         message.content = str(breadcrumbs)
         return message
 

@@ -5,3 +5,4 @@ graphviz
 bs4
 pyparsing
 inflect
+tabulate
