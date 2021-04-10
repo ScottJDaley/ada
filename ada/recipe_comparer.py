@@ -56,7 +56,6 @@ class RecipeComparer:
             self.resources = {}
             base_resource_total = 0
             for input_var, (_input, value) in base_production_stats.inputs.items():
-                print(input_var)
                 self.resources[input_var] = (_input, -100)
                 if weighted and input_var in weighted_resources:
                     base_resource_total += value * \
@@ -196,11 +195,7 @@ class RecipeComparer:
 
         def __str__(self):
             out = []
-            out.append("To make 1 " + self.product_item.human_readable_name() +
-                       " with " + self.recipe.human_readable_name())
-            out.append(str(self.recipe_stats.base))
-            out.append("")
-            out.append("Relative Statistics:")
+            out.append(self.recipe.human_readable_name())
             out.append(self.recipe_comp_stats.to_string(1))
             return '\n'.join(out)
 
@@ -216,9 +211,7 @@ class RecipeComparer:
                        self.base_recipe.human_readable_name() + " ===")
             out.append("")
             for product_item_var, (product_item, normalized_stats, related_stats) in self.product_stats.items():
-                out.append("To make 1 " + product_item.human_readable_name() +
-                           " with " + self.base_recipe.human_readable_name())
-                out.append(str(normalized_stats.base))
+                out.append("For " + product_item.human_readable_name())
                 for related_recipe_stats in related_stats:
                     out.append("")
                     out.append(str(related_recipe_stats))
@@ -277,8 +270,6 @@ class RecipeComparer:
 
         result = await self.__opt.optimize(query)
 
-        print(result)
-
         inputs.update(result.inputs())
 
         return self.ProductionStats(
@@ -306,38 +297,27 @@ class RecipeComparer:
         # The goal is to get, for each candidate recipe, the ingredients, any other products,
         # the raw resources, total power, physical space required, number of steps, etc.
 
-        print("=== Base Stats ===")
         base_stats = await self.compute_recipe_stats(query.base_recipe)
-        print(base_stats)
 
         # product_var -> (product, normalized_base_stats, [related_recipe_stats])
         product_stats = {}
         for product in query.base_recipe.products().values():
-            print("=== Evaluating for",
-                  product.item().human_readable_name(), "product ===")
-
-            print("=== Base Stats Normalized ===")
             base_stats_normalized = self.scaled_recipe_stats(
                 base_stats, 1 / product.minute_rate())
-            print(base_stats_normalized)
 
             related_recipe_stats = []
             for related_recipe in self.__db.recipes_for_product(product.item().var()):
                 if related_recipe.var() == query.base_recipe.var():
                     continue
-                print("\nFound related recipe: " +
-                      related_recipe.human_readable_name())
 
                 related_product_minute_rate = 1
                 for related_product in related_recipe.products().values():
                     if related_product.item().var() == product.item().var():
                         related_product_minute_rate = related_product.minute_rate()
 
-                print("=== Related Base Stats Normalized ===")
                 related_stats = await self.compute_recipe_stats(related_recipe)
                 related_stats_normalized = self.scaled_recipe_stats(
                     related_stats, 1 / related_product_minute_rate)
-                print(related_stats_normalized)
                 # related_recipe_stats[related_recipe.var()] = (
                 #     related_recipe, related_stats_normalized)
                 comp_stats = self.RecipeCompStats(
@@ -352,8 +332,6 @@ class RecipeComparer:
             recipe_comparison_stats = self.RecipeComparison(
                 query.base_recipe, product_stats)
 
-            print()
-            print()
             print(recipe_comparison_stats)
 
         return RecipeCompareResult("compare result")
