@@ -338,6 +338,4 @@ class RecipeComparer:
             recipe_comparison_stats = self.RecipeComparison(
                 query.base_recipe, product_stats)
 
-            print(recipe_comparison_stats)
-
         return RecipeCompareResult(recipe_comparison_stats)
