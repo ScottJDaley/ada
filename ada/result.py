@@ -455,91 +455,86 @@ class RecipeCompareResult:
         def get_percentage_str(percentage):
             if isinstance(percentage, str):
                 return percentage
-            percentage_string = str(round(percentage, 1))
+            percentage_string = str(int(round(percentage, 0)))
             if percentage > 0:
                 percentage_string = "+" + percentage_string
             return percentage_string + "%"
 
-        self.__overall_product_stats = {}
-        self.__product_input_stats = {}
+        recipes = []
+        unweighted = []
+        weighted = []
+        power = []
+        complexity = []
 
-        for product_item_var, (product_item, normalized_stats, related_stats) in stats.product_stats.items():
-            recipes = []
-            unweighted = []
-            weighted = []
-            power = []
-            complexity = []
+        recipes.append(stats.query.base_recipe.human_readable_name())
+        unweighted.append("")
+        weighted.append("")
+        power.append("")
+        complexity.append("")
 
-            recipes.append(stats.base_recipe.human_readable_name())
-            unweighted.append("")
-            weighted.append("")
-            power.append("")
-            complexity.append("")
+        for related_stats in stats.related_recipe_stats:
+            recipes.append(
+                related_stats.recipe.human_readable_name())
+            unweighted.append(
+                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.resource_requirements))
+            weighted.append(
+                get_percentage_str(related_stats.recipe_comp_stats.weighted_comp_stats.resource_requirements))
+            power.append(
+                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption))
+            complexity.append(
+                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.complexity))
 
-            for related_recipe_stats in related_stats:
-                recipes.append(
-                    related_recipe_stats.recipe.human_readable_name())
-                unweighted.append(
-                    get_percentage_str(related_recipe_stats.recipe_comp_stats.unweighted_comp_stats.resource_requirements))
-                weighted.append(
-                    get_percentage_str(related_recipe_stats.recipe_comp_stats.weighted_comp_stats.resource_requirements))
-                power.append(
-                    get_percentage_str(related_recipe_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption))
-                complexity.append(
-                    get_percentage_str(related_recipe_stats.recipe_comp_stats.unweighted_comp_stats.complexity))
+        self.__overall_stats = {
+            "Recipe": recipes,
+            "Unweighted\nResources": unweighted,
+            "Weighted\nResources": weighted,
+            "Power\nConsumption": power,
+            "Complexity": complexity,
+        }
 
-            self.__overall_product_stats[product_item.human_readable_name()] = {
-                "Recipe": recipes,
-                "Unweighted\nResources": unweighted,
-                "Weighted\nResources": weighted,
-                "Power\nConsumption": power,
-                "Complexity": complexity,
-            }
+        # Find all possible inputs.
 
-            # Find all possible inputs.
+        input_vars = {}
 
-            input_vars = {}
-
-            for (_input, value) in normalized_stats.unweighted_stats.inputs.values():
+        for (_input, value) in stats.base_stats_normalized.unweighted_stats.inputs.values():
+            input_vars[_input.var()] = _input.human_readable_name()
+        for related_stats in stats.related_recipe_stats:
+            for (_input, value) in related_stats.recipe_stats.unweighted_stats.inputs.values():
                 input_vars[_input.var()] = _input.human_readable_name()
-            for related_recipe_stats in related_stats:
-                for (_input, value) in related_recipe_stats.recipe_stats.unweighted_stats.inputs.values():
-                    input_vars[_input.var()] = _input.human_readable_name()
 
-            inputs = {}
-            inputs["Recipe"] = recipes
-            for input_var, input_name in input_vars.items():
-                if input_var in normalized_stats.unweighted_stats.inputs:
-                    _input, value = normalized_stats.unweighted_stats.inputs[input_var]
-                    inputs[input_name] = [str(value)]
+        inputs = {}
+        inputs["Recipe"] = recipes
+        for input_var, input_name in input_vars.items():
+            if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
+                _input, value = stats.base_stats_normalized.unweighted_stats.inputs[input_var]
+                inputs[input_name] = [str(round(value, 2))]
+            else:
+                inputs[input_name] = [""]
+            for related_stats in stats.related_recipe_stats:
+                if input_var in related_stats.recipe_stats.unweighted_stats.inputs:
+                    _input, value = related_stats.recipe_stats.unweighted_stats.inputs[
+                        input_var]
+                    resource, percentage = related_stats.recipe_comp_stats.unweighted_comp_stats.resources[
+                        input_var]
+                    percentage_str = get_percentage_str(percentage)
+                    inputs[input_name].append(
+                        "{}/m ({})".format(round(value, 2), percentage_str))
                 else:
-                    inputs[input_name] = [""]
-                for related_recipe_stats in related_stats:
-                    if input_var in related_recipe_stats.recipe_stats.unweighted_stats.inputs:
-                        _input, value = related_recipe_stats.recipe_stats.unweighted_stats.inputs[
-                            input_var]
-                        resource, percentage = related_recipe_stats.recipe_comp_stats.unweighted_comp_stats.resources[
-                            input_var]
-                        percentage_str = get_percentage_str(percentage)
-                        inputs[input_name].append(
-                            "{}/m ({})".format(round(value, 1), percentage_str))
-                    else:
-                        inputs[input_name].append("")
+                    inputs[input_name].append("")
 
-            self.__product_input_stats[product_item.human_readable_name(
-            )] = inputs
+        raw_power = []
+        power_value = stats.base_stats_normalized.unweighted_stats.power_consumption
+        raw_power.append("{} MW".format(round(power_value, 1)))
+        for related_stats in stats.related_recipe_stats:
+            power_value = related_stats.recipe_stats.unweighted_stats.power_consumption
+            power_percentage = related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+            percentage_str = get_percentage_str(power_percentage)
+            raw_power.append("{} MW ({})".format(
+                round(power_value, 1), percentage_str))
 
-            raw_power = []
-            power_value = normalized_stats.unweighted_stats.power_consumption
-            raw_power.append("{} MW".format(power_value))
-            for related_recipe_stats in related_stats:
-                power_value = related_recipe_stats.recipe_stats.unweighted_stats.power_consumption
-                power_percentage = related_recipe_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
-                percentage_str = get_percentage_str(power_percentage)
-                raw_power.append("{} MW ({})".format(
-                    round(power_value, 1), percentage_str))
+        inputs["Power"] = raw_power
 
-            inputs["Power"] = raw_power
+        self.__input_stats = inputs
 
     def __str__(self):
         # === OVERALL STATS ===
@@ -557,19 +552,20 @@ class RecipeCompareResult:
         #  Recipe: Iron Rod             | 0.75/m        |              |             |   0.27 MW  |
         #  -----------------------------|---------------|--------------|-------------|------------|
         #  Recipe: Alternate: Steel Rod | 0.25/m (-75%) | 0.45/m (NEW) |             |   1.2 MW   |
+        product_name = self.__stats.query.product_item.human_readable_name()
 
         out = []
         out.append("Comparison of " +
-                   self.__stats.base_recipe.human_readable_name())
+                   self.__stats.query.base_recipe.human_readable_name())
         out.append("")
-        for product, overall_stats in self.__overall_product_stats.items():
-            out.append("All recipes that produce: " + product)
-            out.append(tabulate(overall_stats, headers="keys", tablefmt="grid"))
-            out.append("")
-            out.append("Raw Inputs for 1 " +
-                       product + " per minute")
-            inputs = self.__product_input_stats[product]
-            out.append(tabulate(inputs, headers="keys", tablefmt="grid"))
+        out.append("All recipes that produce: " + product_name)
+        out.append(tabulate(self.__overall_stats,
+                   headers="keys", tablefmt="grid"))
+        out.append("")
+        out.append("Raw Inputs for 1 " +
+                   product_name + " per minute")
+        out.append(tabulate(self.__input_stats,
+                   headers="keys", tablefmt="grid"))
         return '\n'.join(out)
 
         # return str(self.__stats)
@@ -579,21 +575,19 @@ class RecipeCompareResult:
         # message.embed = Embed(title="Error")
         # message.embed.description = "hello"  # "```{}```".format(str(self))
 
+        product_name = self.__stats.query.product_item.human_readable_name()
+
         out = []
         out.append("Comparison of " +
-                   self.__stats.base_recipe.human_readable_name())
+                   self.__stats.query.base_recipe.human_readable_name())
         out.append("")
-        for product, overall_stats in self.__overall_product_stats.items():
-            out.append("All recipes that produce: " + product)
-            out.append("```\n{}```".format(
-                tabulate(overall_stats, headers="keys", tablefmt="simple")))
-            out.append("Raw Inputs for 1 " +
-                       product + " per minute")
-            inputs = self.__product_input_stats[product]
-            out.append("```\n{}```".format(
-                tabulate(inputs, headers="keys", tablefmt="simple")))
-            # TODO: handle long input
-            break
+        out.append("All recipes that produce: " + product_name)
+        out.append("```\n{}```".format(
+            tabulate(self.__overall_stats, headers="keys", tablefmt="simple")))
+        out.append("Raw Inputs for 1 " +
+                   product_name + " per minute")
+        out.append("```\n{}```".format(
+            tabulate(self.__input_stats, headers="keys", tablefmt="simple")))
 
         message.content = "{}\n{}".format(
             str(breadcrumbs), '\n'.join(out))

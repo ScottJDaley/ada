@@ -45,6 +45,7 @@ class RecipeComparer:
                 "resource:uranium": 46.67,
                 "resource:raw-quartz": 6.36,
                 "resource:sulfur": 13.33,
+                "resource:nitrogen-gas": 4.5,  # TODO
             }
 
             def get_delta_percentage(new, old):
@@ -204,23 +205,22 @@ class RecipeComparer:
             return '\n'.join(out)
 
     class RecipeComparison:
-        # comp_recipes is a dictionary: product_item_var -> (product_item, normalized_base_stats, [related_recipe_stats])
-        def __init__(self, base_recipe, product_stats):
-            self.base_recipe = base_recipe
-            self.product_stats = product_stats
+        def __init__(self, query, base_stats_normalized, related_recipe_stats):
+            self.query = query
+            self.base_stats_normalized = base_stats_normalized
+            self.related_recipe_stats = related_recipe_stats
 
         def __str__(self):
             out = []
-            out.append("=== Comparing " +
-                       self.base_recipe.human_readable_name() + " ===")
+            out.append("=== Comparing Recipes for " +
+                       self.query.product_item.human_readable_name() + " ===")
             out.append("")
-            for product_item_var, (product_item, normalized_stats, related_stats) in self.product_stats.items():
-                out.append("To make 1 " + product_item.human_readable_name() +
-                           " with " + self.base_recipe.human_readable_name())
-                out.append(str(normalized_stats.base))
-                for related_recipe_stats in related_stats:
-                    out.append("")
-                    out.append(str(related_recipe_stats))
+            out.append("To make 1 " + self.query.product_item.human_readable_name() +
+                       " with " + self.query.base_recipe.human_readable_name())
+            out.append(str(self.base_stats_normalized.base))
+            for related_stats in self.related_recipe_stats:
+                out.append("")
+                out.append(str(related_stats))
             return '\n'.join(out)
 
     def __init__(self, db, opt):
@@ -270,9 +270,9 @@ class RecipeComparer:
             else:
                 query.eq_constraints[ingredient_var] = ingredient.minute_rate()
 
-        # Run again, this time disallowing alternate recipes.
-        if not allow_alternates:
-            query.eq_constraints["alternate-recipes"] = 0
+        # TODO: Decide if alternates should be used here
+        # if not allow_alternates:
+        #     query.eq_constraints["alternate-recipes"] = 0
 
         result = await self.__opt.optimize(query)
 
@@ -305,37 +305,34 @@ class RecipeComparer:
 
         base_stats = await self.compute_recipe_stats(query.base_recipe)
 
-        # product_var -> (product, normalized_base_stats, [related_recipe_stats])
-        product_stats = {}
-        for product in query.base_recipe.products().values():
-            base_stats_normalized = self.scaled_recipe_stats(
-                base_stats, 1 / product.minute_rate())
+        product = query.base_recipe.products()[query.product_item.var()]
 
-            related_recipe_stats = []
-            for related_recipe in self.__db.recipes_for_product(product.item().var()):
-                if related_recipe.var() == query.base_recipe.var():
-                    continue
+        base_stats_normalized = self.scaled_recipe_stats(
+            base_stats, 1 / product.minute_rate())
 
-                related_product_minute_rate = 1
-                for related_product in related_recipe.products().values():
-                    if related_product.item().var() == product.item().var():
-                        related_product_minute_rate = related_product.minute_rate()
+        related_recipe_stats = []
+        for related_recipe in query.related_recipes:
+            if related_recipe.var() == query.base_recipe.var():
+                continue
 
-                related_stats = await self.compute_recipe_stats(related_recipe)
-                related_stats_normalized = self.scaled_recipe_stats(
-                    related_stats, 1 / related_product_minute_rate)
-                # related_recipe_stats[related_recipe.var()] = (
-                #     related_recipe, related_stats_normalized)
-                comp_stats = self.RecipeCompStats(
-                    base_stats_normalized, related_stats_normalized)
-                related_recipe_stats.append(self.RelatedRecipeStats(
-                    related_recipe, product.item(), related_stats_normalized, comp_stats))
+            related_product_minute_rate = 1
+            for related_product in related_recipe.products().values():
+                if related_product.item().var() == query.product_item.var():
+                    related_product_minute_rate = related_product.minute_rate()
 
-            product_stats[product.item().var()] = (
-                product.item(), base_stats_normalized, related_recipe_stats
-            )
+            related_stats = await self.compute_recipe_stats(related_recipe)
+            related_stats_normalized = self.scaled_recipe_stats(
+                related_stats, 1 / related_product_minute_rate)
+            # related_recipe_stats[related_recipe.var()] = (
+            #     related_recipe, related_stats_normalized)
+            comp_stats = self.RecipeCompStats(
+                base_stats_normalized, related_stats_normalized)
+            related_recipe_stats.append(self.RelatedRecipeStats(
+                related_recipe, product.item(), related_stats_normalized, comp_stats))
 
-            recipe_comparison_stats = self.RecipeComparison(
-                query.base_recipe, product_stats)
+        recipe_comparison_stats = self.RecipeComparison(
+            query, base_stats_normalized, related_recipe_stats)
+
+        print(recipe_comparison_stats)
 
         return RecipeCompareResult(recipe_comparison_stats)

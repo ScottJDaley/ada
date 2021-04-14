@@ -108,6 +108,7 @@ class Optimizer:
             self.__variables["resource:uranium"]: 1,
             self.__variables["resource:raw-quartz"]: 1,
             self.__variables["resource:sulfur"]: 1,
+            self.__variables["resource:nitrogen-gas"]: 1,
             self.__variables[UNWEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(
@@ -125,6 +126,7 @@ class Optimizer:
             self.__variables["resource:uranium"]: 46.67,
             self.__variables["resource:raw-quartz"]: 6.36,
             self.__variables["resource:sulfur"]: 13.33,
+            self.__variables["resource:nitrogen-gas"]: 4.5,  # TODO
             self.__variables[WEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(
@@ -142,6 +144,7 @@ class Optimizer:
             self.__variables["resource:uranium"]: 6.83,
             self.__variables["resource:raw-quartz"]: 2.52,
             self.__variables["resource:sulfur"]: 3.65,
+            self.__variables["resource:nitrogen-gas"]: 2.2,  # TODO
             self.__variables[MEAN_WEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(

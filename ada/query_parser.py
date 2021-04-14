@@ -155,7 +155,8 @@ class QueryParser:
 
     help_query = HELP("help")
 
-    compare_recipe_query = (Suppress(COMPARE) + Suppress(RECIPE) + entity_expr)("recipe-compare")
+    compare_recipe_query = (
+        Suppress(COMPARE + RECIPES + FOR) + entity_expr)("recipe-compare")
 
     query_grammar = help_query ^ optimization_query ^ recipe_query ^ compare_recipe_query ^ entity_query
 
@@ -247,7 +248,8 @@ class QueryParser:
             elif value == "_":
                 query.ge_constraints.update({var: 0 for var in output_vars})
             else:
-                query.eq_constraints.update({var: value for var in output_vars})
+                query.eq_constraints.update(
+                    {var: value for var in output_vars})
             if output["strict"]:
                 query.strict_outputs = True
             if "power" in output:
@@ -414,16 +416,40 @@ class QueryParser:
     def _parse_recipe_compare_query(self, raw_query, parse_results):
         query = RecipeCompareQuery(raw_query)
         matches = self._get_matches(parse_results.get("entity"),
-                                    ["recipe"])
+                                    ["item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse compare recipe expression '"
+                "Could not parse compare recipes for expression '"
                 + parse_results.get("entity") + "'.")
         elif len(matches) > 1:
             raise QueryParseException(
-                "Multiple recipes were matched:\n   "
-                + "\n   ".join([match.human_readable_name() for match in matches]) + "\nPlease repeat the command with a more specific recipe.")
-        query.base_recipe = matches[0]
+                "Multiple items were matched:\n   "
+                + "\n   ".join([match.human_readable_name() for match in matches]) + "\nPlease repeat the command with a more specific item name.")
+        product_item = matches[0]
+        related_recipes = list(
+            self._db.recipes_for_product(product_item.var()))
+        base_recipe = None
+        if len(related_recipes) == 0:
+            raise QueryParseException(
+                "Could not find any recipe that produces " + product_item.human_readable_name()
+            )
+        elif len(related_recipes) == 1:
+            base_recipe = related_recipes[0]
+            related_recipes.clear()
+        else:
+            for recipe in list(related_recipes):
+                if recipe.slug() == product_item.slug():
+                    base_recipe = recipe
+                    related_recipes.remove(recipe)
+                    break
+            if base_recipe is None:
+                raise QueryParseException(
+                    "Could not find base recipe for " + product_item.human_readable_name()
+                )
+
+        query.product_item = product_item
+        query.base_recipe = base_recipe
+        query.related_recipes = related_recipes
         return query
 
     def _parse_entity_details(self, raw_query, parse_results):

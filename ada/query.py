@@ -2,6 +2,7 @@
 class HelpQuery:
     pass
 
+
 class InfoQuery:
     def __init__(self, raw_query):
         self.raw_query = raw_query
@@ -80,10 +81,13 @@ class OptimizationQuery:
             query_vars.append(var)
         return query_vars
 
+
 class RecipeCompareQuery:
     def __init__(self, raw_query):
         self.raw_query = raw_query
+        self.product_item = None
         self.base_recipe = None
+        self.related_recipes = None
 
     def __str__(self):
         return self.raw_query
