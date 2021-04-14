@@ -156,7 +156,7 @@ class QueryParser:
     help_query = HELP("help")
 
     compare_recipe_query = (
-        Suppress(COMPARE + RECIPES + FOR) + entity_expr)("recipe-compare")
+        Suppress(COMPARE + RECIPES + FOR) + entity_expr + Optional(WITHOUT + ALTERNATE_RECIPES)("exclude-alternates"))("recipe-compare")
 
     query_grammar = help_query ^ optimization_query ^ recipe_query ^ compare_recipe_query ^ entity_query
 
@@ -450,6 +450,7 @@ class QueryParser:
         query.product_item = product_item
         query.base_recipe = base_recipe
         query.related_recipes = related_recipes
+        query.exclude_alternates = "exclude-alternates" in parse_results
         return query
 
     def _parse_entity_details(self, raw_query, parse_results):

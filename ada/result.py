@@ -555,15 +555,11 @@ class RecipeCompareResult:
         product_name = self.__stats.query.product_item.human_readable_name()
 
         out = []
-        out.append("Comparison of " +
-                   self.__stats.query.base_recipe.human_readable_name())
-        out.append("")
-        out.append("All recipes that produce: " + product_name)
+        out.append("All recipes that produce " + product_name)
         out.append(tabulate(self.__overall_stats,
                    headers="keys", tablefmt="grid"))
         out.append("")
-        out.append("Raw Inputs for 1 " +
-                   product_name + " per minute")
+        out.append("Raw Inputs for 1/m " + product_name)
         out.append(tabulate(self.__input_stats,
                    headers="keys", tablefmt="grid"))
         return '\n'.join(out)
@@ -578,14 +574,10 @@ class RecipeCompareResult:
         product_name = self.__stats.query.product_item.human_readable_name()
 
         out = []
-        out.append("Comparison of " +
-                   self.__stats.query.base_recipe.human_readable_name())
-        out.append("")
-        out.append("All recipes that produce: " + product_name)
+        out.append("All recipes that produce " + product_name)
         out.append("```\n{}```".format(
             tabulate(self.__overall_stats, headers="keys", tablefmt="simple")))
-        out.append("Raw Inputs for 1 " +
-                   product_name + " per minute")
+        out.append("Raw Inputs for 1/m " + product_name)
         out.append("```\n{}```".format(
             tabulate(self.__input_stats, headers="keys", tablefmt="simple")))
 
