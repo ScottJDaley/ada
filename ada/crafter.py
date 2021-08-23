@@ -31,7 +31,7 @@ class Crafter:
         return '\n'.join(out)
 
     def wiki(self):
-        return "https://satisfactory.gamepedia.com/" + self.human_readable_underscored()
+        return "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
 
     def thumb(self):
         print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
