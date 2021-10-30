@@ -2,7 +2,13 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import re
 
+
 def fetch_first_on_page(url):
     html = urlopen(url)
     bs = BeautifulSoup(html, 'html.parser')
-    return bs.find('img', {'src':re.compile('.png'), 'width':'128', 'height':'128'})['src']
+    image_element = bs.find(
+        'img', {'src': re.compile('.png'), 'class': 'pi-image-thumbnail'})
+    if image_element is None:
+        print("Could not find any png image with class name 'pi-image-thumbnail' on the following page:", url)
+        return None
+    return image_element['src']
