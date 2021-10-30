@@ -88,7 +88,7 @@ class RecipeCompareQuery:
         self.product_item = None
         self.base_recipe = None
         self.related_recipes = None
-        self.exclude_alternates = False
+        self.include_alternates = False
 
     def __str__(self):
         return self.raw_query

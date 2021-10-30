@@ -254,7 +254,7 @@ class RecipeComparer:
             1
         )
 
-    async def compute_production_stats(self, recipe, weighted, exclude_alternates):
+    async def compute_production_stats(self, recipe, weighted, include_alternates):
         inputs = {}
 
         query = OptimizationQuery("")
@@ -270,8 +270,8 @@ class RecipeComparer:
             else:
                 query.eq_constraints[ingredient_var] = ingredient.minute_rate()
 
-        if exclude_alternates:
-            query.eq_constraints["alternate-recipes"] = 0
+        if include_alternates:
+            query.ge_constraints["alternate-recipes"] = 0
 
         result = await self.__opt.optimize(query)
 
@@ -283,10 +283,10 @@ class RecipeComparer:
             len(result.recipes()) + len(inputs) + 1
         )
 
-    async def compute_recipe_stats(self, recipe, exclude_alternates):
+    async def compute_recipe_stats(self, recipe, include_alternates):
         base_stats = self.get_base_stats(recipe)
-        unweighted_stats = await self.compute_production_stats(recipe, False, exclude_alternates)
-        weighted_stats = await self.compute_production_stats(recipe, True, exclude_alternates)
+        unweighted_stats = await self.compute_production_stats(recipe, False, include_alternates)
+        weighted_stats = await self.compute_production_stats(recipe, True, include_alternates)
         return self.RecipeStats(
             base_stats,
             unweighted_stats,
@@ -302,7 +302,7 @@ class RecipeComparer:
         # The goal is to get, for each candidate recipe, the ingredients, any other products,
         # the raw resources, total power, physical space required, number of steps, etc.
 
-        base_stats = await self.compute_recipe_stats(query.base_recipe, query.exclude_alternates)
+        base_stats = await self.compute_recipe_stats(query.base_recipe, query.include_alternates)
 
         product = query.base_recipe.products()[query.product_item.var()]
 
@@ -319,7 +319,7 @@ class RecipeComparer:
                 if related_product.item().var() == query.product_item.var():
                     related_product_minute_rate = related_product.minute_rate()
 
-            related_stats = await self.compute_recipe_stats(related_recipe, query.exclude_alternates)
+            related_stats = await self.compute_recipe_stats(related_recipe, query.include_alternates)
             related_stats_normalized = self.scaled_recipe_stats(
                 related_stats, 1 / related_product_minute_rate)
             # related_recipe_stats[related_recipe.var()] = (

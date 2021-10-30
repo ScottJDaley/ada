@@ -358,6 +358,9 @@ class Optimizer:
         if "generator:biomass-burner" not in query_vars:
             prob += self.__variables["generator:biomass-burner"] == 0
 
+        # Disable alternate recipes unless the query specifically allows it
+        if ALTERNATE_RECIPES not in query_vars:
+            prob += self.__variables[ALTERNATE_RECIPES] == 0
         # Display the problem
         # print(prob)
 
