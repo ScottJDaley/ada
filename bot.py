@@ -51,11 +51,11 @@ async def on_message(message):
         return
     query = message.content[len(CMD_PREFIX):]
     result = await ada.do(query)
-    result_message = result.message(Breadcrumbs.create(query))
-    reply = await message.channel.send(content=result_message.content,
-                                       embed=result_message.embed,
-                                       file=result_message.file)
-    await add_reactions(reply, result_message.reactions)
+    for result_message in result.messages(Breadcrumbs.create(query)):
+        reply = await message.channel.send(content=result_message.content,
+                                           embed=result_message.embed,
+                                           file=result_message.file)
+        await add_reactions(reply, result_message.reactions)
 
 
 @client.event

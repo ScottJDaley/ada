@@ -49,12 +49,12 @@ ada produce 60 modular frames without refineries
 For more information and examples, see [the GitHub page](https://github.com/ScottJDaley/ada).
 """
 
-    def message(self, breadcrumbs):
+    def messages(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Help")
         message.embed.description = str(self)
         message.content = str(breadcrumbs)
-        return message
+        return [message]
 
     def handle_reaction(self, emoji, breadcrumbs):
         return None
@@ -67,12 +67,12 @@ class ErrorResult:
     def __str__(self):
         return self.__msg
 
-    def message(self, breadcrumbs):
+    def messages(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Error")
         message.embed.description = self.__msg
         message.content = str(breadcrumbs)
-        return message
+        return [message]
 
     def handle_reaction(self, emoji, breadcrumbs):
         return None
@@ -131,21 +131,21 @@ class InfoResult:
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
-        return message
+        return [message]
 
-    def message(self, breadcrumbs):
+    def messages(self, breadcrumbs):
         if len(self._vars) == 0:
             message = ResultMessage()
             message.embed = Embed(title="No matches found")
             message.content = str(breadcrumbs)
-            return message
+            return [message]
         if len(self._vars) > 1:
             return self._get_info_page(breadcrumbs)
         message = ResultMessage()
         message.embed = self._vars[0].embed()
         message.content = str(breadcrumbs)
         message.reactions = [ada.emoji.PREVIOUS_PAGE]
-        return message
+        return [message]
 
     def handle_reaction(self, emoji, breadcrumbs):
         query = None
@@ -284,31 +284,38 @@ class OptimizationResult:
             return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()
 
-    def __solution_message(self, breadcrumbs):
+    def __solution_messages(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Optimization Query")
-        # We don't include the parsed query in case this puts the embed over the character limit
-        # message.embed.description = str(self.__query)
-        message.embed.description = " "
+
+        sections = [str(self.__query)]
+
         inputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
         if len(inputs) > 0:
-            message.embed.add_field(
-                name="Inputs", value="\n".join(inputs), inline=True)
+            sections.append("**Inputs**\n" + "\n".join(inputs))
         outputs = self.__get_vars(
             self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m")
         if len(outputs) > 0:
-            message.embed.add_field(
-                name="Outputs", value="\n".join(outputs), inline=True)
+            sections.append("**Outputs**\n" + "\n".join(outputs))
         recipes = self.__get_vars(self.__db.recipes().values())
         if len(recipes) > 0:
-            message.embed.add_field(
-                name="Recipes", value="\n".join(recipes), inline=False)
+            sections.append("**Recipes**\n" + "\n".join(recipes))
         buildings = self.__get_vars(self.__db.crafters().values())
         buildings.extend(self.__get_vars(self.__db.generators().values()))
         if len(buildings) > 0:
-            message.embed.add_field(name="Buildings", value="\n".join(
-                buildings), inline=True)
+            sections.append("**Buildings**\n" + "\n".join(buildings))
+
+        descriptions = []
+        curr_description = ""
+        for section in sections:
+            if len(curr_description) + len(section) >= 4096:
+                descriptions.append(curr_description)
+                curr_description = ""
+            curr_description += section + "\n\n"
+        descriptions.append(curr_description)
+
+        message.embed.description = descriptions[0]
 
         filename = 'output.gv'
         filepath = 'output/' + filename
@@ -318,15 +325,25 @@ class OptimizationResult:
         # message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = breadcrumbs
-        return message
 
-    def message(self, breadcrumbs):
+        messages = [message]
+
+        if len(descriptions) > 1:
+            for i in range(1, len(descriptions)):
+                next_message = ResultMessage()
+                next_message.embed = Embed()
+                next_message.embed.description = descriptions[i]
+                messages.append(next_message)
+
+        return messages
+
+    def messages(self, breadcrumbs):
         if self.__status is pulp.LpStatusOptimal:
-            return self.__solution_message(breadcrumbs)
+            return self.__solution_messages(breadcrumbs)
         message = ResultMessage()
         message.embed = Embed(title=str(self))
         message.content = str(breadcrumbs)
-        return message
+        return [message]
 
     def handle_reaction(self, emoji, breadcrumbs):
         return None
@@ -566,7 +583,7 @@ class RecipeCompareResult:
 
         # return str(self.__stats)
 
-    def message(self, breadcrumbs):
+    def messages(self, breadcrumbs):
         message = ResultMessage()
         # message.embed = Embed(title="Error")
         # message.embed.description = "hello"  # "```{}```".format(str(self))
@@ -585,7 +602,7 @@ class RecipeCompareResult:
             str(breadcrumbs), '\n'.join(out))
         if len(message.content) > 2000:
             message.content = "Output was too long"
-        return message
+        return [message]
 
     def handle_reaction(self, emoji, breadcrumbs):
         return None
