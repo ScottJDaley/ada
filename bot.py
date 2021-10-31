@@ -6,12 +6,15 @@ from ada.ada import Ada
 from ada.result import OptimizationResult
 from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
 
+load_dotenv()
 CMD_PREFIX = os.getenv('DISCORD_PREFIX', default=None)
 if not CMD_PREFIX:
     CMD_PREFIX = 'ada '
+
+print("Discord Prefix:", CMD_PREFIX)
+
 REACTIONS_DONE = u'\u200B'  # zero-width space
 
-load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 ada = Ada()
