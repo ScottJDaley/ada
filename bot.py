@@ -11,7 +11,7 @@ CMD_PREFIX = os.getenv('DISCORD_PREFIX', default=None)
 if not CMD_PREFIX:
     CMD_PREFIX = 'ada '
 
-print("Discord Prefix:", CMD_PREFIX)
+print(f"Discord Prefix: '{CMD_PREFIX}'")
 
 REACTIONS_DONE = u'\u200B'  # zero-width space
 
