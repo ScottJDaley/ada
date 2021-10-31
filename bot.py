@@ -6,7 +6,9 @@ from ada.ada import Ada
 from ada.result import OptimizationResult
 from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
 
-CMD_PREFIX = 'ada '
+CMD_PREFIX = os.getenv('DISCORD_PREFIX', default=None)
+if not CMD_PREFIX:
+    CMD_PREFIX = 'ada '
 REACTIONS_DONE = u'\u200B'  # zero-width space
 
 load_dotenv()
