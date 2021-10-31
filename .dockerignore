@@ -1,0 +1,9 @@
+tests/
+docs/
+.drone.yaml
+.git
+.ansible
+.gitignore
+ada/__pycache__
+tool.py 
+index.html

@@ -1,0 +1,72 @@
+---
+kind: pipeline
+type: docker
+name: Build & Deploy Ada (Discord Bot)
+
+clone:
+  depth: 1
+
+steps:
+
+  - name: docker build & push (dev/test)
+    image: plugins/docker
+    settings:
+      mirror: dockerhub.nexus.diesel.net
+      registry: docker.nexus.diesel.net
+      username:
+        from_secret: nexus_user
+      password:
+        from_secret: nexus_pass
+      repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
+      tags:
+        - ${DRONE_BRANCH}-latest
+    when:
+      branch:
+        - development
+      event:
+        - push
+
+  # - name: docker build & push (production)
+  #   image: plugins/docker
+  #   settings:
+  #     mirror: dockerhub.nexus.occ.starbucks.net
+  #     registry: docker.nexus.occ.starbucks.net
+  #     username: automation
+  #     password:
+  #       from_secret: nexus_password
+  #     repo: docker.nexus.occ.starbucks.net/${DRONE_REPO_NAME}
+  #     tags:
+  #         - production-latest
+  #         - ${DRONE_TAG}
+  #   when:
+  #     event: 
+  #       - tag
+
+
+  # - name: deploy
+  #   image: plugins/ansible:3
+  #   environment:
+  #     ANSIBLE_CONFIG: .ansible/ansible.cfg
+  #   settings:
+  #     galaxy: .ansible/roles/requirements.yaml
+  #     playbook: .ansible/deploy.yaml
+  #     private_key:
+  #       from_secret: automation_id_rsa
+  #     vault_password:
+  #       from_secret: ansible_vault_password
+  #   commands:
+  #     # dynamically choose ansible inventory based on git branch/tag
+  #     - version=$DRONE_BRANCH
+  #     - if [ ! -z $DRONE_TAG ]; then version=production; fi
+  #     - /bin/drone-ansible --inventory .ansible/inventories/$$version/hosts
+
+
+trigger:
+  branch:
+    - development
+    - stable
+  event:
+    - push
+
+
+...
