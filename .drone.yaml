@@ -33,6 +33,7 @@ steps:
       inventory: .ansible/inventory/test
       galaxy: .ansible/roles/requirements.yaml
       playbook: .ansible/deploy.yaml
+      extra_vars: version=test
       private_key:
         from_secret: automation_id_rsa
 
@@ -79,6 +80,7 @@ steps:
       inventory: .ansible/inventory/prod
       galaxy: .ansible/roles/requirements.yaml
       playbook: .ansible/deploy.yaml
+      extra_vars: version=prod
       private_key:
         from_secret: automation_id_rsa
 
