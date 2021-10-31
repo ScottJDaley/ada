@@ -5,6 +5,7 @@ beautifulsoup4==4.10.0
 bs4==0.0.1
 chardet==4.0.0
 discord==1.7.3
+discord-py-interactions==3.0.2
 discord.py==1.7.3
 graphviz==0.17
 idna==3.3
