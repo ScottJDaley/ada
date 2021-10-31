@@ -127,7 +127,7 @@ py bot.py
 
 ### MacOS Installation
 
-## Requirements
+#### Requirements
 - Homebrew
 - python3 3.9+
 - python3's pip
