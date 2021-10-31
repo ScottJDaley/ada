@@ -1,0 +1,18 @@
+# docker-compose.yaml
+
+version: '3.8'
+services: 
+
+  bot:
+    image: {{ docker_registry }}/{{ repository }}:{{ version }}-latest
+    
+    environment:
+      - DISCORD_TOKEN={{ discord_token }}
+      - DISCORD_PREFIX={{ discord_prefix }}
+    networks:
+      - {{ docker_network }}
+
+networks:
+  {{ docker_network }}:
+    external:
+      name: {{ docker_network }}
