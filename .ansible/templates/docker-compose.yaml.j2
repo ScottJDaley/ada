@@ -7,8 +7,8 @@ services:
     image: {{ docker_registry }}/{{ repository }}:{{ version }}-latest
     
     environment:
-      - DISCORD_TOKEN={{ discord_token }}
-      - DISCORD_PREFIX={{ discord_prefix }}
+      - DISCORD_TOKEN="{{ lookup('env','DISCORD_TOKEN') }}"
+      - DISCORD_PREFIX="{{ lookup('env','DISCORD_PREFIX') }}"
     networks:
       - {{ docker_network }}
 
