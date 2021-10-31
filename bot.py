@@ -6,10 +6,15 @@ from ada.ada import Ada
 from ada.result import OptimizationResult
 from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
 
-CMD_PREFIX = 'ada '
+load_dotenv()
+CMD_PREFIX = os.getenv('DISCORD_PREFIX', default=None)
+if not CMD_PREFIX:
+    CMD_PREFIX = 'ada '
+
+print(f"Discord Prefix: '{CMD_PREFIX}'")
+
 REACTIONS_DONE = u'\u200B'  # zero-width space
 
-load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
 ada = Ada()
@@ -82,7 +87,7 @@ async def on_raw_reaction_add(payload):
         if query:
             result = await ada.do(query)
 
-        result_message = result.message(breadcrumbs)
+        result_message = result.messages(breadcrumbs)[0]
         await message.clear_reactions()
         await message.edit(content=result_message.content,
                            embed=result_message.embed)

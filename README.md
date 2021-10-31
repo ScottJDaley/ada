@@ -1,3 +1,5 @@
+[![Build Status](https://drone.kiwi-labs.net/api/badges/ScottJDaley/ada/status.svg)](https://drone.kiwi-labs.net/ScottJDaley/ada)
+
 # ADA
 ![alt text](/images/checkmark.png "ADA")
 >I am ADA, also known as Artificial Directory and Assistant, tasked to support pioneers, such as you, in their mission.
@@ -121,6 +123,45 @@ py -m pip install -r requirements.txt
 8. Start the bot
 ```
 py bot.py
+```
+
+### MacOS Installation
+
+## Requirements
+- Homebrew
+- python3 3.9+
+- python3's pip
+- Graphviz
+
+1. Create python virtual environment
+```bash
+python3 -m venv venv
+source ./venv/bin/activate
+```
+
+2. Install python requirements to venv
+```bash
+pip3 install -r requirements.txt
+```
+
+3. Install GraphViz
+```bash
+brew install graphviz
+```
+
+4. Install python packages
+```bash
+pip install -r requirements.txt
+```
+
+5. Set up Discord bot
+```bash
+export DISCORD_TOKEN={token from discord developer portal}
+```
+
+6. Start the bot
+```bash
+python bot.py
 ```
  
 ### Linux Installation

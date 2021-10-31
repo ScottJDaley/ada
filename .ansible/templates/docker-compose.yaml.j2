@@ -1,0 +1,17 @@
+# docker-compose.yaml
+
+version: '3.8'
+services: 
+
+  bot:
+    image: {{ docker_registry }}/{{ repository }}:{{ version }}-latest
+    environment:
+      DISCORD_TOKEN: "{{ lookup('env','DISCORD_TOKEN') }}"
+      DISCORD_PREFIX: "{{ lookup('env','DISCORD_PREFIX') }}"
+    networks:
+      - {{ docker_network }}
+
+networks:
+  {{ docker_network }}:
+    external:
+      name: {{ docker_network }}

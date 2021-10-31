@@ -1,0 +1,12 @@
+# ansible-playbook deploy.yaml -i inventories/dev/hosts --vault-id ~/.tokens/master_id
+
+- hosts: all
+  strategy: free
+  roles:
+    - common
+
+  tasks:
+    
+    - include_role:
+        name: docker
+        tasks_from: stack_deploy

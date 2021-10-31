@@ -1,0 +1,94 @@
+---
+kind: pipeline
+type: docker
+name: Build & Deploy ADA (Test)
+
+clone:
+  depth: 1
+
+steps:
+
+  - name: docker build & push (test)
+    image: plugins/docker
+    settings:
+      mirror: dockerhub.nexus.diesel.net
+      registry: docker.nexus.diesel.net
+      username:
+        from_secret: nexus_user
+      password:
+        from_secret: nexus_pass
+      repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
+      tags:
+        - test-latest
+
+
+  - name: deploy
+    image: plugins/ansible:3
+    environment:
+      ANSIBLE_CONFIG: .ansible/ansible.cfg
+      DISCORD_PREFIX: "ada-test "
+      DISCORD_TOKEN:
+        from_secret: discord_token_test
+    settings:
+      inventory: .ansible/inventory/test
+      galaxy: .ansible/roles/requirements.yaml
+      playbook: .ansible/deploy.yaml
+      extra_vars: version=test
+      private_key:
+        from_secret: automation_id_rsa
+
+
+trigger:
+  branch:
+    - development
+  event:
+    - push
+
+---
+kind: pipeline
+type: docker
+name: Build & Deploy ADA (Production)
+
+clone:
+  depth: 1
+
+steps:
+
+  - name: docker build & push (production)
+    image: plugins/docker
+    settings:
+      mirror: dockerhub.nexus.diesel.net
+      registry: docker.nexus.diesel.net
+      username:
+        from_secret: nexus_user
+      password:
+        from_secret: nexus_pass
+      repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
+      tags:
+        - prod-latest
+        - prod-${DRONE_BUILD_NUMBER}
+
+
+  - name: deploy
+    image: plugins/ansible:3
+    environment:
+      ANSIBLE_CONFIG: .ansible/ansible.cfg
+      DISCORD_PREFIX: "ada "
+      DISCORD_TOKEN:
+        from_secret: discord_token_prod
+    settings:
+      inventory: .ansible/inventory/prod
+      galaxy: .ansible/roles/requirements.yaml
+      playbook: .ansible/deploy.yaml
+      extra_vars: version=prod
+      private_key:
+        from_secret: automation_id_rsa
+
+
+trigger:
+  branch:
+    - stable
+  event:
+    - push
+
+...
