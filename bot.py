@@ -82,7 +82,7 @@ async def on_raw_reaction_add(payload):
         if query:
             result = await ada.do(query)
 
-        result_message = result.message(breadcrumbs)
+        result_message = result.messages(breadcrumbs)[0]
         await message.clear_reactions()
         await message.edit(content=result_message.content,
                            embed=result_message.embed)
