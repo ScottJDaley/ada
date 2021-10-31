@@ -1,3 +1,5 @@
+[![Build Status](https://drone.kiwi-labs.net/api/badges/ScottJDaley/ada/status.svg)](https://drone.kiwi-labs.net/ScottJDaley/ada)
+
 # ADA
 ![alt text](/images/checkmark.png "ADA")
 >I am ADA, also known as Artificial Directory and Assistant, tasked to support pioneers, such as you, in their mission.
