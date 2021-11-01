@@ -94,33 +94,31 @@ outputs, and adhere to any given constraints.
 
 1. Download python 3 from https://www.python.org/downloads/
 
-2. Download Microsoft C++ Build Tools from https://visualstudio.microsoft.com/visual-cpp-build-tools/. Just select "C++ build tools" from the options under "Workloads".
-
-3. Install GraphViz:
+2. Install GraphViz:
  - Download from: https://www.graphviz.org/download/
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
  
-4. Run the following as admin to configure GraphViz:
+3. Run the following as admin to configure GraphViz:
 ```
 dot -c
 ```
 
-5. Clone repo (in directory of you choosing)
+4. Clone repo (in directory of you choosing)
 ```console
 git clone https://github.com/ScottJDaley/ada.git
 ```
 
-6. Move inside the repo
+5. Move inside the repo
 ```console
 cd ada
 ```
 
-7. Install python modules
+6. Install python modules
 ```console
 py -m pip install -r requirements.txt
 ```
 
-8. Start the bot
+7. Start the bot
 ```
 py bot.py
 ```
