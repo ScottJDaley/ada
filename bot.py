@@ -143,8 +143,14 @@ async def compare_recipes(ctx, item: str):
                      required=False,
                  ),
              ])
-async def optimize(ctx, output: str, input: str, include: str, exclude: str):
-    query = f"produce {output} from {input} with {include} excluding {exclude}"
+async def optimize(ctx, output: str, input: str = None, include: str = None, exclude: str = None):
+    query = f"produce {output}"
+    if input:
+        query += f" from {input}"
+    if include:
+        query += f" with {include}"
+    if exclude:
+        query += f" excluding {exclude}"
     result = await ada.do(query)
     await _send_result(ctx, result, query)
 
