@@ -3,9 +3,9 @@ import discord
 import asyncio
 from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option #, create_choice
-# from discord_slash.utils.manage_components import create_button, create_actionrow, wait_for_component, create_select, create_select_option
-# from discord_slash.context import ComponentContext
-# from discord_slash.model import ButtonStyle
+from discord_slash.utils.manage_components import create_button, create_actionrow, wait_for_component, create_select, create_select_option
+from discord_slash.context import ComponentContext
+from discord_slash.model import ButtonStyle
 from dotenv import load_dotenv
 from ada.ada import Ada
 from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
@@ -146,34 +146,232 @@ async def optimize(ctx, output: str, input: str, include: str, exclude: str):
     await _send_result(ctx, result, query)
 
 
-# buttons = [
-#             create_button(
-#                 style=ButtonStyle.green,
-#                 label="A Green Button"
-#             ),
-#           ]
+buttons = [
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Ore"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Plate"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+]
 
-# select = create_select(
-#     options=[# the options in your dropdown
-#         create_select_option("Lab Coat", value="coat", emoji="🥼"),
-#         create_select_option("Test Tube", value="tube", emoji="🧪"),
-#         create_select_option("Petri Dish", value="dish", emoji="🧫"),
-#     ],
-#     placeholder="Choose your option",  # the placeholder text to show when no options have been chosen
-#     min_values=1,  # the minimum number of options a user must select
-#     max_values=2,  # the maximum number of options a user can select
-# )
+buttons2 = [
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Ore"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Plate"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+]
 
-# action_row = create_actionrow(*buttons)
+buttons3 = [
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Ore"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Plate"
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label="Iron Rod"
+    ),
+]
 
-# @slash.slash(name="test", description="Test the bot!", guild_ids=guild_ids)
-# async def _test(ctx):
-#     await ctx.send("test", components=[create_actionrow(select)])
-#     await ctx.send("My Message", components=[action_row])
-#     # note: this will only catch one button press, if you want more, put this in a loop
-#     button_ctx: ComponentContext = await wait_for_component(client,components=action_row)
-#     await button_ctx.edit_origin(content="You pressed a button!")
+arrows = [
+    create_button(
+        style=ButtonStyle.grey,
+        emoji='◀️',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Page 1 of 14',
+        disabled=True,
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        emoji='▶️',
+    ),
+]
 
+inside_buttons = [
+    create_button(
+        style=ButtonStyle.grey,
+        label='Back',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Recipes For',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Recipes From',
+    ),
+]
+
+recipe_buttons = [
+    create_button(
+        style=ButtonStyle.grey,
+        label='Iron Ingot',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Iron Rod',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Constructor',
+    ),
+]
+
+optimization_buttons = [
+    create_button(
+        style=ButtonStyle.grey,
+        label='Query',
+        disabled=True,
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Inputs',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Outputs',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Recipes',
+    ),
+    create_button(
+        style=ButtonStyle.grey,
+        label='Buildings',
+    ),
+]
+
+
+select = create_select(
+    options=[# the options in your dropdown
+        create_select_option("Raw Query", value="query", emoji="🥼"),
+        create_select_option("Inputs", value="inputs", emoji="🧪"),
+        create_select_option("Outputs", value="outputs", emoji="🧫"),
+        create_select_option("Recipes", value="recipes", emoji="🧫"),
+        create_select_option("Buildings", value="buildings", emoji="🧫"),
+    ],
+    placeholder="See Details",  # the placeholder text to show when no options have been chosen
+    min_values=1,  # the minimum number of options a user must select
+    max_values=1,  # the maximum number of options a user can select
+)
+
+search_results = create_select(
+    options=[# the options in your dropdown
+        create_select_option("Iron Ore", value="iron-ore", emoji="🥼"),
+        create_select_option("Iron Rod", value="iron-rod", emoji="🧪"),
+        create_select_option("Iron Plate", value="iron-plate", emoji="🧫"),
+        create_select_option("Reinforced Iron Plate", value="reinforced-iron-plate", emoji="🧫"),
+        create_select_option("Iron wire", value="iron-wire", emoji="🧫"),
+        create_select_option("Load next 24 results...", value="next-results",),
+    ],
+    placeholder="Results",  # the placeholder text to show when no options have been chosen
+    min_values=1,  # the minimum number of options a user must select
+    max_values=1,  # the maximum number of options a user can select
+)
+
+action_row = create_actionrow(*buttons)
+action_row2 = create_actionrow(*buttons2)
+action_row3 = create_actionrow(*buttons3)
+arrow_row = create_actionrow(*arrows)
+inside_row = create_actionrow(*inside_buttons)
+recipe_row = create_actionrow(*recipe_buttons)
+optimization_row = create_actionrow(*optimization_buttons)
+
+@slash.slash(name="test-recipe", description="Test the bot!", guild_ids=guild_ids)
+async def _test_recipe(ctx):
+    # await ctx.send("test", components=[create_actionrow(select)])
+    # await ctx.send("My Message", components=[action_row, action_row2, action_row3, arrow_row])
+    # # note: this will only catch one button press, if you want more, put this in a loop
+    # button_ctx: ComponentContext = await wait_for_component(client,components=action_row)
+    # await button_ctx.edit_origin(content="You pressed a button!",components=[inside_row])
+    # inside_ctx = await wait_for_component(client, components=[inside_row])
+    # await inside_ctx.edit_origin(content="Recipe: Iron Row", components=[recipe_row])
+
+    query = f"recipe: iron rod"
+    result = await ada.do(query)
+    result_message = result.messages(Breadcrumbs.create(query))[0]
+    reply = await ctx.send(content=result_message.content,
+                    embed=result_message.embed,
+                    file=result_message.file,
+                    components=[recipe_row, arrow_row])
+
+@slash.slash(name="test-search", description="Test the bot!", guild_ids=guild_ids)
+async def _test_search(ctx):
+    # await ctx.send("test", components=[create_actionrow(select)])
+    # await ctx.send("My Message", components=[action_row, action_row2, action_row3, arrow_row])
+    # # note: this will only catch one button press, if you want more, put this in a loop
+    # button_ctx: ComponentContext = await wait_for_component(client,components=action_row)
+    # await button_ctx.edit_origin(content="You pressed a button!",components=[inside_row])
+    # inside_ctx = await wait_for_component(client, components=[inside_row])
+    # await inside_ctx.edit_origin(content="Recipe: Iron Row", components=[recipe_row])
+
+    await ctx.send("```iron.*```", components=[action_row, action_row2, action_row3, arrow_row])
+
+@slash.slash(name="test-search2", description="Test the bot!", guild_ids=guild_ids)
+async def _test_search2(ctx):
+    # await ctx.send("test", components=[create_actionrow(select)])
+    # await ctx.send("My Message", components=[action_row, action_row2, action_row3, arrow_row])
+    # # note: this will only catch one button press, if you want more, put this in a loop
+    # button_ctx: ComponentContext = await wait_for_component(client,components=action_row)
+    # await button_ctx.edit_origin(content="You pressed a button!",components=[inside_row])
+    # inside_ctx = await wait_for_component(client, components=[inside_row])
+    # await inside_ctx.edit_origin(content="Recipe: Iron Row", components=[recipe_row])
+
+    await ctx.send("```iron.*```", components=[create_actionrow(search_results)])
+
+@slash.slash(name="test-optimization", description="Test the bot!", guild_ids=guild_ids)
+async def _test_optimization(ctx):
+    # await ctx.send("test", components=[create_actionrow(select)])
+    # await ctx.send("My Message", components=[action_row, action_row2, action_row3, arrow_row])
+    # # note: this will only catch one button press, if you want more, put this in a loop
+    # button_ctx: ComponentContext = await wait_for_component(client,components=action_row)
+    # await button_ctx.edit_origin(content="You pressed a button!",components=[inside_row])
+    # inside_ctx = await wait_for_component(client, components=[inside_row])
+    # await inside_ctx.edit_origin(content="Recipe: Iron Row", components=[recipe_row])
+    query = f"produce 1 turbo motor"
+    result = await ada.do(query)
+    result_message = result.messages(Breadcrumbs.create(query))[0]
+    reply = await ctx.send(content=result_message.content,
+                    #embed=result_message.embed,
+                    file=result_message.file,
+                    components=[optimization_row, create_actionrow(select)])
+    # await ctx.send("```iron.*```", components=[action_row, action_row2, action_row3, arrow_row])
 
 @client.event
 async def on_message(message):
