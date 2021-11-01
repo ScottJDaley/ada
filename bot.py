@@ -23,6 +23,9 @@ guild_ids = None
 restrict_slash_commands_to_guild = os.getenv('RESTRICT_SLASH_COMMANDS_TO_GUILD')
 if restrict_slash_commands_to_guild:
     guild_ids = [int(restrict_slash_commands_to_guild)]
+    print(f'Restricting slash commands to guild_id "{restrict_slash_commands_to_guild}"')
+else:
+    print(f'Setting up global slash commands.\nNOTE: For this to work, all servers with the bot must have the applications.commands scope.')
 
 token = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
