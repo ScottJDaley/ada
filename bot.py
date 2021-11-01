@@ -22,7 +22,7 @@ REACTIONS_DONE = u'\u200B'  # zero-width space
 guild_ids = None
 restrict_slash_commands_to_guild = os.getenv('RESTRICT_SLASH_COMMANDS_TO_GUILD')
 if restrict_slash_commands_to_guild:
-    guild_ids = [restrict_slash_commands_to_guild]
+    guild_ids = [int(restrict_slash_commands_to_guild)]
 
 token = os.getenv('DISCORD_TOKEN')
 client = discord.Client()
@@ -42,7 +42,7 @@ async def on_ready():
 
 @slash.slash(
     name="help",
-    description="Help",
+    description="Help.",
     guild_ids=guild_ids,
 )
 async def help(ctx):
@@ -112,7 +112,7 @@ async def compare_recipes(ctx, item: str):
 
 
 @slash.slash(name="optimize",
-             description="Compute an optimal production chain",
+             description="Compute an optimal production chain.",
              guild_ids=guild_ids,
              options=[
                  create_option(
@@ -197,6 +197,8 @@ async def on_raw_reaction_add(payload):
         return
     channel = await client.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
+    if message.author.id != client.user:
+        return #Only respond to reactions on the bot's messages.
     emoji = str(payload.emoji)
 
     if not _are_reactions_done(message):
