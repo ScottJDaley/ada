@@ -40,7 +40,7 @@ steps:
 
 trigger:
   branch:
-    - development
+    - test
   event:
     - push
 
