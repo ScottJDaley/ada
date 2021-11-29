@@ -1,6 +1,7 @@
 import os
 import discord
 import asyncio
+import re
 from discord_slash import SlashCommand
 from discord_slash.utils.manage_commands import create_option #, create_choice
 from discord_slash.utils.manage_components import create_button, create_actionrow, wait_for_component, create_select, create_select_option
@@ -354,9 +355,20 @@ async def optimize(ctx, output: str, input: str = None, include: str = None, exc
 async def on_message(message):
     if message.author == client.user:
         return
-    if not message.content.startswith(CMD_PREFIX):
+    if client.user.mentioned_in(message):
+        # The bot was mentioned, treat the rest of the message as the query.
+        query = re.sub(r'<.+>', '', message.content)
+    elif message.content.startswith(CMD_PREFIX):
+        # The bot command prefix was used, treat the rest of the message as the query.
+        query = message.content[len(CMD_PREFIX):]
+    elif not message.guild:
+        # This is a DM, so treat the entire message as a query.
+        query = message.content
+    else:
         return
-    query = message.content[len(CMD_PREFIX):]
+    if not query or query.isspace():
+        # Empty query, so show the help message.
+        query = "help"
     result = await ada.do(query)
     for result_message in result.messages(Breadcrumbs.create(query)):
         reply = await message.channel.send(content=result_message.content,
