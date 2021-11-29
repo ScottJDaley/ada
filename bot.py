@@ -359,7 +359,7 @@ async def on_message(message):
         # The bot was mentioned, treat the rest of the message as the query.
         query = re.sub(r'<.+>', '', message.content)
     elif message.content.startswith(CMD_PREFIX):
-        # The bot command prefix was used, treat the rest of the messas as the query.
+        # The bot command prefix was used, treat the rest of the message as the query.
         query = message.content[len(CMD_PREFIX):]
     elif not message.guild:
         # This is a DM, so treat the entire message as a query.
