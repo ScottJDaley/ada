@@ -8,12 +8,10 @@
 
 ADA is a Discord bot for the Satisfactory video game.
 
-> :warning: **ADA is not currently hosted.** You will need to host it yourself to add the bot to your discord server. I am working on setting up new hosting.
-
 [![Discord Bots](https://top.gg/api/widget/687148652732743710.svg)](https://top.gg/bot/687148652732743710)
 
 
-**[Invite to Server](https://discord.com/api/oauth2/authorize?client_id=687148652732743710&permissions=124992&scope=bot)**
+**[Invite to Server](https://discord.com/api/oauth2/authorize?client_id=687148652732743710&permissions=2147608640&scope=bot%20applications.commands)**
 
 With ADA, you can browse information about items, recipes, and buildings within Discord.
 
@@ -88,39 +86,39 @@ outputs, and adhere to any given constraints.
 - `ada produce ? power from 240 crude oil with only fuel generators`: Produce as much power as possible from only 240 crude oil only using fuel generators (no other generators allowed).
 - `ada produce 60 modular frames without refineries`: Produce exactly 60 modular frames without using any refineries, minimizing unweighted resources.
 
-## Running your own version of ADA
+## Hosting ADA yourself
+
+> :warning: You do not need to host ADA yourself to use the bot. Use the link at the top of the readme to invite ADA to your sever. These instructions are only for those interested in customizing ADA and/or hosting it themselves.
 
 ### Windows Installation
 
 1. Download python 3 from https://www.python.org/downloads/
 
-2. Download Microsoft C++ Build Tools from https://visualstudio.microsoft.com/visual-cpp-build-tools/. Just select "C++ build tools" from the options under "Workloads".
-
-3. Install GraphViz:
+2. Install GraphViz:
  - Download from: https://www.graphviz.org/download/
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
  
-4. Run the following as admin to configure GraphViz:
+3. Run the following as admin to configure GraphViz:
 ```
 dot -c
 ```
 
-5. Clone repo (in directory of you choosing)
+4. Clone repo (in directory of you choosing)
 ```console
 git clone https://github.com/ScottJDaley/ada.git
 ```
 
-6. Move inside the repo
+5. Move inside the repo
 ```console
 cd ada
 ```
 
-7. Install python modules
+6. Install python modules
 ```console
 py -m pip install -r requirements.txt
 ```
 
-8. Start the bot
+7. Start the bot
 ```
 py bot.py
 ```
