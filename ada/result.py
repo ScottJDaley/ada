@@ -47,6 +47,8 @@ ada produce 60 modular frames without refineries
 ```
 
 For more information and examples, see [the GitHub page](https://github.com/ScottJDaley/ada).
+
+If you have any questions or concerns, please join the [ADA Bot Support Server](https://discord.gg/UnFkv4wDYJ).
 """
 
     def messages(self, breadcrumbs):
