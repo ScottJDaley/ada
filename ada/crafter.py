@@ -1,24 +1,25 @@
 from discord import Embed
 import ada.image_fetcher
+from typing import Dict
 
 
 class Crafter:
-    def __init__(self, data):
+    def __init__(self, data: Dict[str, str]) -> None:
         self.__data = data
 
-    def var(self):
+    def var(self) -> str:
         return "crafter:" + self.__data["mDisplayName"].lower().replace(" ", "-")
 
-    def class_name(self):
+    def class_name(self) -> str:
         return self.__data["ClassName"]
 
-    def human_readable_name(self):
+    def human_readable_name(self) -> str:
         return self.__data["mDisplayName"]
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
 
-    def power_consumption(self):
+    def power_consumption(self) -> float:
         return float(self.__data["mPowerConsumption"])
 
     def details(self):

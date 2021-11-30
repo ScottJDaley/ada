@@ -3,7 +3,7 @@ import sys
 import traceback
 
 from ada.ada import Ada
-from ada.result import OptimizationResult
+from ada.optimizer import OptimizationResult
 
 DEBUG_PRINTS = False
 

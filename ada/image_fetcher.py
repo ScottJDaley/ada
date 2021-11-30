@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import re
 
 
-def fetch_first_on_page(url):
+def fetch_first_on_page(url: str) -> str:
     html = urlopen(url)
     bs = BeautifulSoup(html, "html.parser")
     image_element = bs.find(

@@ -1,5 +1,6 @@
 from discord import Embed
 import ada.image_fetcher
+from typing import Dict
 
 STACK_SIZES = {
     "SS_HUGE": 500,
@@ -11,27 +12,31 @@ STACK_SIZES = {
 
 
 class Item:
-    def __init__(self, data, is_resource):
+    def __init__(self, data: Dict[str, str], native_class_name: str, is_resource: bool) -> None:
         self.__data = data
+        self.__native_class_name = native_class_name
         self.__is_resource = is_resource
 
-    def slug(self):
+    def slug(self) -> str:
         return self.__data["mDisplayName"].lower().replace(" ", "-")
 
-    def var(self):
+    def var(self) -> str:
         if self.__is_resource:
             return "resource:" + self.slug()
         return "item:" + self.slug()
 
-    def class_name(self):
+    def class_name(self) -> str:
         return self.__data["ClassName"]
 
-    def viz_name(self):
+    def native_class_name(self) -> str:
+        return self.__native_class_name
+
+    def viz_name(self) -> str:
         if self.__is_resource:
             return "resource-" + self.slug()
         return "item-" + self.slug()
 
-    def viz_label(self, amount):
+    def viz_label(self, amount: float) -> str:
         color = "moccasin" if amount < 0 else "lightblue"
         out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
@@ -48,31 +53,31 @@ class Item:
         out += "</TABLE>>"
         return out
 
-    def human_readable_name(self):
+    def human_readable_name(self) -> str:
         return "".join(i for i in self.__data["mDisplayName"] if ord(i) < 128)
 
-    def human_readable_underscored(self):
+    def human_readable_underscored(self) -> str:
         return self.human_readable_name().replace(" ", "_")
 
-    def energy_value(self):
+    def energy_value(self) -> float:
         if self.is_liquid():
             return float(self.__data["mEnergyValue"]) * 1000
         return float(self.__data["mEnergyValue"])
 
-    def stack_size(self):
+    def stack_size(self) -> int:
         if self.__data["mStackSize"].isdigit():
             return int(self.__data["mStackSize"])
         if self.__data["mStackSize"] in STACK_SIZES:
             return STACK_SIZES[self.__data["mStackSize"]]
         return -1
 
-    def sink_value(self):
+    def sink_value(self) -> int:
         return int(self.__data["mResourceSinkPoints"])
 
-    def is_resource(self):
+    def is_resource(self) -> bool:
         return self.__is_resource
 
-    def is_liquid(self):
+    def is_liquid(self) -> bool:
         return self.__data["mForm"] == "RF_LIQUID"
 
     def details(self):
@@ -84,16 +89,16 @@ class Item:
         out.append("")
         return "\n".join(out)
 
-    def wiki(self):
+    def wiki(self) -> str:
         return (
             "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
-    def thumb(self):
+    def thumb(self) -> str:
         print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
         return ada.image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self):
+    def embed(self) -> Embed:
         embed = Embed(title=self.human_readable_name())
         embed.description = self.__data["mDescription"]
         embed.url = self.wiki()

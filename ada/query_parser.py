@@ -17,6 +17,11 @@ from pyparsing import (
     ParseException,
 )
 from ada.query import OptimizationQuery, InfoQuery, HelpQuery, RecipeCompareQuery
+from ada.crafter import Crafter
+from ada.db import DB
+from ada.item import Item
+from pyparsing.results import ParseResults
+from typing import Any, List, Union
 
 
 PRODUCE = CaselessKeyword("produce")
@@ -175,11 +180,11 @@ class QueryParser:
         ^ entity_query
     )
 
-    def __init__(self, db):
+    def __init__(self, db: DB) -> None:
         self._db = db
 
     @staticmethod
-    def _check_var(expr, var):
+    def _check_var(expr: str, var: Union[Crafter, Item]) -> bool:
         # Support the following:
         # 1. singular human-readable name
         # 2. plural human-readable name
@@ -222,7 +227,7 @@ class QueryParser:
             or re.fullmatch(expr, typeless_var)
         )
 
-    def _get_matches(self, expr, allowed_types):
+    def _get_matches(self, expr: str, allowed_types: List[str]) -> List[Union[Any, Item]]:
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(
@@ -242,7 +247,7 @@ class QueryParser:
             allowed_vars.update(self._db.generators().values())
         return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
 
-    def _parse_outputs(self, outputs, query):
+    def _parse_outputs(self, outputs: ParseResults, query: OptimizationQuery) -> None:
         if not outputs:
             raise QueryParseException("No outputs specified in optimization query.")
         for output in outputs:
@@ -273,7 +278,7 @@ class QueryParser:
                 print("has power output")
                 query.has_power_output = True
 
-    def _parse_inputs(self, inputs, query):
+    def _parse_inputs(self, inputs: ParseResults, query: OptimizationQuery) -> None:
         if not inputs:
             return
         for input_ in inputs:
@@ -308,7 +313,7 @@ class QueryParser:
             if input_["strict"]:
                 query.strict_inputs = True
 
-    def _parse_includes(self, includes, query):
+    def _parse_includes(self, includes: None, query: OptimizationQuery) -> None:
         if not includes:
             return
         for include in includes:
@@ -342,7 +347,7 @@ class QueryParser:
                 if var.startswith("generator:"):
                     query.strict_generators = True
 
-    def _parse_excludes(self, excludes, query):
+    def _parse_excludes(self, excludes: None, query: OptimizationQuery) -> None:
         if not excludes:
             return
         for exclude in excludes:
@@ -369,7 +374,7 @@ class QueryParser:
                 query.strict_outputs = True
             query.eq_constraints.update({var: 0 for var in exclude_vars})
 
-    def _parse_optimization_query(self, raw_query, parse_results):
+    def _parse_optimization_query(self, raw_query: str, parse_results: ParseResults) -> OptimizationQuery:
         query = OptimizationQuery(raw_query)
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
@@ -453,7 +458,7 @@ class QueryParser:
         query.vars.extend(matches)
         return query
 
-    def _parse_recipe_compare_query(self, raw_query, parse_results):
+    def _parse_recipe_compare_query(self, raw_query: str, parse_results: ParseResults) -> RecipeCompareQuery:
         query = RecipeCompareQuery(raw_query)
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
@@ -497,7 +502,7 @@ class QueryParser:
         query.include_alternates = "include-alternates" in parse_results
         return query
 
-    def _parse_entity_details(self, raw_query, parse_results):
+    def _parse_entity_details(self, raw_query: str, parse_results: ParseResults) -> InfoQuery:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
@@ -518,7 +523,7 @@ class QueryParser:
         query.vars.extend(recipe_matches)
         return query
 
-    def parse(self, raw_query):
+    def parse(self, raw_query: str) -> Union[InfoQuery, HelpQuery, RecipeCompareQuery, OptimizationQuery]:
         try:
             results = QueryParser.query_grammar.parseString(raw_query, parseAll=True)
         except ParseException as pe:

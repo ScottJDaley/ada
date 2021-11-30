@@ -130,3 +130,6 @@ dmypy.json
 
 # Output files
 output/
+
+# MonkeyType database
+monkeytype.sqlite3

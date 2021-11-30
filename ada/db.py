@@ -3,7 +3,7 @@
 
 import json
 from ada.crafter import Crafter
-from ada.generator import Generator
+from ada.power_generator import PowerGenerator
 from ada.item import Item
 from ada.recipe import Recipe
 from ada.power_recipe import PowerRecipe
@@ -53,7 +53,7 @@ class DB:
             resource_class_short = resource_class.split(".")[1][:-1]
             self.__item_vars_from_native_class_name[resource_class_short] = []
             for resource_data in native_classes[resource_class]:
-                item = Item(resource_data, is_resource=True)
+                item = Item(resource_data, resource_class_short, is_resource=True)
                 self.__items[item.var()] = item
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[resource_class_short].append(
@@ -64,7 +64,7 @@ class DB:
             item_class_short = item_class.split(".")[1][:-1]
             self.__item_vars_from_native_class_name[item_class_short] = []
             for item_data in native_classes[item_class]:
-                item = Item(item_data, is_resource=False)
+                item = Item(item_data, item_class_short, is_resource=False)
                 self.__items[item.var()] = item
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[item_class_short].append(
@@ -84,7 +84,7 @@ class DB:
         self.__generators = {}
         for generator_class in GENERATOR_CLASSES:
             for generator_data in native_classes[generator_class]:
-                generator = Generator(generator_data, self)
+                generator = PowerGenerator(generator_data, self.__items.values())
                 self.__generators[generator.var()] = generator
 
         # Parse recipes
@@ -95,7 +95,7 @@ class DB:
         self.__recipes = {}
         for recipe_class in RECIPE_CLASSES:
             for recipe_data in native_classes[recipe_class]:
-                recipe = Recipe(recipe_data, self)
+                recipe = Recipe(recipe_data, self.__items.values(), self.__crafters.values())
                 if not recipe.is_craftable_in_building():
                     continue
                 self.__recipes[recipe.var()] = recipe

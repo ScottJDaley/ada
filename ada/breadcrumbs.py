@@ -1,13 +1,17 @@
+from __future__ import annotations
+from typing import List
+
+
 class BreadcrumbsException(Exception):
     pass
 
 
 class Breadcrumbs:
-    def __init__(self, queries, page):
+    def __init__(self, queries: List[str], page: int) -> None:
         self._queries = queries
         self._page = page
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "```" + str(self._page) + "\n" + " > ".join(self._queries) + "\n```"
 
     def primary_query(self):
@@ -31,8 +35,8 @@ class Breadcrumbs:
     def goto_prev_query(self):
         self._queries.pop()
 
-    @staticmethod
-    def extract(content):
+    @classmethod
+    def extract(cls, content):
         content_lines = content.splitlines()
         if len(content_lines) <= 2:
             raise BreadcrumbsException(
@@ -54,8 +58,8 @@ class Breadcrumbs:
         page = int(content_lines[0][3:])
         query_line = content_lines[1]
         queries = [x.strip() for x in query_line.split(">")]
-        return Breadcrumbs(queries, page)
+        return cls(queries, page)
 
-    @staticmethod
-    def create(query):
-        return Breadcrumbs(queries=[query], page=1)
+    @classmethod
+    def create(cls, query: str) -> Breadcrumbs:
+        return cls(queries=[query], page=1)

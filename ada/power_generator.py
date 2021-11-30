@@ -1,27 +1,29 @@
 from discord import Embed
-import ada.image_fetcher
+from ada import image_fetcher
+from ada.item import Item
+from typing import Any, List, Union
 
 
-def parse_list(raw):
-    return raw[1:-1].split(",")
-
-
-class Generator:
-    def __init__(self, data, db):
+class PowerGenerator:
+    def __init__(self, data, items):
         self.__data = data
-
         self.__fuel_items = []
         if "mDefaultFuelClasses" not in data:
             return
-        for fuel_class in parse_list(data["mDefaultFuelClasses"]):
-            fuel_class_name = fuel_class.split(".")[1]
-            fuel_items = db.items_from_native_class_name(fuel_class_name)
-            if fuel_items is not None:
+        for fuel_class in data["mDefaultFuelClasses"][1:-1].split(","):
+            fuel_class_short = fuel_class.split(".")[1]
+            fuel_items = [item for item in items if item.native_class_name() == fuel_class_short]
+            if fuel_items:
+                # This fuel class is something generic, like 'FGItemDescriptorBiomass' which describes
+                # all biomass items.
                 self.__fuel_items.extend(fuel_items)
             else:
-                self.__fuel_items.append(db.item_from_class_name(fuel_class_name))
+                # This fuel class is a specific item, so find it by its class name.
+                for item in items:
+                    if item.class_name() == fuel_class_short:
+                        self.__fuel_items.append(item)
 
-    def var(self):
+    def var(self) -> str:
         return "generator:" + self.__data["mDisplayName"].lower().replace(" ", "-")
 
     def human_readable_name(self):
@@ -30,10 +32,10 @@ class Generator:
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
 
-    def power_production(self):
+    def power_production(self) -> float:
         return float(self.__data["mPowerProduction"])
 
-    def fuel_items(self):
+    def fuel_items(self) -> List[Union[Any, Item]]:
         return self.__fuel_items
 
     def details(self):
@@ -53,8 +55,8 @@ class Generator:
         )
 
     def thumb(self):
-        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
-        return ada.image_fetcher.fetch_first_on_page(self.wiki())
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
 
     def embed(self):
         embed = Embed(title=self.human_readable_name())

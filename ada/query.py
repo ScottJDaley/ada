@@ -1,9 +1,11 @@
+from typing import List
+
 class HelpQuery:
     pass
 
 
 class InfoQuery:
-    def __init__(self, raw_query):
+    def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.vars = []
 
@@ -14,7 +16,7 @@ class InfoQuery:
 
 
 class OptimizationQuery:
-    def __init__(self, raw_query):
+    def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.maximize_objective = True
         self.objective_coefficients = {}
@@ -29,7 +31,7 @@ class OptimizationQuery:
         self.strict_power_recipes = False
         self.has_power_output = False
 
-    def __str__(self):
+    def __str__(self) -> str:
         out = []
         out.append("Objective:")
         func = "minimize"
@@ -72,7 +74,7 @@ class OptimizationQuery:
     def print(self):
         print(self)
 
-    def query_vars(self):
+    def query_vars(self) -> List[str]:
         query_vars = []
         query_vars.extend(self.objective_coefficients.keys())
         for var in self.eq_constraints:
@@ -85,7 +87,7 @@ class OptimizationQuery:
 
 
 class RecipeCompareQuery:
-    def __init__(self, raw_query):
+    def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.product_item = None
         self.base_recipe = None

@@ -1,6 +1,16 @@
 import pulp
 import os
-from ada.result import OptimizationResult
+from sys import float_info
+from ada.breadcrumbs import Breadcrumbs
+from ada.db import DB
+from ada.item import Item
+from ada.query import OptimizationQuery
+from ada.recipe import Recipe
+from ada.result_message import ResultMessage
+from graphviz import Digraph
+from pulp.pulp import LpProblem, LpVariable
+from typing import Dict, List, Tuple
+from discord import Embed, File
 
 POWER = "power"
 UNWEIGHTED_RESOURCES = "unweighted-resources"
@@ -10,8 +20,342 @@ ALTERNATE_RECIPES = "alternate-recipes"
 BYPRODUCTS = "byproducts"
 
 
+class OptimizationResult:
+    def __init__(
+        self,
+        db: DB,
+        vars_: Dict[str, LpVariable],
+        prob: LpProblem,
+        status: int,
+        query: OptimizationQuery,
+    ) -> None:
+        self.__db = db
+        self.__prob = prob
+        self.__vars = vars_
+        self.__status = status
+        self.__query = query
+        # Dictionaries from var -> (obj, value)
+        # TODO: Use these in the functions below
+        self.__inputs = {
+            item.var(): (item, -self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) < 0
+        }
+        self.__outputs = {
+            item.var(): (item, self.__get_value(item.var()))
+            for item in self.__db.items().values()
+            if self.__has_value(item.var()) and self.__get_value(item.var()) > 0
+        }
+        self.__recipes = {
+            recipe.var(): (recipe, self.__get_value(recipe.var()))
+            for recipe in self.__db.recipes().values()
+            if self.__has_value(recipe.var())
+        }
+        self.__crafters = {
+            crafter.var(): (crafter, self.__get_value(crafter.var()))
+            for crafter in self.__db.crafters().values()
+            if self.__has_value(crafter.var())
+        }
+        self.__generators = {
+            generator.var(): (generator, self.__get_value(generator.var()))
+            for generator in self.__db.generators().values()
+            if self.__has_value(generator.var())
+        }
+        self.__net_power = self.__get_value("power") if self.__has_value("power") else 0
+
+    def inputs(self) -> Dict[str, Tuple[Item, float]]:
+        return self.__inputs
+
+    def outputs(self):
+        return self.__outputs
+
+    def recipes(self) -> Dict[str, Tuple[Recipe, float]]:
+        return self.__recipes
+
+    def crafters(self):
+        return self.__crafters
+
+    def generators(self):
+        return self.__generators
+
+    def net_power(self) -> float:
+        return self.__net_power
+
+    def __has_value(self, var):
+        return (
+            self.__vars[var].value()
+            and abs(self.__vars[var].value()) > float_info.epsilon
+        )
+
+    def __get_value(self, var):
+        return self.__vars[var].value()
+
+    def __get_vars(self, objs, check_value=lambda val: True, suffix=""):
+        out = []
+        for obj in objs:
+            var = obj.var()
+            if self.__has_value(var) and check_value(self.__get_value(var)):
+                out.append(
+                    obj.human_readable_name()
+                    + ": "
+                    + str(round(abs(self.__get_value(var)), 2))
+                    + suffix
+                )
+        return out
+
+    def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
+        out = []
+        out.append(title)
+        vars_ = self.__get_vars(objs, check_value=check_value, suffix=suffix)
+        if len(vars_) == 0:
+            return []
+        out = []
+        out.append(title)
+        out.extend(vars_)
+        out.append("")
+        return out
+
+    def __string_solution(self):
+        out = []
+        out.append(str(self.__query))
+        out.append("=== OPTIMAL SOLUTION FOUND ===\n")
+        out.extend(
+            self.__get_section(
+                "INPUT",
+                self.__db.items().values(),
+                check_value=lambda val: val < 0,
+                suffix="/m",
+            )
+        )
+        out.extend(
+            self.__get_section(
+                "OUTPUT",
+                self.__db.items().values(),
+                check_value=lambda val: val > 0,
+                suffix="/m",
+            )
+        )
+        # out.extend(self.__get_section("INPUT", [item.input() for item in self.__db.items().values()]))
+        # out.extend(self.__get_section("OUTPUT", [item.output() for item in self.__db.items().values()]))
+        out.extend(self.__get_section("RECIPES", self.__db.recipes().values()))
+        out.extend(self.__get_section("CRAFTERS", self.__db.crafters().values()))
+        out.extend(self.__get_section("GENERATORS", self.__db.generators().values()))
+        out.append("NET POWER")
+        net_power = 0
+        if self.__has_value("power"):
+            net_power = self.__get_value("power")
+        out.append(str(net_power) + " MW")
+        out.append("")
+        out.append("OBJECTIVE VALUE")
+        out.append(str(self.__prob.objective.value()))
+        return "\n".join(out)
+
+    def __str__(self) -> str:
+        if self.__status is pulp.LpStatusNotSolved:
+            return "No solution has been found."
+        if self.__status is pulp.LpStatusUndefined:
+            return "No solution has been found."
+        if self.__status is pulp.LpStatusInfeasible:
+            return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)"
+        if self.__status is pulp.LpStatusUnbounded:
+            return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
+        return self.__string_solution()
+
+    def __solution_messages(self, breadcrumbs):
+        message = ResultMessage()
+        message.embed = Embed(title="Optimization Query")
+
+        sections = [str(self.__query)]
+
+        inputs = self.__get_vars(
+            self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"
+        )
+        if len(inputs) > 0:
+            sections.append("**Inputs**\n" + "\n".join(inputs))
+        outputs = self.__get_vars(
+            self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"
+        )
+        if len(outputs) > 0:
+            sections.append("**Outputs**\n" + "\n".join(outputs))
+        recipes = self.__get_vars(self.__db.recipes().values())
+        if len(recipes) > 0:
+            sections.append("**Recipes**\n" + "\n".join(recipes))
+        buildings = self.__get_vars(self.__db.crafters().values())
+        buildings.extend(self.__get_vars(self.__db.generators().values()))
+        if len(buildings) > 0:
+            sections.append("**Buildings**\n" + "\n".join(buildings))
+
+        descriptions = []
+        curr_description = ""
+        for section in sections:
+            if len(curr_description) + len(section) >= 4096:
+                descriptions.append(curr_description)
+                curr_description = ""
+            curr_description += section + "\n\n"
+        descriptions.append(curr_description)
+
+        message.embed.description = descriptions[0]
+
+        filename = "output.gv"
+        filepath = "output/" + filename
+        self.generate_graph_viz(filepath)
+        file = File(filepath + ".png")
+        # The image already shows up from the attached file, so no need to place it in the embed as well.
+        # message.embed.set_image(url="attachment://" + filename + ".png")
+        message.file = file
+        message.content = str(breadcrumbs)
+
+        messages = [message]
+
+        if len(descriptions) > 1:
+            for i in range(1, len(descriptions)):
+                next_message = ResultMessage()
+                next_message.embed = Embed()
+                next_message.embed.description = descriptions[i]
+                messages.append(next_message)
+
+        return messages
+
+    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
+        if self.__status is pulp.LpStatusOptimal:
+            return self.__solution_messages(breadcrumbs)
+        message = ResultMessage()
+        message.embed = Embed(title=str(self))
+        message.content = str(breadcrumbs)
+        return [message]
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None
+
+    def __add_nodes(self, s, objs):
+        for obj in objs:
+            var = obj.var()
+            if not self.__has_value(var):
+                continue
+            amount = self.__get_value(var)
+            s.node(obj.viz_name(), obj.viz_label(amount), shape="plaintext")
+
+    def __has_non_zero_var(self):
+        for var in self.__vars:
+            if self.__has_value(var):
+                return True
+        return False
+
+    def has_solution(self) -> bool:
+        return self.__status is pulp.LpStatusOptimal and self.__has_non_zero_var()
+
+    def __power_viz_label(self, output, net):
+        color = "moccasin" if net < 0 else "lightblue"
+        out = "<"
+        out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
+        if output > 0:
+            out += "<TR>"
+            out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Power Output</TD>'
+            out += "<TD>" + str(round(output, 2)) + " MW</TD>"
+            out += "</TR>"
+        out += "<TR>"
+        out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Net Power</TD>'
+        out += "<TD>" + str(round(net, 2)) + " MW</TD>"
+        out += "</TR>"
+        out += "</TABLE>>"
+        return out
+
+    def generate_graph_viz(self, filename: str) -> None:
+        s = Digraph(
+            "structs", format="png", filename=filename, node_attr={"shape": "record"}
+        )
+
+        sources = {}  # item => {source => amount}
+        sinks = {}  # item => {sink => amount}
+
+        def add_to_target(item_var, targets, target, amount):
+            if item_var not in targets:
+                targets[item_var] = {}
+            targets[item_var][target] = amount
+
+        # items
+        self.__add_nodes(s, self.__db.items().values())
+        for item in self.__db.items().values():
+            if not self.__has_value(item.var()):
+                continue
+            amount = self.__get_value(item.var())
+            target = sources if amount < 0 else sinks
+            add_to_target(
+                item.var(), target, item.viz_name(), self.__get_value(item.var())
+            )
+        # recipes
+        self.__add_nodes(s, self.__db.recipes().values())
+        for recipe in self.__db.recipes().values():
+            if not self.__has_value(recipe.var()):
+                continue
+            recipe_amount = self.__get_value(recipe.var())
+            for item_var, ingredient in recipe.ingredients().items():
+                ingredient_amount = recipe_amount * ingredient.minute_rate()
+                add_to_target(item_var, sinks, recipe.viz_name(), ingredient_amount)
+            for item_var, product in recipe.products().items():
+                product_amount = recipe_amount * product.minute_rate()
+                add_to_target(item_var, sources, recipe.viz_name(), product_amount)
+        # power
+        power_output = 0
+        net_power = 0
+        if self.__has_value("power"):
+            net_power = self.__get_value("power")
+
+        def get_power_edge_label(power_production):
+            return str(round(power_production, 2)) + " MW"
+
+        # power recipes
+        self.__add_nodes(s, self.__db.power_recipes().values())
+        for power_recipe in self.__db.power_recipes().values():
+            if not self.__has_value(power_recipe.var()):
+                continue
+            fuel_item = power_recipe.fuel_item()
+            fuel_amount = (
+                self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate()
+            )
+            add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
+            power_production = (
+                self.__get_value(power_recipe.var()) * power_recipe.power_production()
+            )
+            power_output += power_production
+            s.edge(
+                power_recipe.viz_name(),
+                "power",
+                label=get_power_edge_label(power_production),
+            )
+
+        s.node(
+            "power", self.__power_viz_label(power_output, net_power), shape="plaintext"
+        )
+
+        def get_edge_label(item, amount):
+            return str(round(amount, 2)) + "/m\n" + item
+
+        # Connect each source to all sinks of that item
+        for item_var, item_sources in sources.items():
+            item = self.__db.items()[item_var]
+            if item_var not in sinks:
+                print("Could not find", item_var, "in sinks")
+                continue
+            for source, source_amount in item_sources.items():
+                total_sink_amount = 0
+                for _, sink_amount in sinks[item_var].items():
+                    total_sink_amount += sink_amount
+                multiplier = source_amount / total_sink_amount
+                for sink, sink_amount in sinks[item_var].items():
+                    s.edge(
+                        source,
+                        sink,
+                        label=get_edge_label(
+                            item.human_readable_name(), multiplier * sink_amount
+                        ),
+                    )
+
+        s.render()
+
+
 class Optimizer:
-    def __init__(self, db):
+    def __init__(self, db: DB) -> None:
         self.__db = db
 
         self.variable_names = []
@@ -155,7 +499,9 @@ class Optimizer:
         alternate_coeffs[self.__variables[ALTERNATE_RECIPES]] = -1
         self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
 
-    def enable_related_recipes(self, query, prob, debug=False):
+    def enable_related_recipes(
+        self, query: OptimizationQuery, prob: LpProblem, debug: bool = False
+    ) -> None:
         query_vars = query.query_vars()
         if UNWEIGHTED_RESOURCES in query_vars:
             return
@@ -267,7 +613,7 @@ class Optimizer:
             if power_recipe_var not in enabled_power_recipes:
                 prob += self.__variables[power_recipe_var] == 0
 
-    async def optimize(self, query):
+    async def optimize(self, query: OptimizationQuery) -> OptimizationResult:
         print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?

@@ -1,13 +1,16 @@
 from discord import Embed
+from ada.crafter import Crafter
+from typing import Dict, List, Tuple
+from ada.item import Item
 
 
-def parse_list(raw):
+def parse_list(raw: str) -> List[str]:
     if raw.startswith("(("):
         return raw[2:-2].split("),(")
     return raw[1:-1].split(",")
 
 
-def parse_recipe_item(raw):
+def parse_recipe_item(raw: str) -> Tuple[str, int]:
     components = raw.split(",")
     component_map = {}
     for component in components:
@@ -17,46 +20,45 @@ def parse_recipe_item(raw):
     return class_name, int(component_map["Amount"])
 
 
+class RecipeItem:
+    def __init__(self, item: Item, amount: int, time: float) -> None:
+        self.__item = item
+        self.__amount = amount
+        self.__time = time
+
+    def item(self) -> Item:
+        return self.__item
+
+    def amount(self) -> int:
+        return self.__amount
+
+    def minute_rate(self) -> float:
+        return 60 * self.amount() / self.__time
+
+    def human_readable_name(self):
+        return (
+            self.item().human_readable_name()
+            + ": "
+            + str(self.amount())
+            + " ("
+            + str(self.minute_rate())
+            + "/m)"
+        )
+
+
 class Recipe:
-    class RecipeItem:
-        def __init__(self, item, amount, time):
-            self.__item = item
-            self.__amount = amount
-            self.__time = time
-
-        def item(self):
-            return self.__item
-
-        def amount(self):
-            return self.__amount
-
-        def minute_rate(self):
-            return 60 * self.amount() / self.__time
-
-        def human_readable_name(self):
-            return (
-                self.item().human_readable_name()
-                + ": "
-                + str(self.amount())
-                + " ("
-                + str(self.minute_rate())
-                + "/m)"
-            )
-
-    def __init__(self, data, db):
+    def __init__(self, data: Dict[str, str], items, crafters) -> None:
         self.__data = data
-        self.__db = db
-
         self.__crafter = None
         if len(data["mProducedIn"]) == 0:
             return
         producers = parse_list(data["mProducedIn"])
         for producer in producers:
             producer_class_name = producer.split(".")[1]
-            crafter = db.crafter_from_class_name(producer_class_name)
-            if crafter is not None:
-                self.__crafter = crafter
-                break
+            for crafter in crafters:
+                if crafter.class_name() == producer_class_name:
+                    self.__crafter = crafter
+                    break
         if self.__crafter is None:
             return
 
@@ -65,31 +67,35 @@ class Recipe:
         self.__products = {}
         for ingredient in parse_list(data["mIngredients"]):
             class_name, amount = parse_recipe_item(ingredient)
-            item = db.item_from_class_name(class_name)
-            if item.is_liquid():
-                amount = int(amount / 1000)
-            self.__ingredients[item.var()] = self.RecipeItem(
-                item, amount, float(data["mManufactoringDuration"])
-            )
+            for item in items:
+                if item.class_name() != class_name:
+                    continue
+                if item.is_liquid():
+                    amount = int(amount / 1000)
+                self.__ingredients[item.var()] = RecipeItem(
+                    item, amount, float(data["mManufactoringDuration"])
+                )
         for product in parse_list(data["mProduct"]):
             class_name, amount = parse_recipe_item(product)
-            item = db.item_from_class_name(class_name)
-            if item.is_liquid():
-                amount = int(amount / 1000)
-            self.__products[item.var()] = self.RecipeItem(
-                item, amount, float(data["mManufactoringDuration"])
-            )
+            for item in items:
+                if item.class_name() != class_name:
+                    continue
+                if item.is_liquid():
+                    amount = int(amount / 1000)
+                self.__products[item.var()] = RecipeItem(
+                    item, amount, float(data["mManufactoringDuration"])
+                )
 
-    def slug(self):
+    def slug(self) -> str:
         return self.__data["mDisplayName"].lower().replace(" ", "-").replace(":", "")
 
-    def var(self):
+    def var(self) -> str:
         return "recipe:" + self.slug()
 
-    def viz_name(self):
+    def viz_name(self) -> str:
         return "recipe-" + self.slug()
 
-    def viz_label(self, amount):
+    def viz_label(self, amount: float) -> str:
         out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
@@ -123,7 +129,7 @@ class Recipe:
         out += "</TABLE>>"
         return out
 
-    def human_readable_name(self):
+    def human_readable_name(self) -> str:
         return "Recipe: " + self.__data["mDisplayName"]
 
     def details(self):
@@ -162,23 +168,23 @@ class Recipe:
         )
         return embed
 
-    def ingredients(self):
+    def ingredients(self) -> Dict[str, RecipeItem]:
         return self.__ingredients
 
-    def products(self):
+    def products(self) -> Dict[str, RecipeItem]:
         return self.__products
 
-    def ingredient(self, var):
+    def ingredient(self, var: str) -> RecipeItem:
         return self.__ingredients[var]
 
-    def product(self, var):
+    def product(self, var: str) -> RecipeItem:
         return self.__products[var]
 
-    def crafter(self):
+    def crafter(self) -> Crafter:
         return self.__crafter
 
-    def is_alternate(self):
+    def is_alternate(self) -> bool:
         return self.__data["mDisplayName"].startswith("Alternate: ")
 
-    def is_craftable_in_building(self):
+    def is_craftable_in_building(self) -> bool:
         return self.__crafter is not None

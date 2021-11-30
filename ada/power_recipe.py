@@ -1,19 +1,21 @@
 from discord import Embed
+from ada.power_generator import PowerGenerator
+from ada.item import Item
 
 
 class PowerRecipe:
-    def __init__(self, fuel_item, generator):
+    def __init__(self, fuel_item: Item, generator: PowerGenerator) -> None:
         # item var => recipe item
         self.__fuel_item = fuel_item
         self.__generator = generator
 
-    def var(self):
+    def var(self) -> str:
         return "power-recipe:" + self.__fuel_item.slug()
 
-    def viz_name(self):
+    def viz_name(self) -> str:
         return "power-recipe-" + self.__fuel_item.slug()
 
-    def viz_label(self, amount):
+    def viz_label(self, amount: float) -> str:
         out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
@@ -62,7 +64,7 @@ class PowerRecipe:
         )
         return embed
 
-    def fuel_minute_rate(self):
+    def fuel_minute_rate(self) -> float:
         # Example:
         # 75 MW power production from generator
         # = 75 MJ/s
@@ -73,11 +75,11 @@ class PowerRecipe:
             self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
         )
 
-    def power_production(self):
+    def power_production(self) -> float:
         return self.__generator.power_production()
 
-    def fuel_item(self):
+    def fuel_item(self) -> Item:
         return self.__fuel_item
 
-    def generator(self):
+    def generator(self) -> PowerGenerator:
         return self.__generator
