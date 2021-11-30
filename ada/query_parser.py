@@ -275,8 +275,6 @@ class QueryParser:
 
     def _parse_inputs(self, inputs, query):
         if not inputs:
-            query.maximize_objective = False
-            query.objective_coefficients = {"unweighted-resources": -1}
             return
         for input_ in inputs:
             input_vars = []
@@ -377,6 +375,9 @@ class QueryParser:
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
+        if not query.objective_coefficients:
+            query.maximize_objective = False
+            query.objective_coefficients = {"unweighted-resources": -1}
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):
