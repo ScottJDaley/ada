@@ -1,4 +1,3 @@
-
 class HelpQuery:
     pass
 
@@ -43,8 +42,11 @@ class OptimizationQuery:
             if coeff == -1:
                 return "-"
             return str(coeff) + "*"
-        objective = [get_str_coeff(coeff) + var for var,
-                     coeff in self.objective_coefficients.items()]
+
+        objective = [
+            get_str_coeff(coeff) + var
+            for var, coeff in self.objective_coefficients.items()
+        ]
         out.append("  " + func + " " + " + ".join(objective))
         out.append("Constraints:")
         for var, val in self.eq_constraints.items():

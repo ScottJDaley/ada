@@ -3,32 +3,44 @@ import discord
 import asyncio
 import re
 from discord_slash import SlashCommand
-from discord_slash.utils.manage_commands import create_option #, create_choice
-from discord_slash.utils.manage_components import create_button, create_actionrow, wait_for_component, create_select, create_select_option
-from discord_slash.context import ComponentContext
-from discord_slash.model import ButtonStyle
+from discord_slash.utils.manage_commands import create_option  # , create_choice
+
+# from discord_slash.utils.manage_components import (
+#     create_button,
+#     create_actionrow,
+#     wait_for_component,
+#     create_select,
+#     create_select_option,
+# )
+# from discord_slash.context import ComponentContext
+# from discord_slash.model import ButtonStyle
 from dotenv import load_dotenv
 from ada.ada import Ada
 from ada.breadcrumbs import Breadcrumbs, BreadcrumbsException
 
 load_dotenv()
-CMD_PREFIX = os.getenv('DISCORD_PREFIX')
+CMD_PREFIX = os.getenv("DISCORD_PREFIX")
 if not CMD_PREFIX:
-    CMD_PREFIX = 'ada '
+    CMD_PREFIX = "ada "
 
 print(f"Discord Prefix: '{CMD_PREFIX}'")
 
-REACTIONS_DONE = u'\u200B'  # zero-width space
+REACTIONS_DONE = "\u200B"  # zero-width space
 
 guild_ids = None
-restrict_slash_commands_to_guild = os.getenv('RESTRICT_SLASH_COMMANDS_TO_GUILD')
+restrict_slash_commands_to_guild = os.getenv("RESTRICT_SLASH_COMMANDS_TO_GUILD")
 if restrict_slash_commands_to_guild:
     guild_ids = [int(restrict_slash_commands_to_guild)]
-    print(f'Restricting slash commands to guild_id "{restrict_slash_commands_to_guild}"')
+    print(
+        f'Restricting slash commands to guild_id "{restrict_slash_commands_to_guild}"'
+    )
 else:
-    print(f'Setting up global slash commands.\nNOTE: For this to work, all servers with the bot must have the applications.commands scope.')
+    print(
+        "Setting up global slash commands.\n"
+        "NOTE: For this to work, all servers with the bot must have the applications.commands scope."
+    )
 
-token = os.getenv('DISCORD_TOKEN')
+token = os.getenv("DISCORD_TOKEN")
 client = discord.Client()
 slash = SlashCommand(client, sync_commands=True)
 ada = Ada()
@@ -36,7 +48,8 @@ ada = Ada()
 
 @client.event
 async def on_ready():
-    print('Connected to Discord as {0.user}'.format(client))
+    print("Connected to Discord as {0.user}".format(client))
+
 
 # TODO:
 # item cards should show recipes
@@ -59,15 +72,14 @@ async def help(ctx):
     name="info",
     description="Information about items, buildings, and recipes.",
     guild_ids=guild_ids,
-    options=
-    [
+    options=[
         create_option(
             name="entity",
             description="The item, building, or recipe you want information about",
             option_type=3,
             required=True,
         ),
-    ]
+    ],
 )
 async def info(ctx, entity: str):
     query = f"{entity}"
@@ -79,15 +91,14 @@ async def info(ctx, entity: str):
     name="recipes",
     description="Look up the recipes that produce an item.",
     guild_ids=guild_ids,
-    options=
-    [
+    options=[
         create_option(
             name="item",
             description="The item that is produced by the recipes",
             option_type=3,
             required=True,
         ),
-    ]
+    ],
 )
 async def recipes(ctx, item: str):
     query = f"recipes for {item}"
@@ -99,15 +110,14 @@ async def recipes(ctx, item: str):
     name="compare-recipes",
     description="Compare all recipes that produce an item.",
     guild_ids=guild_ids,
-    options=
-    [
+    options=[
         create_option(
             name="item",
             description="The item that is produced by the recipes",
             option_type=3,
             required=True,
         ),
-    ]
+    ],
 )
 async def compare_recipes(ctx, item: str):
     query = f"compare recipes for {item}"
@@ -115,36 +125,40 @@ async def compare_recipes(ctx, item: str):
     await _send_result(ctx, result, query)
 
 
-@slash.slash(name="optimize",
-             description="Compute an optimal production chain.",
-             guild_ids=guild_ids,
-             options=[
-                 create_option(
-                     name="output",
-                     description="Specify what you want to produce",
-                     option_type=3,
-                     required=True,
-                 ),
-                 create_option(
-                     name="input",
-                     description="Specify what the inputs are",
-                     option_type=3,
-                     required=False,
-                 ),
-                 create_option(
-                     name="include",
-                     description="Specify constraints for what should be included",
-                     option_type=3,
-                     required=False,
-                 ),
-                 create_option(
-                     name="exclude",
-                     description="Specify constraints for what should be excluded",
-                     option_type=3,
-                     required=False,
-                 ),
-             ])
-async def optimize(ctx, output: str, input: str = None, include: str = None, exclude: str = None):
+@slash.slash(
+    name="optimize",
+    description="Compute an optimal production chain.",
+    guild_ids=guild_ids,
+    options=[
+        create_option(
+            name="output",
+            description="Specify what you want to produce",
+            option_type=3,
+            required=True,
+        ),
+        create_option(
+            name="input",
+            description="Specify what the inputs are",
+            option_type=3,
+            required=False,
+        ),
+        create_option(
+            name="include",
+            description="Specify constraints for what should be included",
+            option_type=3,
+            required=False,
+        ),
+        create_option(
+            name="exclude",
+            description="Specify constraints for what should be excluded",
+            option_type=3,
+            required=False,
+        ),
+    ],
+)
+async def optimize(
+    ctx, output: str, input: str = None, include: str = None, exclude: str = None
+):
     query = f"produce {output}"
     if input:
         query += f" from {input}"
@@ -351,16 +365,17 @@ async def optimize(ctx, output: str, input: str = None, include: str = None, exc
 #                     file=result_message.file,
 #                     components=[optimization_row, create_actionrow(select)])
 
+
 @client.event
 async def on_message(message):
     if message.author == client.user:
         return
     if client.user.mentioned_in(message):
         # The bot was mentioned, treat the rest of the message as the query.
-        query = re.sub(r'<.+>', '', message.content)
+        query = re.sub(r"<.+>", "", message.content)
     elif message.content.startswith(CMD_PREFIX):
         # The bot command prefix was used, treat the rest of the message as the query.
-        query = message.content[len(CMD_PREFIX):]
+        query = message.content[len(CMD_PREFIX) :]
     elif not message.guild:
         # This is a DM, so treat the entire message as a query.
         query = message.content
@@ -371,9 +386,11 @@ async def on_message(message):
         query = "help"
     result = await ada.do(query)
     for result_message in result.messages(Breadcrumbs.create(query)):
-        reply = await message.channel.send(content=result_message.content,
-                                           embed=result_message.embed,
-                                           file=result_message.file)
+        reply = await message.channel.send(
+            content=result_message.content,
+            embed=result_message.embed,
+            file=result_message.file,
+        )
         await _add_reactions(reply, result_message.reactions)
 
 
@@ -385,15 +402,20 @@ async def on_raw_reaction_add(payload):
     channel = await client.fetch_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
     if message.author.id != client.user:
-        return #Only respond to reactions on the bot's messages.
+        return  # Only respond to reactions on the bot's messages.
     emoji = str(payload.emoji)
 
     if not _are_reactions_done(message):
+
         def check(before, after):
-            return (before.channel == channel and before.id == message.id
-                    and _are_reactions_done(after))
+            return (
+                before.channel == channel
+                and before.id == message.id
+                and _are_reactions_done(after)
+            )
+
         try:
-            await client.wait_for('message_edit', check=check, timeout=20)
+            await client.wait_for("message_edit", check=check, timeout=20)
         except asyncio.TimeoutError:
             pass
     try:
@@ -405,11 +427,11 @@ async def on_raw_reaction_add(payload):
 
         result_message = result.messages(breadcrumbs)[0]
         await message.clear_reactions()
-        await message.edit(content=result_message.content,
-                           embed=result_message.embed)
+        await message.edit(content=result_message.content, embed=result_message.embed)
         await _add_reactions(message, result_message.reactions)
     except BreadcrumbsException as extraction_error:
         print(extraction_error)
+
 
 async def _add_reactions(message, reactions):
     for reaction in reactions:
@@ -426,13 +448,18 @@ async def _add_reactions(message, reactions):
 
 
 def _are_reactions_done(message):
-    return len(message.embeds) == 0 or message.embeds[0].description.endswith(REACTIONS_DONE)
+    return len(message.embeds) == 0 or message.embeds[0].description.endswith(
+        REACTIONS_DONE
+    )
+
 
 async def _send_result(ctx, result, query):
     for result_message in result.messages(Breadcrumbs.create(query)):
-        reply = await ctx.send(content=result_message.content,
-                       embed=result_message.embed,
-                       file=result_message.file)
+        reply = await ctx.send(
+            content=result_message.content,
+            embed=result_message.embed,
+            file=result_message.file,
+        )
         await _add_reactions(reply, result_message.reactions)
 
 
