@@ -2,6 +2,7 @@ import pulp
 from graphviz import Digraph
 from discord import Embed, File
 from tabulate import tabulate
+from sys import float_info
 import math
 
 import ada.emoji
@@ -221,7 +222,7 @@ class OptimizationResult:
         return self.__net_power
 
     def __has_value(self, var):
-        return self.__vars[var].value() and self.__vars[var].value() != 0
+        return self.__vars[var].value() and abs(self.__vars[var].value()) > float_info.epsilon
 
     def __get_value(self, var):
         return self.__vars[var].value()
