@@ -6,7 +6,6 @@ import math
 
 import ada.emoji
 from ada.result_message import ResultMessage
-from ada.breadcrumbs import Breadcrumbs
 
 
 class HelpResult:
@@ -117,7 +116,7 @@ class InfoResult:
         for i, var_ in enumerate(vars_on_page):
             prefix = ""
             if self._add_reaction_selectors:
-                prefix = ada.emoji.NUM_EMOJI[i+1]
+                prefix = ada.emoji.NUM_EMOJI[i + 1]
                 message.reactions.append(prefix)
             out.append("- " + prefix + var_)
         if not self._add_reaction_selectors:
@@ -128,8 +127,7 @@ class InfoResult:
             if breadcrumbs.page() < self._num_pages():
                 message.reactions.append(ada.emoji.NEXT_PAGE)
 
-        message.embed = Embed(
-            title="Found " + str(len(self._vars)) + " matches:")
+        message.embed = Embed(title=f"Found {len(self._vars)} matches:")
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
@@ -202,8 +200,7 @@ class OptimizationResult:
             for generator in self.__db.generators().values()
             if self.__has_value(generator.var())
         }
-        self.__net_power = self.__get_value(
-            "power") if self.__has_value("power") else 0
+        self.__net_power = self.__get_value("power") if self.__has_value("power") else 0
 
     def inputs(self):
         return self.__inputs
@@ -234,8 +231,12 @@ class OptimizationResult:
         for obj in objs:
             var = obj.var()
             if self.__has_value(var) and check_value(self.__get_value(var)):
-                out.append(obj.human_readable_name() +
-                           ": " + str(round(abs(self.__get_value(var)), 2)) + suffix)
+                out.append(
+                    obj.human_readable_name()
+                    + ": "
+                    + str(round(abs(self.__get_value(var)), 2))
+                    + suffix
+                )
         return out
 
     def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
@@ -254,17 +255,27 @@ class OptimizationResult:
         out = []
         out.append(str(self.__query))
         out.append("=== OPTIMAL SOLUTION FOUND ===\n")
-        out.extend(self.__get_section(
-            "INPUT", self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"))
-        out.extend(self.__get_section(
-            "OUTPUT", self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"))
+        out.extend(
+            self.__get_section(
+                "INPUT",
+                self.__db.items().values(),
+                check_value=lambda val: val < 0,
+                suffix="/m",
+            )
+        )
+        out.extend(
+            self.__get_section(
+                "OUTPUT",
+                self.__db.items().values(),
+                check_value=lambda val: val > 0,
+                suffix="/m",
+            )
+        )
         # out.extend(self.__get_section("INPUT", [item.input() for item in self.__db.items().values()]))
         # out.extend(self.__get_section("OUTPUT", [item.output() for item in self.__db.items().values()]))
         out.extend(self.__get_section("RECIPES", self.__db.recipes().values()))
-        out.extend(self.__get_section(
-            "CRAFTERS", self.__db.crafters().values()))
-        out.extend(self.__get_section(
-            "GENERATORS", self.__db.generators().values()))
+        out.extend(self.__get_section("CRAFTERS", self.__db.crafters().values()))
+        out.extend(self.__get_section("GENERATORS", self.__db.generators().values()))
         out.append("NET POWER")
         net_power = 0
         if self.__has_value("power"):
@@ -273,7 +284,7 @@ class OptimizationResult:
         out.append("")
         out.append("OBJECTIVE VALUE")
         out.append(str(self.__prob.objective.value()))
-        return '\n'.join(out)
+        return "\n".join(out)
 
     def __str__(self):
         if self.__status is pulp.LpStatusNotSolved:
@@ -293,11 +304,13 @@ class OptimizationResult:
         sections = [str(self.__query)]
 
         inputs = self.__get_vars(
-            self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m")
+            self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"
+        )
         if len(inputs) > 0:
             sections.append("**Inputs**\n" + "\n".join(inputs))
         outputs = self.__get_vars(
-            self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m")
+            self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"
+        )
         if len(outputs) > 0:
             sections.append("**Outputs**\n" + "\n".join(outputs))
         recipes = self.__get_vars(self.__db.recipes().values())
@@ -319,10 +332,10 @@ class OptimizationResult:
 
         message.embed.description = descriptions[0]
 
-        filename = 'output.gv'
-        filepath = 'output/' + filename
+        filename = "output.gv"
+        filepath = "output/" + filename
         self.generate_graph_viz(filepath)
-        file = File(filepath + '.png')
+        file = File(filepath + ".png")
         # The image already shows up from the attached file, so no need to place it in the embed as well.
         # message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
@@ -369,23 +382,24 @@ class OptimizationResult:
 
     def __power_viz_label(self, output, net):
         color = "moccasin" if net < 0 else "lightblue"
-        out = '<'
+        out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         if output > 0:
-            out += '<TR>'
+            out += "<TR>"
             out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Power Output</TD>'
-            out += '<TD>' + str(round(output, 2)) + ' MW</TD>'
-            out += '</TR>'
-        out += '<TR>'
+            out += "<TD>" + str(round(output, 2)) + " MW</TD>"
+            out += "</TR>"
+        out += "<TR>"
         out += '<TD COLSPAN="2" BGCOLOR="' + color + '">Net Power</TD>'
-        out += '<TD>' + str(round(net, 2)) + ' MW</TD>'
-        out += '</TR>'
-        out += '</TABLE>>'
+        out += "<TD>" + str(round(net, 2)) + " MW</TD>"
+        out += "</TR>"
+        out += "</TABLE>>"
         return out
 
     def generate_graph_viz(self, filename):
-        s = Digraph('structs', format='png', filename=filename,
-                    node_attr={'shape': 'record'})
+        s = Digraph(
+            "structs", format="png", filename=filename, node_attr={"shape": "record"}
+        )
 
         sources = {}  # item => {source => amount}
         sinks = {}  # item => {sink => amount}
@@ -402,8 +416,9 @@ class OptimizationResult:
                 continue
             amount = self.__get_value(item.var())
             target = sources if amount < 0 else sinks
-            add_to_target(item.var(), target, item.viz_name(),
-                          self.__get_value(item.var()))
+            add_to_target(
+                item.var(), target, item.viz_name(), self.__get_value(item.var())
+            )
         # recipes
         self.__add_nodes(s, self.__db.recipes().values())
         for recipe in self.__db.recipes().values():
@@ -412,12 +427,10 @@ class OptimizationResult:
             recipe_amount = self.__get_value(recipe.var())
             for item_var, ingredient in recipe.ingredients().items():
                 ingredient_amount = recipe_amount * ingredient.minute_rate()
-                add_to_target(item_var, sinks, recipe.viz_name(),
-                              ingredient_amount)
+                add_to_target(item_var, sinks, recipe.viz_name(), ingredient_amount)
             for item_var, product in recipe.products().items():
                 product_amount = recipe_amount * product.minute_rate()
-                add_to_target(item_var, sources,
-                              recipe.viz_name(), product_amount)
+                add_to_target(item_var, sources, recipe.viz_name(), product_amount)
         # power
         power_output = 0
         net_power = 0
@@ -425,7 +438,7 @@ class OptimizationResult:
             net_power = self.__get_value("power")
 
         def get_power_edge_label(power_production):
-            return str(round(power_production, 2)) + ' MW'
+            return str(round(power_production, 2)) + " MW"
 
         # power recipes
         self.__add_nodes(s, self.__db.power_recipes().values())
@@ -433,21 +446,26 @@ class OptimizationResult:
             if not self.__has_value(power_recipe.var()):
                 continue
             fuel_item = power_recipe.fuel_item()
-            fuel_amount = self.__get_value(
-                power_recipe.var()) * power_recipe.fuel_minute_rate()
-            add_to_target(fuel_item.var(), sinks,
-                          power_recipe.viz_name(), fuel_amount)
-            power_production = self.__get_value(
-                power_recipe.var()) * power_recipe.power_production()
+            fuel_amount = (
+                self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate()
+            )
+            add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
+            power_production = (
+                self.__get_value(power_recipe.var()) * power_recipe.power_production()
+            )
             power_output += power_production
-            s.edge(power_recipe.viz_name(), "power",
-                   label=get_power_edge_label(power_production))
+            s.edge(
+                power_recipe.viz_name(),
+                "power",
+                label=get_power_edge_label(power_production),
+            )
 
-        s.node("power", self.__power_viz_label(
-            power_output, net_power), shape="plaintext")
+        s.node(
+            "power", self.__power_viz_label(power_output, net_power), shape="plaintext"
+        )
 
         def get_edge_label(item, amount):
-            return str(round(amount, 2)) + '/m\n' + item
+            return str(round(amount, 2)) + "/m\n" + item
 
         # Connect each source to all sinks of that item
         for item_var, item_sources in sources.items():
@@ -461,8 +479,13 @@ class OptimizationResult:
                     total_sink_amount += sink_amount
                 multiplier = source_amount / total_sink_amount
                 for sink, sink_amount in sinks[item_var].items():
-                    s.edge(source, sink, label=get_edge_label(
-                        item.human_readable_name(), multiplier * sink_amount))
+                    s.edge(
+                        source,
+                        sink,
+                        label=get_edge_label(
+                            item.human_readable_name(), multiplier * sink_amount
+                        ),
+                    )
 
         s.render()
 
@@ -492,16 +515,27 @@ class RecipeCompareResult:
         complexity.append("")
 
         for related_stats in stats.related_recipe_stats:
-            recipes.append(
-                related_stats.recipe.human_readable_name())
+            recipes.append(related_stats.recipe.human_readable_name())
             unweighted.append(
-                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.resource_requirements))
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.resource_requirements
+                )
+            )
             weighted.append(
-                get_percentage_str(related_stats.recipe_comp_stats.weighted_comp_stats.resource_requirements))
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.weighted_comp_stats.resource_requirements
+                )
+            )
             power.append(
-                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption))
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+                )
+            )
             complexity.append(
-                get_percentage_str(related_stats.recipe_comp_stats.unweighted_comp_stats.complexity))
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.complexity
+                )
+            )
 
         self.__overall_stats = {
             "Recipe": recipes,
@@ -515,29 +549,43 @@ class RecipeCompareResult:
 
         input_vars = {}
 
-        for (_input, value) in stats.base_stats_normalized.unweighted_stats.inputs.values():
+        for (
+            _input,
+            value,
+        ) in stats.base_stats_normalized.unweighted_stats.inputs.values():
             input_vars[_input.var()] = _input.human_readable_name()
         for related_stats in stats.related_recipe_stats:
-            for (_input, value) in related_stats.recipe_stats.unweighted_stats.inputs.values():
+            for (
+                _input,
+                value,
+            ) in related_stats.recipe_stats.unweighted_stats.inputs.values():
                 input_vars[_input.var()] = _input.human_readable_name()
 
         inputs = {}
         inputs["Recipe"] = recipes
         for input_var, input_name in input_vars.items():
             if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
-                _input, value = stats.base_stats_normalized.unweighted_stats.inputs[input_var]
+                _input, value = stats.base_stats_normalized.unweighted_stats.inputs[
+                    input_var
+                ]
                 inputs[input_name] = [str(round(value, 2))]
             else:
                 inputs[input_name] = [""]
             for related_stats in stats.related_recipe_stats:
                 if input_var in related_stats.recipe_stats.unweighted_stats.inputs:
                     _input, value = related_stats.recipe_stats.unweighted_stats.inputs[
-                        input_var]
-                    resource, percentage = related_stats.recipe_comp_stats.unweighted_comp_stats.resources[
-                        input_var]
+                        input_var
+                    ]
+                    (
+                        resource,
+                        percentage,
+                    ) = related_stats.recipe_comp_stats.unweighted_comp_stats.resources[
+                        input_var
+                    ]
                     percentage_str = get_percentage_str(percentage)
                     inputs[input_name].append(
-                        "{}/m ({})".format(round(value, 2), percentage_str))
+                        "{}/m ({})".format(round(value, 2), percentage_str)
+                    )
                 else:
                     inputs[input_name].append("")
 
@@ -546,10 +594,11 @@ class RecipeCompareResult:
         raw_power.append("{} MW".format(round(power_value, 1)))
         for related_stats in stats.related_recipe_stats:
             power_value = related_stats.recipe_stats.unweighted_stats.power_consumption
-            power_percentage = related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+            power_percentage = (
+                related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+            )
             percentage_str = get_percentage_str(power_percentage)
-            raw_power.append("{} MW ({})".format(
-                round(power_value, 1), percentage_str))
+            raw_power.append("{} MW ({})".format(round(power_value, 1), percentage_str))
 
         inputs["Power"] = raw_power
 
@@ -575,13 +624,11 @@ class RecipeCompareResult:
 
         out = []
         out.append("All recipes that produce " + product_name)
-        out.append(tabulate(self.__overall_stats,
-                   headers="keys", tablefmt="grid"))
+        out.append(tabulate(self.__overall_stats, headers="keys", tablefmt="grid"))
         out.append("")
         out.append("Raw Inputs for 1/m " + product_name)
-        out.append(tabulate(self.__input_stats,
-                   headers="keys", tablefmt="grid"))
-        return '\n'.join(out)
+        out.append(tabulate(self.__input_stats, headers="keys", tablefmt="grid"))
+        return "\n".join(out)
 
         # return str(self.__stats)
 
@@ -594,14 +641,19 @@ class RecipeCompareResult:
 
         out = []
         out.append("All recipes that produce " + product_name)
-        out.append("```\n{}```".format(
-            tabulate(self.__overall_stats, headers="keys", tablefmt="simple")))
+        out.append(
+            "```\n{}```".format(
+                tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
+            )
+        )
         out.append("Raw Inputs for 1/m " + product_name)
-        out.append("```\n{}```".format(
-            tabulate(self.__input_stats, headers="keys", tablefmt="simple")))
+        out.append(
+            "```\n{}```".format(
+                tabulate(self.__input_stats, headers="keys", tablefmt="simple")
+            )
+        )
 
-        message.content = "{}\n{}".format(
-            str(breadcrumbs), '\n'.join(out))
+        message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
         if len(message.content) > 2000:
             message.content = "Output was too long"
         return [message]

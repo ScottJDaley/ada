@@ -9,13 +9,14 @@ STACK_SIZES = {
     "SS_FLUID": 50,
 }
 
+
 class Item:
     def __init__(self, data, is_resource):
         self.__data = data
         self.__is_resource = is_resource
 
     def slug(self):
-        return self.__data["mDisplayName"].lower().replace(' ', '-')
+        return self.__data["mDisplayName"].lower().replace(" ", "-")
 
     def var(self):
         if self.__is_resource:
@@ -32,21 +33,26 @@ class Item:
 
     def viz_label(self, amount):
         color = "moccasin" if amount < 0 else "lightblue"
-        out = '<'
+        out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
-        out += '<TR>'
-        out += '<TD COLSPAN="2" BGCOLOR="' + color + '">' + \
-            str(round(abs(amount), 2)) + '/m'
-        out += '<BR/>' + self.human_readable_name() + '</TD>'
-        out += '</TR>'
-        out += '</TABLE>>'
+        out += "<TR>"
+        out += (
+            '<TD COLSPAN="2" BGCOLOR="'
+            + color
+            + '">'
+            + str(round(abs(amount), 2))
+            + "/m"
+        )
+        out += "<BR/>" + self.human_readable_name() + "</TD>"
+        out += "</TR>"
+        out += "</TABLE>>"
         return out
 
     def human_readable_name(self):
-        return ''.join(i for i in self.__data["mDisplayName"] if ord(i) < 128)
+        return "".join(i for i in self.__data["mDisplayName"] if ord(i) < 128)
 
     def human_readable_underscored(self):
-        return self.human_readable_name().replace(' ', '_')
+        return self.human_readable_name().replace(" ", "_")
 
     def energy_value(self):
         if self.is_liquid():
@@ -59,7 +65,7 @@ class Item:
         if self.__data["mStackSize"] in STACK_SIZES:
             return STACK_SIZES[self.__data["mStackSize"]]
         return -1
-    
+
     def sink_value(self):
         return int(self.__data["mResourceSinkPoints"])
 
@@ -76,10 +82,12 @@ class Item:
         out.append("  sink value: " + str(self.sink_value()))
         out.append(self.__data["mDescription"])
         out.append("")
-        return '\n'.join(out)
+        return "\n".join(out)
 
     def wiki(self):
-        return "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+        return (
+            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+        )
 
     def thumb(self):
         print(ada.image_fetcher.fetch_first_on_page(self.wiki()))

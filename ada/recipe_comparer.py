@@ -12,19 +12,23 @@ class RecipeComparer:
         def to_string(self, indent=0):
             out = []
             out.append("")
-            out.append(indent * '  ' + "INPUTS:")
+            out.append(indent * "  " + "INPUTS:")
             indent += 1
             for _, (_input, value) in self.inputs.items():
-                out.append(indent*'  ' + _input.human_readable_name() +
-                           ": " + str(round(value, 2)) + "/m")
+                out.append(
+                    indent * "  "
+                    + _input.human_readable_name()
+                    + ": "
+                    + str(round(value, 2))
+                    + "/m"
+                )
             indent -= 1
-            out.append(indent * '  ' + "POWER CONSUMPTION:")
+            out.append(indent * "  " + "POWER CONSUMPTION:")
             indent += 1
-            out.append(indent*'  ' +
-                       str(round(self.power_consumption, 2)) + " MW")
+            out.append(indent * "  " + str(round(self.power_consumption, 2)) + " MW")
             # out.append("PROCESSING STEPS: ")
             # out.append("  " + str(self.step_count))
-            return '\n'.join(out)
+            return "\n".join(out)
 
         def __str__(self):
             return self.to_string()
@@ -59,8 +63,7 @@ class RecipeComparer:
             for input_var, (_input, value) in base_production_stats.inputs.items():
                 self.resources[input_var] = (_input, -100)
                 if weighted and input_var in weighted_resources:
-                    base_resource_total += value * \
-                        weighted_resources[input_var]
+                    base_resource_total += value * weighted_resources[input_var]
                 else:
                     base_resource_total += value
 
@@ -70,18 +73,21 @@ class RecipeComparer:
                 if input_var in base_production_stats.inputs:
                     _, base_value = base_production_stats.inputs[input_var]
                 self.resources[input_var] = (
-                    _input, get_delta_percentage(value, base_value))
+                    _input,
+                    get_delta_percentage(value, base_value),
+                )
                 if weighted:
-                    comp_resources_total += value * \
-                        weighted_resources[input_var]
+                    comp_resources_total += value * weighted_resources[input_var]
                 else:
                     comp_resources_total += value
 
             self.resource_requirements = get_delta_percentage(
-                comp_resources_total, base_resource_total)
+                comp_resources_total, base_resource_total
+            )
 
             self.power_consumption = get_delta_percentage(
-                comp_production_stats.power_consumption, base_production_stats.power_consumption
+                comp_production_stats.power_consumption,
+                base_production_stats.power_consumption,
             )
 
             self.complexity = get_delta_percentage(
@@ -105,7 +111,7 @@ class RecipeComparer:
             out.append("")
             out.append("Weighted")
             out.append(str(self.weighted_stats))
-            return '\n'.join(out)
+            return "\n".join(out)
 
     class RecipeCompStats:
         def __init__(self, base_stats, comp_stats):
@@ -126,13 +132,20 @@ class RecipeComparer:
                 return percentage_string + "%"
 
             out = []
-            out.append(indent * '  ' + "Inputs:")
+            out.append(indent * "  " + "Inputs:")
             indent += 1
             # out.append(indent * '  ' + "Unweighted w/o alternates:")
             # indent += 1
-            for _, (resource, percentage) in self.unweighted_comp_stats.resources.items():
-                out.append(indent*'  ' + resource.human_readable_name() +
-                           ": " + get_percentage_str(percentage))
+            for _, (
+                resource,
+                percentage,
+            ) in self.unweighted_comp_stats.resources.items():
+                out.append(
+                    indent * "  "
+                    + resource.human_readable_name()
+                    + ": "
+                    + get_percentage_str(percentage)
+                )
             indent -= 1
             # out.append(indent * '  ' + "Unweighted w/ alternates:")
             # indent += 1
@@ -152,15 +165,24 @@ class RecipeComparer:
             #     out.append(indent*'  ' + resource.human_readable_name() +
             #                ": " + get_percentage_str(percentage))
             # indent -= 2
-            out.append(indent * '  ' + "Total Resource Requirements:")
+            out.append(indent * "  " + "Total Resource Requirements:")
             indent += 1
-            out.append(indent * '  ' + "Unweighted: " +
-                       get_percentage_str(self.unweighted_comp_stats.resource_requirements))
-            out.append(indent * '  ' + "Weighted: " +
-                       get_percentage_str(self.weighted_comp_stats.resource_requirements))
+            out.append(
+                indent * "  "
+                + "Unweighted: "
+                + get_percentage_str(self.unweighted_comp_stats.resource_requirements)
+            )
+            out.append(
+                indent * "  "
+                + "Weighted: "
+                + get_percentage_str(self.weighted_comp_stats.resource_requirements)
+            )
             indent -= 1
-            out.append(indent * '  ' + "Power Consumption: " +
-                       get_percentage_str(self.unweighted_comp_stats.power_consumption))
+            out.append(
+                indent * "  "
+                + "Power Consumption: "
+                + get_percentage_str(self.unweighted_comp_stats.power_consumption)
+            )
             # indent += 1
             # out.append(indent * '  ' + "Unweighted w/o alternates: " +
             #            get_percentage_str(self.unweighted_comp_stats.power_consumption))
@@ -171,8 +193,11 @@ class RecipeComparer:
             # out.append(indent * '  ' + "Weighted w/ alternates: " +
             #            get_percentage_str(self.weighted_optimal.power_consumption))
             # indent -= 1
-            out.append(indent * '  ' + "Complexity: " +
-                       get_percentage_str(self.unweighted_comp_stats.complexity))
+            out.append(
+                indent * "  "
+                + "Complexity: "
+                + get_percentage_str(self.unweighted_comp_stats.complexity)
+            )
             # indent += 1
             # out.append(indent * '  ' + "Unweighted w/o alternates: " +
             #            get_percentage_str(self.unweighted_comp_stats.complexity))
@@ -182,7 +207,7 @@ class RecipeComparer:
             #            get_percentage_str(self.weighted_default.complexity))
             # out.append(indent * '  ' + "Weighted w/ alternates: " +
             #            get_percentage_str(self.weighted_optimal.complexity))
-            return '\n'.join(out)
+            return "\n".join(out)
 
         def __str__(self):
             return self.to_string()
@@ -196,13 +221,17 @@ class RecipeComparer:
 
         def __str__(self):
             out = []
-            out.append("To make 1 " + self.product_item.human_readable_name() +
-                       " with " + self.recipe.human_readable_name())
+            out.append(
+                "To make 1 "
+                + self.product_item.human_readable_name()
+                + " with "
+                + self.recipe.human_readable_name()
+            )
             out.append(str(self.recipe_stats.base))
             out.append("")
             out.append("Relative Statistics:")
             out.append(self.recipe_comp_stats.to_string(1))
-            return '\n'.join(out)
+            return "\n".join(out)
 
     class RecipeComparison:
         def __init__(self, query, base_stats_normalized, related_recipe_stats):
@@ -212,16 +241,23 @@ class RecipeComparer:
 
         def __str__(self):
             out = []
-            out.append("=== Comparing Recipes for " +
-                       self.query.product_item.human_readable_name() + " ===")
+            out.append(
+                "=== Comparing Recipes for "
+                + self.query.product_item.human_readable_name()
+                + " ==="
+            )
             out.append("")
-            out.append("To make 1 " + self.query.product_item.human_readable_name() +
-                       " with " + self.query.base_recipe.human_readable_name())
+            out.append(
+                "To make 1 "
+                + self.query.product_item.human_readable_name()
+                + " with "
+                + self.query.base_recipe.human_readable_name()
+            )
             out.append(str(self.base_stats_normalized.base))
             for related_stats in self.related_recipe_stats:
                 out.append("")
                 out.append(str(related_stats))
-            return '\n'.join(out)
+            return "\n".join(out)
 
     def __init__(self, db, opt):
         self.__db = db
@@ -234,7 +270,7 @@ class RecipeComparer:
                 for input_var, (item, value) in stats.inputs.items()
             },
             stats.power_consumption * scalar,
-            stats.step_count
+            stats.step_count,
         )
 
     def scaled_recipe_stats(self, stats, scalar):
@@ -251,7 +287,7 @@ class RecipeComparer:
                 for ingredient in recipe.ingredients().values()
             },
             recipe.crafter().power_consumption(),
-            1
+            1,
         )
 
     async def compute_production_stats(self, recipe, weighted, include_alternates):
@@ -265,8 +301,7 @@ class RecipeComparer:
             query.objective_coefficients = {"unweighted-resources": -1}
         for ingredient_var, ingredient in recipe.ingredients().items():
             if ingredient.item().is_resource():
-                inputs[ingredient_var] = (
-                    ingredient.item(), ingredient.minute_rate())
+                inputs[ingredient_var] = (ingredient.item(), ingredient.minute_rate())
             else:
                 query.eq_constraints[ingredient_var] = ingredient.minute_rate()
 
@@ -280,13 +315,17 @@ class RecipeComparer:
         return self.ProductionStats(
             inputs,
             -result.net_power() + recipe.crafter().power_consumption(),
-            len(result.recipes()) + len(inputs) + 1
+            len(result.recipes()) + len(inputs) + 1,
         )
 
     async def compute_recipe_stats(self, recipe, include_alternates):
         base_stats = self.get_base_stats(recipe)
-        unweighted_stats = await self.compute_production_stats(recipe, False, include_alternates)
-        weighted_stats = await self.compute_production_stats(recipe, True, include_alternates)
+        unweighted_stats = await self.compute_production_stats(
+            recipe, False, include_alternates
+        )
+        weighted_stats = await self.compute_production_stats(
+            recipe, True, include_alternates
+        )
         return self.RecipeStats(
             base_stats,
             unweighted_stats,
@@ -302,12 +341,15 @@ class RecipeComparer:
         # The goal is to get, for each candidate recipe, the ingredients, any other products,
         # the raw resources, total power, physical space required, number of steps, etc.
 
-        base_stats = await self.compute_recipe_stats(query.base_recipe, query.include_alternates)
+        base_stats = await self.compute_recipe_stats(
+            query.base_recipe, query.include_alternates
+        )
 
         product = query.base_recipe.products()[query.product_item.var()]
 
         base_stats_normalized = self.scaled_recipe_stats(
-            base_stats, 1 / product.minute_rate())
+            base_stats, 1 / product.minute_rate()
+        )
 
         related_recipe_stats = []
         for related_recipe in query.related_recipes:
@@ -319,18 +361,26 @@ class RecipeComparer:
                 if related_product.item().var() == query.product_item.var():
                     related_product_minute_rate = related_product.minute_rate()
 
-            related_stats = await self.compute_recipe_stats(related_recipe, query.include_alternates)
+            related_stats = await self.compute_recipe_stats(
+                related_recipe, query.include_alternates
+            )
             related_stats_normalized = self.scaled_recipe_stats(
-                related_stats, 1 / related_product_minute_rate)
+                related_stats, 1 / related_product_minute_rate
+            )
             # related_recipe_stats[related_recipe.var()] = (
             #     related_recipe, related_stats_normalized)
             comp_stats = self.RecipeCompStats(
-                base_stats_normalized, related_stats_normalized)
-            related_recipe_stats.append(self.RelatedRecipeStats(
-                related_recipe, product.item(), related_stats_normalized, comp_stats))
+                base_stats_normalized, related_stats_normalized
+            )
+            related_recipe_stats.append(
+                self.RelatedRecipeStats(
+                    related_recipe, product.item(), related_stats_normalized, comp_stats
+                )
+            )
 
         recipe_comparison_stats = self.RecipeComparison(
-            query, base_stats_normalized, related_recipe_stats)
+            query, base_stats_normalized, related_recipe_stats
+        )
 
         # print(recipe_comparison_stats)
 

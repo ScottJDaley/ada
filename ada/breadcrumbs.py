@@ -36,17 +36,24 @@ class Breadcrumbs:
         content_lines = content.splitlines()
         if len(content_lines) <= 2:
             raise BreadcrumbsException(
-                "Content only had " + str(len(content_lines)) + " lines")
-        if not content_lines[0].startswith('```') or not content_lines[2].startswith('```'):
+                "Content only had " + str(len(content_lines)) + " lines"
+            )
+        if not content_lines[0].startswith("```") or not content_lines[2].startswith(
+            "```"
+        ):
             raise BreadcrumbsException(
-                "Content missing code section:\n" + str(content_lines))
+                "Content missing code section:\n" + str(content_lines)
+            )
         if not content_lines[0][3:].isdigit():
-            raise BreadcrumbsException("Page was not a digit: "
-                                       + content_lines[0][3:] + " content:\n"
-                                       + str(content_lines))
+            raise BreadcrumbsException(
+                "Page was not a digit: "
+                + content_lines[0][3:]
+                + " content:\n"
+                + str(content_lines)
+            )
         page = int(content_lines[0][3:])
         query_line = content_lines[1]
-        queries = [x.strip() for x in query_line.split('>')]
+        queries = [x.strip() for x in query_line.split(">")]
         return Breadcrumbs(queries, page)
 
     @staticmethod

@@ -42,8 +42,7 @@ class DB:
 
         native_classes = {}
         for native_class in data:
-            native_classes[native_class["NativeClass"]
-                           ] = native_class["Classes"]
+            native_classes[native_class["NativeClass"]] = native_class["Classes"]
 
         self.__items = {}
         self.__item_var_from_class_name = {}
@@ -51,24 +50,26 @@ class DB:
 
         # Parse resources
         for resource_class in RESOURCE_CLASSES:
-            resource_class_short = resource_class.split('.')[1][:-1]
+            resource_class_short = resource_class.split(".")[1][:-1]
             self.__item_vars_from_native_class_name[resource_class_short] = []
             for resource_data in native_classes[resource_class]:
                 item = Item(resource_data, is_resource=True)
                 self.__items[item.var()] = item
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[resource_class_short].append(
-                    item.var())
+                    item.var()
+                )
         # Parse items
         for item_class in ITEM_CLASSES:
-            item_class_short = item_class.split('.')[1][:-1]
+            item_class_short = item_class.split(".")[1][:-1]
             self.__item_vars_from_native_class_name[item_class_short] = []
             for item_data in native_classes[item_class]:
                 item = Item(item_data, is_resource=False)
                 self.__items[item.var()] = item
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[item_class_short].append(
-                    item.var())
+                    item.var()
+                )
 
         # Parse crafters
         self.__crafters = {}
@@ -77,8 +78,7 @@ class DB:
             for building_data in native_classes[crafter_class]:
                 crafter = Crafter(building_data)
                 self.__crafters[crafter.var()] = crafter
-                self.__crafter_var_from_class_name[crafter.class_name(
-                )] = crafter.var()
+                self.__crafter_var_from_class_name[crafter.class_name()] = crafter.var()
 
         # Parse generators
         self.__generators = {}
@@ -128,7 +128,10 @@ class DB:
     def items_from_native_class_name(self, class_name):
         if class_name not in self.__item_vars_from_native_class_name:
             return None
-        return [self.__items[item_var] for item_var in self.__item_vars_from_native_class_name[class_name]]
+        return [
+            self.__items[item_var]
+            for item_var in self.__item_vars_from_native_class_name[class_name]
+        ]
 
     def recipes(self):
         return self.__recipes
