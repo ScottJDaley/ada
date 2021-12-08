@@ -23,13 +23,14 @@ class TracePrints(object):
 if DEBUG_PRINTS:
     sys.stdout = TracePrints()
 
+
 async def main():
     ada = Ada()
 
     async def handle_query(raw_query):
         result = await ada.do(raw_query)
         if isinstance(result, OptimizationResult) and result.has_solution():
-            result.generate_graph_viz('output/output.gv')
+            result.generate_graph_viz("output/output.gv")
         print(result)
 
     if len(sys.argv) > 1:
