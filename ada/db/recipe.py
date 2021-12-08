@@ -1,8 +1,9 @@
-from discord import Embed
-from ada.crafter import Crafter
-from typing import Dict, List, Tuple
-from ada.item import Item
 import math
+from typing import Dict, List, Tuple
+
+from ada.db.crafter import Crafter
+from ada.db.item import Item
+from discord import Embed
 
 
 def parse_list(raw: str) -> List[str]:
@@ -129,14 +130,22 @@ class Recipe:
             out += '<TD BGCOLOR="moccasin">Input</TD>'
             out += "<TD>" + ingredient.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(ingredient, amount) + "</TD>"
-            out += "<TD>" + get_component_amount_label(ingredient, amount / num_buildings) + " each</TD>"
+            out += (
+                "<TD>"
+                + get_component_amount_label(ingredient, amount / num_buildings)
+                + " each</TD>"
+            )
             out += "</TR>"
         for product in self.products().values():
             out += "<TR>"
             out += '<TD BGCOLOR="lightblue">Output</TD>'
             out += "<TD>" + product.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(product, amount) + "</TD>"
-            out += "<TD>" + get_component_amount_label(product, amount / num_buildings) + " each</TD>"
+            out += (
+                "<TD>"
+                + get_component_amount_label(product, amount / num_buildings)
+                + " each</TD>"
+            )
             out += "</TR>"
         out += "</TABLE>>"
         return out

@@ -2,11 +2,12 @@
 # into data\Docs.json
 
 import json
-from ada.crafter import Crafter
-from ada.power_generator import PowerGenerator
-from ada.item import Item
-from ada.recipe import Recipe
-from ada.power_recipe import PowerRecipe
+
+from ada.db.crafter import Crafter
+from ada.db.item import Item
+from ada.db.power_generator import PowerGenerator
+from ada.db.power_recipe import PowerRecipe
+from ada.db.recipe import Recipe
 
 RESOURCE_CLASSES = [
     "Class'/Script/FactoryGame.FGResourceDescriptor'",
@@ -95,7 +96,9 @@ class DB:
         self.__recipes = {}
         for recipe_class in RECIPE_CLASSES:
             for recipe_data in native_classes[recipe_class]:
-                recipe = Recipe(recipe_data, self.__items.values(), self.__crafters.values())
+                recipe = Recipe(
+                    recipe_data, self.__items.values(), self.__crafters.values()
+                )
                 if not recipe.is_craftable_in_building():
                     continue
                 self.__recipes[recipe.var()] = recipe

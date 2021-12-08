@@ -1,28 +1,32 @@
 import re
+from typing import Any, List, Union
+
 import inflect
 from pyparsing import (
     CaselessKeyword,
+    Combine,
+    Group,
     Literal,
-    Word,
-    alphas,
+    OneOrMore,
     Optional,
+    ParseException,
+    StringEnd,
+    Suppress,
+    Word,
+    ZeroOrMore,
+    alphas,
     pyparsing_common,
     replaceWith,
-    Group,
-    ZeroOrMore,
-    OneOrMore,
-    Suppress,
-    StringEnd,
-    Combine,
-    ParseException,
 )
-from ada.query import OptimizationQuery, InfoQuery, HelpQuery, RecipeCompareQuery
-from ada.crafter import Crafter
-from ada.db import DB
-from ada.item import Item
 from pyparsing.results import ParseResults
-from typing import Any, List, Union
 
+from ada.db import DB
+from ada.db.crafter import Crafter
+from ada.db.item import Item
+from ada.help import HelpQuery
+from ada.info import InfoQuery
+from ada.optimizer import OptimizationQuery
+from ada.recipe_comparer import RecipeCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
 MAKE = CaselessKeyword("make")
@@ -227,7 +231,9 @@ class QueryParser:
             or re.fullmatch(expr, typeless_var)
         )
 
-    def _get_matches(self, expr: str, allowed_types: List[str]) -> List[Union[Any, Item]]:
+    def _get_matches(
+        self, expr: str, allowed_types: List[str]
+    ) -> List[Union[Any, Item]]:
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(
@@ -374,7 +380,9 @@ class QueryParser:
                 query.strict_outputs = True
             query.eq_constraints.update({var: 0 for var in exclude_vars})
 
-    def _parse_optimization_query(self, raw_query: str, parse_results: ParseResults) -> OptimizationQuery:
+    def _parse_optimization_query(
+        self, raw_query: str, parse_results: ParseResults
+    ) -> OptimizationQuery:
         query = OptimizationQuery(raw_query)
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
@@ -458,7 +466,9 @@ class QueryParser:
         query.vars.extend(matches)
         return query
 
-    def _parse_recipe_compare_query(self, raw_query: str, parse_results: ParseResults) -> RecipeCompareQuery:
+    def _parse_recipe_compare_query(
+        self, raw_query: str, parse_results: ParseResults
+    ) -> RecipeCompareQuery:
         query = RecipeCompareQuery(raw_query)
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
@@ -502,7 +512,9 @@ class QueryParser:
         query.include_alternates = "include-alternates" in parse_results
         return query
 
-    def _parse_entity_details(self, raw_query: str, parse_results: ParseResults) -> InfoQuery:
+    def _parse_entity_details(
+        self, raw_query: str, parse_results: ParseResults
+    ) -> InfoQuery:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
@@ -523,7 +535,9 @@ class QueryParser:
         query.vars.extend(recipe_matches)
         return query
 
-    def parse(self, raw_query: str) -> Union[InfoQuery, HelpQuery, RecipeCompareQuery, OptimizationQuery]:
+    def parse(
+        self, raw_query: str
+    ) -> Union[InfoQuery, HelpQuery, RecipeCompareQuery, OptimizationQuery]:
         try:
             results = QueryParser.query_grammar.parseString(raw_query, parseAll=True)
         except ParseException as pe:

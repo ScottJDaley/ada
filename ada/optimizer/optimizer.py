@@ -3,6 +3,11 @@ import sys
 from typing import Dict, List, Tuple
 
 import pulp
+from ada.breadcrumbs import Breadcrumbs
+from ada.db import DB
+from ada.db.item import Item
+from ada.db.recipe import Recipe
+from ada.result import Result, ResultMessage
 from discord import Embed, File
 from graphviz import Digraph
 from pulp.constants import (
@@ -13,12 +18,6 @@ from pulp.constants import (
     LpStatusUndefined,
 )
 from pulp.pulp import LpProblem, LpVariable
-
-from ada.breadcrumbs import Breadcrumbs
-from ada.db import DB
-from ada.db.item import Item
-from ada.db.recipe import Recipe
-from ada.result import Result, ResultMessage
 
 
 class OptimizationQuery:

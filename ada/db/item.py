@@ -1,6 +1,7 @@
-from discord import Embed
-import ada.image_fetcher
 from typing import Dict
+
+import ada.image_fetcher
+from discord import Embed
 
 STACK_SIZES = {
     "SS_HUGE": 500,
@@ -12,7 +13,9 @@ STACK_SIZES = {
 
 
 class Item:
-    def __init__(self, data: Dict[str, str], native_class_name: str, is_resource: bool) -> None:
+    def __init__(
+        self, data: Dict[str, str], native_class_name: str, is_resource: bool
+    ) -> None:
         self.__data = data
         self.__native_class_name = native_class_name
         self.__is_resource = is_resource

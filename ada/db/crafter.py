@@ -1,6 +1,7 @@
-from discord import Embed
-import ada.image_fetcher
 from typing import Dict
+
+import ada.image_fetcher
+from discord import Embed
 
 
 class Crafter:

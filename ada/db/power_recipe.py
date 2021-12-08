@@ -1,6 +1,6 @@
+from ada.db.item import Item
+from ada.db.power_generator import PowerGenerator
 from discord import Embed
-from ada.power_generator import PowerGenerator
-from ada.item import Item
 
 
 class PowerRecipe:

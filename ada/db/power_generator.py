@@ -1,7 +1,8 @@
-from discord import Embed
-from ada import image_fetcher
-from ada.item import Item
 from typing import Any, List, Union
+
+from ada import image_fetcher
+from ada.db.item import Item
+from discord import Embed
 
 
 class PowerGenerator:
@@ -12,7 +13,9 @@ class PowerGenerator:
             return
         for fuel_class in data["mDefaultFuelClasses"][1:-1].split(","):
             fuel_class_short = fuel_class.split(".")[1]
-            fuel_items = [item for item in items if item.native_class_name() == fuel_class_short]
+            fuel_items = [
+                item for item in items if item.native_class_name() == fuel_class_short
+            ]
             if fuel_items:
                 # This fuel class is something generic, like 'FGItemDescriptorBiomass' which describes
                 # all biomass items.

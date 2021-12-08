@@ -1,9 +1,25 @@
-from ada.query import RecipeCompareQuery, OptimizationQuery
-from ada.db import DB
-from ada.optimizer import Optimizer
-from ada.item import Item
-from ada.recipe import Recipe
 from typing import Dict, List, Tuple
+
+import tabulate
+
+from ada.breadcrumbs import Breadcrumbs
+from ada.db import DB
+from ada.db.item import Item
+from ada.db.recipe import Recipe
+from ada.optimizer import OptimizationQuery, Optimizer
+from ada.result import Result, ResultMessage
+
+
+class RecipeCompareQuery:
+    def __init__(self, raw_query: str) -> None:
+        self.raw_query = raw_query
+        self.product_item = None
+        self.base_recipe = None
+        self.related_recipes = None
+        self.include_alternates = False
+
+    def __str__(self):
+        return self.raw_query
 
 
 class ProductionStats:
@@ -420,6 +436,176 @@ class RecipeComparer:
                 )
             )
 
-        return RecipeComparison(
-            query, base_stats_normalized, related_recipe_stats
+        return RecipeComparison(query, base_stats_normalized, related_recipe_stats)
+
+
+class RecipeCompareResult(Result):
+    def __init__(self, stats: RecipeComparison) -> None:
+        self.__stats = stats
+
+        def get_percentage_str(percentage):
+            if isinstance(percentage, str):
+                return percentage
+            percentage_string = str(int(round(percentage, 0)))
+            if percentage > 0:
+                percentage_string = "+" + percentage_string
+            return percentage_string + "%"
+
+        recipes = []
+        unweighted = []
+        weighted = []
+        power = []
+        complexity = []
+
+        recipes.append(stats.query.base_recipe.human_readable_name())
+        unweighted.append("")
+        weighted.append("")
+        power.append("")
+        complexity.append("")
+
+        for related_stats in stats.related_recipe_stats:
+            recipes.append(related_stats.recipe.human_readable_name())
+            unweighted.append(
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.resource_requirements
+                )
+            )
+            weighted.append(
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.weighted_comp_stats.resource_requirements
+                )
+            )
+            power.append(
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+                )
+            )
+            complexity.append(
+                get_percentage_str(
+                    related_stats.recipe_comp_stats.unweighted_comp_stats.complexity
+                )
+            )
+
+        self.__overall_stats = {
+            "Recipe": recipes,
+            "Unweighted\nResources": unweighted,
+            "Weighted\nResources": weighted,
+            "Power\nConsumption": power,
+            "Complexity": complexity,
+        }
+
+        # Find all possible inputs.
+
+        input_vars = {}
+
+        for (
+            _input,
+            value,
+        ) in stats.base_stats_normalized.unweighted_stats.inputs.values():
+            input_vars[_input.var()] = _input.human_readable_name()
+        for related_stats in stats.related_recipe_stats:
+            for (
+                _input,
+                value,
+            ) in related_stats.recipe_stats.unweighted_stats.inputs.values():
+                input_vars[_input.var()] = _input.human_readable_name()
+
+        inputs = {}
+        inputs["Recipe"] = recipes
+        for input_var, input_name in input_vars.items():
+            if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
+                _input, value = stats.base_stats_normalized.unweighted_stats.inputs[
+                    input_var
+                ]
+                inputs[input_name] = [str(round(value, 2))]
+            else:
+                inputs[input_name] = [""]
+            for related_stats in stats.related_recipe_stats:
+                if input_var in related_stats.recipe_stats.unweighted_stats.inputs:
+                    _input, value = related_stats.recipe_stats.unweighted_stats.inputs[
+                        input_var
+                    ]
+                    (
+                        resource,
+                        percentage,
+                    ) = related_stats.recipe_comp_stats.unweighted_comp_stats.resources[
+                        input_var
+                    ]
+                    percentage_str = get_percentage_str(percentage)
+                    inputs[input_name].append(
+                        "{}/m ({})".format(round(value, 2), percentage_str)
+                    )
+                else:
+                    inputs[input_name].append("")
+
+        raw_power = []
+        power_value = stats.base_stats_normalized.unweighted_stats.power_consumption
+        raw_power.append("{} MW".format(round(power_value, 1)))
+        for related_stats in stats.related_recipe_stats:
+            power_value = related_stats.recipe_stats.unweighted_stats.power_consumption
+            power_percentage = (
+                related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
+            )
+            percentage_str = get_percentage_str(power_percentage)
+            raw_power.append("{} MW ({})".format(round(power_value, 1), percentage_str))
+
+        inputs["Power"] = raw_power
+
+        self.__input_stats = inputs
+
+    def __str__(self) -> str:
+        # === OVERALL STATS ===
+        #                               | Unweighted | Weighted  | Power       |            |
+        #  Recipe                       | Resources  | Resources | Consumption | Complexity |
+        #  -----------------------------|------------|-----------|-------------|------------|
+        #  Recipe: Iron Rod             |            |           |             |            |
+        #  -----------------------------|------------|-----------|-------------|------------|
+        #  Recipe: Alternate: Steel Rod |  -50%      |  -1.25%   |  -56%       |  +33%      |
+        #
+        # === RAW INPUTS ===
+        #                               | Iron          |              |             |            |
+        #  Recipe                       | Ore           | Coal         |             |   Power    |
+        #  -----------------------------|---------------|--------------|-------------|------------|
+        #  Recipe: Iron Rod             | 0.75/m        |              |             |   0.27 MW  |
+        #  -----------------------------|---------------|--------------|-------------|------------|
+        #  Recipe: Alternate: Steel Rod | 0.25/m (-75%) | 0.45/m (NEW) |             |   1.2 MW   |
+        product_name = self.__stats.query.product_item.human_readable_name()
+
+        out = []
+        out.append("All recipes that produce " + product_name)
+        out.append(tabulate(self.__overall_stats, headers="keys", tablefmt="grid"))
+        out.append("")
+        out.append("Raw Inputs for 1/m " + product_name)
+        out.append(tabulate(self.__input_stats, headers="keys", tablefmt="grid"))
+        return "\n".join(out)
+
+        # return str(self.__stats)
+
+    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
+        message = ResultMessage()
+        # message.embed = Embed(title="Error")
+        # message.embed.description = "hello"  # "```{}```".format(str(self))
+
+        product_name = self.__stats.query.product_item.human_readable_name()
+
+        out = []
+        out.append("All recipes that produce " + product_name)
+        out.append(
+            "```\n{}```".format(
+                tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
+            )
         )
+        out.append("Raw Inputs for 1/m " + product_name)
+        out.append(
+            "```\n{}```".format(
+                tabulate(self.__input_stats, headers="keys", tablefmt="simple")
+            )
+        )
+
+        message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
+        if len(message.content) > 2000:
+            message.content = "Output was too long"
+        return [message]
+
+    def handle_reaction(self, emoji, breadcrumbs):
+        return None

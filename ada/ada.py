@@ -1,15 +1,12 @@
-from ada.db import DB
-from ada.optimizer import Optimizer, OptimizationResult
-from ada.query import OptimizationQuery, InfoQuery, HelpQuery, RecipeCompareQuery
-from ada.query_parser import QueryParser, QueryParseException
-from ada.recipe_comparer import RecipeComparer
-from ada.result import (
-    RecipeCompareResult,
-    ErrorResult,
-    InfoResult,
-    HelpResult,
-)
 from typing import Union
+
+from ada.db import DB
+from ada.help import HelpQuery, HelpResult
+from ada.info import InfoQuery, InfoResult
+from ada.optimizer import OptimizationQuery, OptimizationResult, Optimizer
+from ada.query_parser import QueryParseException, QueryParser
+from ada.recipe_comparer import RecipeCompareQuery, RecipeComparer, RecipeCompareResult
+from ada.result import ErrorResult
 
 
 class Ada:
