@@ -20,8 +20,8 @@ from pyparsing import (
 )
 from pyparsing.results import ParseResults
 
-from ada.db import DB
 from ada.db.crafter import Crafter
+from ada.db.db import DB
 from ada.db.item import Item
 from ada.help import HelpQuery
 from ada.info import InfoQuery

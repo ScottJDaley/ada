@@ -15,7 +15,7 @@ from pulp.constants import (
 from pulp.pulp import LpProblem, LpVariable
 
 from ada.breadcrumbs import Breadcrumbs
-from ada.db import DB
+from ada.db.db import DB
 from ada.db.item import Item
 from ada.db.recipe import Recipe
 from ada.result import Result, ResultMessage

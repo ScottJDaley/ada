@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple
 import tabulate
 
 from ada.breadcrumbs import Breadcrumbs
-from ada.db import DB
+from ada.db.db import DB
 from ada.db.item import Item
 from ada.db.recipe import Recipe
 from ada.optimizer import OptimizationQuery, Optimizer

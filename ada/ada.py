@@ -1,6 +1,6 @@
 from typing import Union
 
-from ada.db import DB
+from ada.db.db import DB
 from ada.help import HelpQuery, HelpResult
 from ada.info import InfoQuery, InfoResult
 from ada.optimizer import OptimizationQuery, OptimizationResult, Optimizer
