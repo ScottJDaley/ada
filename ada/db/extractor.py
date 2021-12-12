@@ -23,10 +23,18 @@ class Extractor:
     def power_consumption(self) -> float:
         return float(self.__data["mPowerConsumption"])
 
+    def minute_rate(self) -> float:
+        return (
+            60
+            * float(self.__data["mItemsPerCycle"])
+            / float(self.__data["mExtractCycleTime"])
+        )
+
     def details(self):
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  power consumption: " + str(self.power_consumption()) + " MW")
+        out.append("  extraction rate: " + str(self.minute_rate()) + "/m")
         out.append(self.__data["mDescription"])
         out.append("")
         return "\n".join(out)
@@ -48,5 +56,6 @@ class Extractor:
         embed.add_field(
             name="Power Consumption", value=(str(self.power_consumption()) + " MW")
         )
+        embed.add_field(name="Extraction Rate", value=(str(self.minute_rate()) + "/m"))
         # TODO
         return embed
