@@ -4,6 +4,7 @@
 import json
 
 from ada.db.crafter import Crafter
+from ada.db.extractor import Extractor
 from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
 from ada.db.power_recipe import PowerRecipe
@@ -24,6 +25,9 @@ ITEM_CLASSES = [
 ]
 CRAFTER_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildableManufacturer'",
+]
+EXTRACTOR_CLASSES = [
+    "Class'/Script/FactoryGame.FGBuildableResourceExtractor'",
 ]
 GENERATOR_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildableGeneratorFuel'",
@@ -80,6 +84,17 @@ class DB:
                 crafter = Crafter(building_data)
                 self.__crafters[crafter.var()] = crafter
                 self.__crafter_var_from_class_name[crafter.class_name()] = crafter.var()
+
+        # Parse extractors
+        self.__extractors = {}
+        self.__extractors_var_from_class_name = {}
+        for extractor_class in EXTRACTOR_CLASSES:
+            for building_data in native_classes[extractor_class]:
+                extractor = Extractor(building_data)
+                self.__extractors[extractor.var()] = extractor
+                self.__extractors_var_from_class_name[
+                    extractor.class_name()
+                ] = extractor.var()
 
         # Parse generators
         self.__generators = {}
@@ -165,6 +180,14 @@ class DB:
         if class_name not in self.__crafter_var_from_class_name:
             return None
         return self.crafters()[self.__crafter_var_from_class_name[class_name]]
+
+    def extractors(self):
+        return self.__extractors
+
+    def extractor_from_class_name(self, class_name):
+        if class_name not in self.__extractors_var_from_class_name:
+            return None
+        return self.extractors()[self.__extractors_var_from_class_name[class_name]]
 
     def generators(self):
         return self.__generators

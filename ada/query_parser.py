@@ -15,6 +15,7 @@ from pyparsing import (
     Word,
     ZeroOrMore,
     alphas,
+    nums,
     pyparsing_common,
     replaceWith,
 )
@@ -22,7 +23,9 @@ from pyparsing.results import ParseResults
 
 from ada.db.crafter import Crafter
 from ada.db.db import DB
+from ada.db.extractor import Extractor
 from ada.db.item import Item
+from ada.db.power_generator import PowerGenerator
 from ada.help import HelpQuery
 from ada.info import InfoQuery
 from ada.optimizer import OptimizationQuery
@@ -98,7 +101,7 @@ class QueryParser:
         | StringEnd()
     )
     entity_expr = Combine(
-        OneOrMore(~entity_expr_end + Word(alphas + ":.*-")),
+        OneOrMore(~entity_expr_end + Word(alphas + nums + ":.*-")),
         joinString=" ",
         adjacent=False,
     )("entity")
@@ -188,7 +191,9 @@ class QueryParser:
         self._db = db
 
     @staticmethod
-    def _check_var(expr: str, var: Union[Crafter, Item]) -> bool:
+    def _check_var(
+        expr: str, var: Union[Crafter, Extractor, PowerGenerator, Item]
+    ) -> bool:
         # Support the following:
         # 1. singular human-readable name
         # 2. plural human-readable name
@@ -249,6 +254,8 @@ class QueryParser:
             allowed_vars.update(self._db.power_recipes().values())
         if "crafter" in allowed_types:
             allowed_vars.update(self._db.crafters().values())
+        if "extractor" in allowed_types:
+            allowed_vars.update(self._db.extractors().values())
         if "generator" in allowed_types:
             allowed_vars.update(self._db.generators().values())
         return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
@@ -332,7 +339,13 @@ class QueryParser:
                         var.var()
                         for var in self._get_matches(
                             include["entity"],
-                            ["recipe", "power-recipe", "crafter", "generator"],
+                            [
+                                "recipe",
+                                "power-recipe",
+                                "crafter",
+                                "extractor",
+                                "generator",
+                            ],
                         )
                     ]
                 )
@@ -366,7 +379,13 @@ class QueryParser:
                         var.var()
                         for var in self._get_matches(
                             exclude["entity"],
-                            ["recipe", "power-recipe", "crafter", "generator"],
+                            [
+                                "recipe",
+                                "power-recipe",
+                                "crafter",
+                                "extractor",
+                                "generator",
+                            ],
                         )
                     ]
                 )
@@ -417,7 +436,8 @@ class QueryParser:
     def _parse_recipes_for_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
         matches = self._get_matches(
-            parse_results.get("entity"), ["resource", "item", "crafter", "generator"]
+            parse_results.get("entity"),
+            ["resource", "item", "crafter", "extractor", "generator"],
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -518,7 +538,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["resource", "item", "crafter", "generator"],
+            ["resource", "item", "crafter", "extractor", "generator"],
         )
         if len(non_recipe_matches) > 0:
             query.vars.extend(non_recipe_matches)
