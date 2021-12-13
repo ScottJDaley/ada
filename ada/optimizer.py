@@ -476,10 +476,14 @@ class Optimizer:
             recipes_for_item = self.__db.recipes_for_product(item_var)
             recipes_from_item = self.__db.recipes_for_ingredient(item_var)
             for recipe in recipes_for_item:
+                if not recipe.is_craftable_in_building():
+                    continue
                 var_coeff[self.__variables[recipe.var()]] = recipe.product(
                     item_var
                 ).minute_rate()
             for recipe in recipes_from_item:
+                if not recipe.is_craftable_in_building():
+                    continue
                 var_coeff[self.__variables[recipe.var()]] = -recipe.ingredient(
                     item_var
                 ).minute_rate()
@@ -496,6 +500,8 @@ class Optimizer:
         for crafter_var in self.__db.crafters():
             var_coeff = {}  # variable => coefficient
             for recipe_var, recipe in self.__db.recipes().items():
+                if not recipe.is_craftable_in_building():
+                    continue
                 if recipe.crafter().var() == crafter_var:
                     var_coeff[self.__variables[recipe_var]] = 1
             var_coeff[self.__variables[crafter_var]] = -1
@@ -515,6 +521,8 @@ class Optimizer:
         for generator_var, generator in self.__db.generators().items():
             power_coeff[self.__variables[generator_var]] = generator.power_production()
         for recipe_var, recipe in self.__db.recipes().items():
+            if not recipe.is_craftable_in_building():
+                continue
             power_coeff[
                 self.__variables[recipe_var]
             ] = -recipe.crafter().power_consumption()

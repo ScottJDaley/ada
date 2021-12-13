@@ -250,6 +250,8 @@ class QueryParser:
             )
         if "recipe" in allowed_types:
             allowed_vars.update(self._db.recipes().values())
+        if "buildable-recipe" in allowed_types:
+            allowed_vars.update(self._db.buildable_recipes().values())
         if "power-recipe" in allowed_types:
             allowed_vars.update(self._db.power_recipes().values())
         if "crafter" in allowed_types:
@@ -476,7 +478,9 @@ class QueryParser:
 
     def _parse_single_recipe_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
-        matches = self._get_matches(parse_results.get("entity"), ["recipe"])
+        matches = self._get_matches(
+            parse_results.get("entity"), ["recipe", "buildable-recipe"]
+        )
         if len(matches) == 0:
             raise QueryParseException(
                 "Could not parse recipe expression '"
@@ -544,7 +548,8 @@ class QueryParser:
             query.vars.extend(non_recipe_matches)
             return query
         recipe_matches = self._get_matches(
-            parse_results.get("entity-details"), ["recipe", "power-recipe"]
+            parse_results.get("entity-details"),
+            ["recipe", "buildable-recipe", "power-recipe"],
         )
         if len(recipe_matches) == 0:
             raise QueryParseException(

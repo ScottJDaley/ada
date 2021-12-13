@@ -39,12 +39,7 @@ class RecipeItem:
 
     def human_readable_name(self):
         return (
-            self.item().human_readable_name()
-            + ": "
-            + str(self.amount())
-            + " ("
-            + str(self.minute_rate())
-            + "/m)"
+            f"{self.item().human_readable_name()}: {self.amount()} ({self.amount()}/m)"
         )
 
 
@@ -52,17 +47,15 @@ class Recipe:
     def __init__(self, data: Dict[str, str], items, crafters) -> None:
         self.__data = data
         self.__crafter = None
-        if len(data["mProducedIn"]) == 0:
-            return
         producers = parse_list(data["mProducedIn"])
         for producer in producers:
+            if len(producer) == 0:
+                continue
             producer_class_name = producer.split(".")[1]
             for crafter in crafters:
                 if crafter.class_name() == producer_class_name:
                     self.__crafter = crafter
                     break
-        if self.__crafter is None:
-            return
 
         # item var => recipe item
         self.__ingredients = {}
@@ -74,9 +67,8 @@ class Recipe:
                     continue
                 if item.is_liquid():
                     amount = int(amount / 1000)
-                self.__ingredients[item.var()] = RecipeItem(
-                    item, amount, float(data["mManufactoringDuration"])
-                )
+                duration = float(data["mManufactoringDuration"])
+                self.__ingredients[item.var()] = RecipeItem(item, amount, duration)
         for product in parse_list(data["mProduct"]):
             class_name, amount = parse_recipe_item(product)
             for item in items:
@@ -84,9 +76,8 @@ class Recipe:
                     continue
                 if item.is_liquid():
                     amount = int(amount / 1000)
-                self.__products[item.var()] = RecipeItem(
-                    item, amount, float(data["mManufactoringDuration"])
-                )
+                duration = float(data["mManufactoringDuration"])
+                self.__products[item.var()] = RecipeItem(item, amount, duration)
 
     def slug(self) -> str:
         return self.__data["mDisplayName"].lower().replace(" ", "-").replace(":", "")

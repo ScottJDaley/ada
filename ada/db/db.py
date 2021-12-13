@@ -3,6 +3,7 @@
 
 import json
 
+from ada.db.buildable_recipe import BuildableRecipe
 from ada.db.crafter import Crafter
 from ada.db.extractor import Extractor
 from ada.db.item import Item
@@ -109,14 +110,19 @@ class DB:
         # Create a dictionary from ingredient => [recipe]
         self.__recipes_for_ingredient = {}
         self.__recipes = {}
+        self.__buildable_recipes = {}
         for recipe_class in RECIPE_CLASSES:
             for recipe_data in native_classes[recipe_class]:
                 recipe = Recipe(
                     recipe_data, self.__items.values(), self.__crafters.values()
                 )
                 if not recipe.is_craftable_in_building():
-                    continue
-                self.__recipes[recipe.var()] = recipe
+                    buildable_recipe = BuildableRecipe(
+                        recipe_data, self.__items.values()
+                    )
+                    self.__buildable_recipes[buildable_recipe.var()] = buildable_recipe
+                else:
+                    self.__recipes[recipe.var()] = recipe
                 for ingredient in recipe.ingredients().keys():
                     if ingredient not in self.__recipes_for_ingredient:
                         self.__recipes_for_ingredient[ingredient] = []
@@ -163,6 +169,9 @@ class DB:
         if ingredient not in self.__recipes_for_ingredient:
             return []
         return self.__recipes_for_ingredient[ingredient]
+
+    def buildable_recipes(self):
+        return self.__buildable_recipes
 
     def power_recipes(self):
         return self.__power_recipes
