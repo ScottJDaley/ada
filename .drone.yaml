@@ -23,7 +23,7 @@ steps:
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:5.3.0
     environment:
       ANSIBLE_CONFIG: .ansible/ansible.cfg
       DISCORD_PREFIX: "ada-test "
@@ -66,11 +66,11 @@ steps:
       repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
       tags:
         - prod-latest
-        - prod-${DRONE_BUILD_NUMBER}
+        - prod-${DRONE_COMMIT_SHA:0:8}
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:5.3.0
     environment:
       ANSIBLE_CONFIG: .ansible/ansible.cfg
       DISCORD_PREFIX: "ada "
