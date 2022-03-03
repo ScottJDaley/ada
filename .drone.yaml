@@ -23,7 +23,7 @@ steps:
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:5.3.0
     environment:
       ANSIBLE_CONFIG: .ansible/ansible.cfg
       DISCORD_PREFIX: "ada-test "
@@ -70,7 +70,7 @@ steps:
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:5.3.0
     environment:
       ANSIBLE_CONFIG: .ansible/ansible.cfg
       DISCORD_PREFIX: "ada "
