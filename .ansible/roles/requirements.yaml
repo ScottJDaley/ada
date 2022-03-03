@@ -6,4 +6,4 @@
 - name: docker
   scm: git
   src: "git@github.com:Diesel-Net/ansible-role-docker.git"
-  version: 1.5.0
+  version: 1.11.0
