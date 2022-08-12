@@ -1,8 +1,4 @@
-- hosts: all
-  strategy: free
-  roles:
-    - common
-
+- hosts: swarm_manager
   tasks:
     
     - include_role:

@@ -133,3 +133,6 @@ output/
 
 # MonkeyType database
 monkeytype.sqlite3
+
+# ansible roles
+.ansible/roles/docker
