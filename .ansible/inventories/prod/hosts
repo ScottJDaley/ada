@@ -1,9 +1,9 @@
 all:
   children:
 
-    manager:
+    swarm_manager:
       hosts:
-        test.diesel.net: 
+        prod.diesel.net
 
   vars:        
     ansible_user: automation
