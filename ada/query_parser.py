@@ -108,7 +108,7 @@ class QueryParser:
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
-    output_literal = POWER("power") | TICKETS("literal")
+    output_literal = (POWER("power") | TICKETS)("literal")
     output_var = output_literal | entity_expr
 
     input_literal = (POWER | SPACE | unweighted_resources_kw | weighted_resources_kw)(
@@ -230,10 +230,10 @@ class QueryParser:
             return True
 
         return (
-            re.fullmatch(expr, singular) is None
-            or re.fullmatch(expr, plural) is None
-            or re.fullmatch(expr, var.var()) is None
-            or re.fullmatch(expr, typeless_var) is None
+            re.fullmatch(expr, singular) is not None
+            or re.fullmatch(expr, plural) is not None
+            or re.fullmatch(expr, var.var()) is not None
+            or re.fullmatch(expr, typeless_var) is not None
         )
 
     def _get_matches(
