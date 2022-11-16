@@ -36,7 +36,7 @@ class BuildableRecipeItem:
 
 
 class BuildableRecipe:
-    def __init__(self, data: Dict[str, str], items) -> None:
+    def __init__(self, data: Dict[str, str], buildables) -> None:
         self.__data = data
 
         # item var => recipe item
@@ -44,27 +44,45 @@ class BuildableRecipe:
         self.__product = None
         for ingredient in parse_list(data["mIngredients"]):
             class_name, amount = parse_recipe_item(ingredient)
-            for item in items:
-                if item.class_name() != class_name:
+            for buildable in buildables:
+                if buildable.class_name() != class_name:
                     continue
-                if item.is_liquid():
-                    amount = int(amount / 1000)
-                self.__ingredients[item.var()] = BuildableRecipeItem(item, amount)
+                self.__ingredients[buildable.var()] = BuildableRecipeItem(
+                    buildable, amount
+                )
         for product in parse_list(data["mProduct"]):
             class_name, amount = parse_recipe_item(product)
-            for item in items:
-                if item.class_name() != class_name:
+            for buildable in buildables:
+                buildable_class_name_suffix = (
+                    buildable.class_name().removeprefix("Build_").removeprefix("Desc_")
+                )
+                product_class_name_suffix = class_name.removeprefix(
+                    "Desc_"
+                ).removeprefix("Build_")
+                if buildable_class_name_suffix != product_class_name_suffix:
+                    # if buildable.class_name() != class_name:
+                    # if "Ladder" in class_name and "Ladder" in buildable.class_name():
+                    #     print(
+                    #         f"What the fuck {buildable.class_name()} vs. {class_name}"
+                    #     )
+                    # if "Ladder" in class_name:
+                    #     print(f"considering {buildable.class_name()}")
                     continue
-                if item.is_liquid():
-                    amount = int(amount / 1000)
-                self.__product = item
+                self.__product = buildable
                 break
+        # if self.__product:
+        #     print(f"Product var {self.__product.var()}")
+        # else:
+        #     # print(f"Could not find product class {class_name}")
+        #     print(f"Could not find {product_class_name_suffix}")
+        if not self.__product:
+            print(f"Could not find product class '{class_name}'")
 
     def slug(self) -> str:
         return self.__data["mDisplayName"].lower().replace(" ", "-").replace(":", "")
 
     def var(self) -> str:
-        return "recipe:" + self.slug()
+        return "buildable-recipe:" + self.slug()
 
     def human_readable_name(self) -> str:
         return "Recipe: " + self.__data["mDisplayName"]

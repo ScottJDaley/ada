@@ -3,6 +3,7 @@
 
 import json
 
+from ada.db.buildable import Buildable
 from ada.db.buildable_recipe import BuildableRecipe
 from ada.db.crafter import Crafter
 from ada.db.extractor import Extractor
@@ -38,6 +39,7 @@ GENERATOR_CLASSES = [
 RECIPE_CLASSES = [
     "Class'/Script/FactoryGame.FGRecipe'",
 ]
+BUILDABLE_CLASSES_PREFIX = "Class'/Script/FactoryGame.FGBuild"
 
 
 class DB:
@@ -49,6 +51,22 @@ class DB:
         native_classes = {}
         for native_class in data:
             native_classes[native_class["NativeClass"]] = native_class["Classes"]
+
+        # Parse buildables (besides crafters, extractors, and generators)
+        self.__buildables = {}
+        for native_class in native_classes:
+            if not native_class.startswith(BUILDABLE_CLASSES_PREFIX):
+                continue
+            if native_class in set().union(
+                CRAFTER_CLASSES, EXTRACTOR_CLASSES, GENERATOR_CLASSES
+            ):
+                continue
+            buildable_class_short = native_class.split(".")[1][:-1]
+            for buildable_data in native_classes[native_class]:
+                if not buildable_data["mDisplayName"]:
+                    continue
+                buildable = Buildable(buildable_data, buildable_class_short)
+                self.__buildables[buildable.var()] = buildable
 
         self.__items = {}
         self.__item_var_from_class_name = {}
@@ -65,6 +83,8 @@ class DB:
                 self.__item_vars_from_native_class_name[resource_class_short].append(
                     item.var()
                 )
+                self.__buildables[item.var()] = item
+
         # Parse items
         for item_class in ITEM_CLASSES:
             item_class_short = item_class.split(".")[1][:-1]
@@ -76,6 +96,7 @@ class DB:
                 self.__item_vars_from_native_class_name[item_class_short].append(
                     item.var()
                 )
+                self.__buildables[item.var()] = item
 
         # Parse crafters
         self.__crafters = {}
@@ -85,6 +106,7 @@ class DB:
                 crafter = Crafter(building_data)
                 self.__crafters[crafter.var()] = crafter
                 self.__crafter_var_from_class_name[crafter.class_name()] = crafter.var()
+                self.__buildables[crafter.var()] = crafter
 
         # Parse extractors
         self.__extractors = {}
@@ -96,6 +118,7 @@ class DB:
                 self.__extractors_var_from_class_name[
                     extractor.class_name()
                 ] = extractor.var()
+                self.__buildables[extractor.var()] = extractor
 
         # Parse generators
         self.__generators = {}
@@ -103,6 +126,7 @@ class DB:
             for generator_data in native_classes[generator_class]:
                 generator = PowerGenerator(generator_data, self.__items.values())
                 self.__generators[generator.var()] = generator
+                self.__buildables[generator.var()] = generator
 
         # Parse recipes
         # Create a dictionary from product => [recipe]
@@ -118,7 +142,7 @@ class DB:
                 )
                 if not recipe.is_craftable_in_building():
                     buildable_recipe = BuildableRecipe(
-                        recipe_data, self.__items.values()
+                        recipe_data, self.__buildables.values()
                     )
                     self.__buildable_recipes[buildable_recipe.var()] = buildable_recipe
                 else:
@@ -156,6 +180,9 @@ class DB:
             self.__items[item_var]
             for item_var in self.__item_vars_from_native_class_name[class_name]
         ]
+
+    def buildables(self):
+        return self.__buildables
 
     def recipes(self):
         return self.__recipes

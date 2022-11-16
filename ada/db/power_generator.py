@@ -29,6 +29,9 @@ class PowerGenerator:
     def var(self) -> str:
         return "generator:" + self.__data["mDisplayName"].lower().replace(" ", "-")
 
+    def class_name(self) -> str:
+        return self.__data["ClassName"]
+
     def human_readable_name(self):
         return self.__data["mDisplayName"]
 
