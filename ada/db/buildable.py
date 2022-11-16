@@ -39,10 +39,12 @@ class Buildable:
         return self.human_readable_name().replace(" ", "_")
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append(self.__data["mDescription"])
-        out.append("")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            self.__data["mDescription"],
+            ""
+        ]
         return "\n".join(out)
 
     def wiki(self) -> str:

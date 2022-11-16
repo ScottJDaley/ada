@@ -145,11 +145,13 @@ class Recipe:
         return "Recipe: " + self.__data["mDisplayName"]
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  time: " + str(float(self.__data["mManufactoringDuration"])) + "s")
-        out.append("  crafted in: " + self.crafter().human_readable_name())
-        out.append("  ingredients:")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  time: " + str(float(self.__data["mManufactoringDuration"])) + "s",
+            "  crafted in: " + self.crafter().human_readable_name(),
+            "  ingredients:"
+        ]
         for ingredient in self.__ingredients.values():
             out.append("    " + ingredient.human_readable_name())
         out.append("  products:")

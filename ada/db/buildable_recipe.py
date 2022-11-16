@@ -88,9 +88,11 @@ class BuildableRecipe:
         return "Recipe: " + self.__data["mDisplayName"]
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  ingredients:")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  ingredients:"
+        ]
         for ingredient in self.__ingredients.values():
             out.append("    " + ingredient.human_readable_name())
         out.append("")

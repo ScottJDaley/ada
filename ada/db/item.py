@@ -84,12 +84,14 @@ class Item:
         return self.__data["mForm"] == "RF_LIQUID"
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  stack size: " + str(self.stack_size()))
-        out.append("  sink value: " + str(self.sink_value()))
-        out.append(self.__data["mDescription"])
-        out.append("")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  stack size: " + str(self.stack_size()),
+            "  sink value: " + str(self.sink_value()),
+            self.__data["mDescription"],
+            ""
+        ]
         return "\n".join(out)
 
     def wiki(self) -> str:

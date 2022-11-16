@@ -24,11 +24,13 @@ class Crafter:
         return float(self.__data["mPowerConsumption"])
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  power consumption: " + str(self.power_consumption()) + " MW")
-        out.append(self.__data["mDescription"])
-        out.append("")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  power consumption: " + str(self.power_consumption()) + " MW",
+            self.__data["mDescription"],
+            ""
+        ]
         return "\n".join(out)
 
     def wiki(self):

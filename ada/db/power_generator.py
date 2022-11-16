@@ -45,10 +45,12 @@ class PowerGenerator:
         return self.__fuel_items
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  power production: " + str(self.power_production()) + " MW")
-        out.append("  fuel types:")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  power production: " + str(self.power_production()) + " MW",
+            "  fuel types:"
+        ]
         for fuel_item in self.__fuel_items:
             out.append("    " + fuel_item.human_readable_name())
         out.append(self.__data["mDescription"])

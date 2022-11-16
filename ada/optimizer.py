@@ -38,8 +38,7 @@ class OptimizationQuery:
         self.has_power_output = False
 
     def __str__(self) -> str:
-        out = []
-        out.append("Objective:")
+        out = ["Objective:"]
         func = "minimize"
         if self.maximize_objective:
             func = "maximize"
@@ -176,21 +175,20 @@ class OptimizationResult(Result):
         return out
 
     def __get_section(self, title, objs, check_value=lambda val: True, suffix=""):
-        out = []
-        out.append(title)
+        out = [title]
         vars_ = self.__get_vars(objs, check_value=check_value, suffix=suffix)
         if len(vars_) == 0:
             return []
-        out = []
-        out.append(title)
+        out = [title]
         out.extend(vars_)
         out.append("")
         return out
 
     def __string_solution(self):
-        out = []
-        out.append(str(self.__query))
-        out.append("=== OPTIMAL SOLUTION FOUND ===\n")
+        out = [
+            str(self.__query),
+            "=== OPTIMAL SOLUTION FOUND ===\n"
+        ]
         out.extend(
             self.__get_section(
                 "INPUT",

@@ -45,7 +45,7 @@ class Bot(commands.Bot):
             await self.tree.sync()
         print("Loaded cogs")
 
-    def run(self):
+    def run(self, **kwargs):
         super(Bot, self).run(self.token)
 
 

@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractclassmethod
+from abc import ABC, abstractmethod
 from typing import List
 
 from discord import Embed
@@ -15,14 +15,14 @@ class ResultMessage:
         self.reactions = []
 
 
-class Result(metaclass=ABCMeta):
-    @abstractclassmethod
+class Result(ABC):
+    @abstractmethod
     def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
-        raise NotImplementedError
+        pass
 
-    @abstractclassmethod
+    @abstractmethod
     def handle_reaction(self, emoji: str, breadcrumbs: Breadcrumbs) -> str:
-        return NotImplementedError
+        pass
 
 
 class ErrorResult(Result):
