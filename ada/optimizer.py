@@ -316,7 +316,8 @@ class OptimizationResult(Result):
     def has_solution(self) -> bool:
         return self.__status is LpStatusOptimal and self.__has_non_zero_var()
 
-    def __power_viz_label(self, output, net):
+    @staticmethod
+    def __power_viz_label(output, net):
         color = "moccasin" if net < 0 else "lightblue"
         out = "<"
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'

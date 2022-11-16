@@ -206,9 +206,6 @@ class DB:
     def power_recipes_by_fuel(self):
         return self.__power_recipes_by_fuel
 
-    def resources(self):
-        return self.__resources
-
     def crafters(self):
         return self.__crafters
 

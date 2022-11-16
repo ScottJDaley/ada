@@ -4,7 +4,7 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 
 
-def fetch_first_on_page(url: str) -> str:
+def fetch_first_on_page(url: str) -> None | str:
     html = urlopen(url)
     bs = BeautifulSoup(html, "html.parser")
     image_element = bs.find(

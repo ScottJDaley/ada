@@ -108,7 +108,7 @@ class QueryParser:
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
-    output_literal = ((POWER)("power") | TICKETS)("literal")
+    output_literal = POWER("power") | TICKETS("literal")
     output_var = output_literal | entity_expr
 
     input_literal = (POWER | SPACE | unweighted_resources_kw | weighted_resources_kw)(
@@ -201,7 +201,7 @@ class QueryParser:
         # 4. regex on human-readable name
         # 5. regex on var name
         expr = expr.strip().lower()
-        expr_parts = list(filter(None, re.split(r"[\s\-\_:]", expr)))
+        expr_parts = list(filter(None, re.split(r"[\s\-_:]", expr)))
 
         singular = var.human_readable_name().lower()
         singular_parts = list(filter(None, re.split(r"[\s:\-]", singular)))
@@ -230,10 +230,10 @@ class QueryParser:
             return True
 
         return (
-            re.fullmatch(expr, singular)
-            or re.fullmatch(expr, plural)
-            or re.fullmatch(expr, var.var())
-            or re.fullmatch(expr, typeless_var)
+            re.fullmatch(expr, singular) is None
+            or re.fullmatch(expr, plural) is None
+            or re.fullmatch(expr, var.var()) is None
+            or re.fullmatch(expr, typeless_var) is None
         )
 
     def _get_matches(
@@ -330,7 +330,7 @@ class QueryParser:
             if input_["strict"]:
                 query.strict_inputs = True
 
-    def _parse_includes(self, includes: None, query: OptimizationQuery) -> None:
+    def _parse_includes(self, includes: ParseResults, query: OptimizationQuery) -> None:
         if not includes:
             return
         for include in includes:
@@ -370,7 +370,7 @@ class QueryParser:
                 if var.startswith("generator:"):
                     query.strict_generators = True
 
-    def _parse_excludes(self, excludes: None, query: OptimizationQuery) -> None:
+    def _parse_excludes(self, excludes: ParseResults, query: OptimizationQuery) -> None:
         if not excludes:
             return
         for exclude in excludes:
@@ -472,7 +472,7 @@ class QueryParser:
         matches = self._get_matches(parse_results.get("entity"), ["resource", "item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resoure or item expression '"
+                "Could not parse resource or item expression '"
                 + parse_results.get("entity")
                 + "'."
             )

@@ -64,8 +64,8 @@ Assume that outputs should be maximized and inputs should be minimized. Also all
   example, if no `?` is specified and there is one expression with an empty
   value, then assume that is the target. And if there is already a `?`
   specified, assume the others are `_`.
-- The input `space` is a little strange since its not an input flow of material
-  like the rest. However, it is an requirement to the produce chain and also
+- The input `space` is a little strange since it's not an input flow of material
+  like the rest. However, it is a requirement to the produce chain and also
   something that the user may want to minimize. Also, the expression
   `using ? space` does have a natural meaning similar to `using ? <item>`.
 
@@ -118,7 +118,7 @@ Assume that outputs should be maximized and inputs should be minimized. Also all
   ```
   produce 60 iron plates from only iron ore
   ```
-- Specify an non-resource input, such as 30 iron rods:
+- Specify a non-resource input, such as 30 iron rods:
   ```
   produce 60 modular frames from ? resources and 30 iron rods
   ```

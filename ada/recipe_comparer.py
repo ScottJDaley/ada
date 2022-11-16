@@ -315,8 +315,9 @@ class RecipeComparer:
         self.__db = db
         self.__opt = opt
 
+    @staticmethod
     def scaled_production_stats(
-        self, stats: ProductionStats, scalar: float
+            stats: ProductionStats, scalar: float
     ) -> ProductionStats:
         return ProductionStats(
             {
@@ -327,14 +328,16 @@ class RecipeComparer:
             stats.step_count,
         )
 
-    def scaled_recipe_stats(self, stats: RecipeStats, scalar: float) -> RecipeStats:
+    @staticmethod
+    def scaled_recipe_stats(stats: RecipeStats, scalar: float) -> RecipeStats:
         return RecipeStats(
-            self.scaled_production_stats(stats.base, scalar),
-            self.scaled_production_stats(stats.unweighted_stats, scalar),
-            self.scaled_production_stats(stats.weighted_stats, scalar),
+            RecipeComparer.scaled_production_stats(stats.base, scalar),
+            RecipeComparer.scaled_production_stats(stats.unweighted_stats, scalar),
+            RecipeComparer.scaled_production_stats(stats.weighted_stats, scalar),
         )
 
-    def get_base_stats(self, recipe: Recipe) -> ProductionStats:
+    @staticmethod
+    def get_base_stats(recipe: Recipe) -> ProductionStats:
         return ProductionStats(
             {
                 ingredient.item().var(): (ingredient.item(), ingredient.minute_rate())
@@ -510,8 +513,7 @@ class RecipeCompareResult(Result):
             ) in related_stats.recipe_stats.unweighted_stats.inputs.values():
                 input_vars[_input.var()] = _input.human_readable_name()
 
-        inputs = {}
-        inputs["Recipe"] = recipes
+        inputs = {"Recipe": recipes}
         for input_var, input_name in input_vars.items():
             if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
                 _input, value = stats.base_stats_normalized.unweighted_stats.inputs[
@@ -573,10 +575,10 @@ class RecipeCompareResult(Result):
 
         out = []
         out.append("All recipes that produce " + product_name)
-        out.append(tabulate(self.__overall_stats, headers="keys", tablefmt="grid"))
+        out.append(tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="grid"))
         out.append("")
         out.append("Raw Inputs for 1/m " + product_name)
-        out.append(tabulate(self.__input_stats, headers="keys", tablefmt="grid"))
+        out.append(tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="grid"))
         return "\n".join(out)
 
         # return str(self.__stats)
@@ -592,13 +594,13 @@ class RecipeCompareResult(Result):
         out.append("All recipes that produce " + product_name)
         out.append(
             "```\n{}```".format(
-                tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
+                tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
             )
         )
         out.append("Raw Inputs for 1/m " + product_name)
         out.append(
             "```\n{}```".format(
-                tabulate(self.__input_stats, headers="keys", tablefmt="simple")
+                tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="simple")
             )
         )
 

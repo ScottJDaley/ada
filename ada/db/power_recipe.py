@@ -33,19 +33,20 @@ class PowerRecipe:
         return "Power Recipe: " + self.__fuel_item.human_readable_name()
 
     def details(self):
+        # noinspection PyListCreation
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  generator: " + self.__generator.human_readable_name())
         out.append("  fuel:")
         out.append(
             "    "
-            + self.fuel_minute_rate()
+            + str(self.fuel_minute_rate())
             + " "
-            + self.__fuel_item.human_readable_name()
+            + str(self.__fuel_item.human_readable_name())
             + "/m"
         )
         out.append("  power:")
-        out.append("    " + self.__generator.power_production())
+        out.append("    " + str(self.__generator.power_production()))
         out.append("")
         return "\n".join(out)
 
@@ -58,9 +59,9 @@ class PowerRecipe:
         embed.add_field(
             name="Fuel Type", value=self.fuel_item().human_readable_name(), inline=True
         )
-        embed.add_field(name="Fuel Rate", value=(self.fuel_minute_rate() + "/minute"))
+        embed.add_field(name="Fuel Rate", value=(str(self.fuel_minute_rate()) + "/minute"))
         embed.add_field(
-            name="Power", value=(self.__generator.power_production() + " MW")
+            name="Power", value=(str(self.__generator.power_production()) + " MW")
         )
         return embed
 

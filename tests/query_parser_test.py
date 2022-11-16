@@ -1,5 +1,5 @@
-from query_parser import QueryParser
-from db import DB
+from ada.query_parser import QueryParser
+from ada.db.db import DB
 
 if __name__ == "__main__":
     db = DB()
