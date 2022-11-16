@@ -15,13 +15,15 @@ ADA is a Discord bot for the Satisfactory video game.
 
 With ADA, you can browse information about items, recipes, and buildings within Discord.
 
-![alt text](/images/examples/item_info.png "Item Info")
+![alt text](/images/examples/info.gif "Item Info")
 
-![alt text](/images/examples/recipes_for.png "Recipes For")
+You can also get detailed information to compare different recipes for an item.
+
+![alt text](/images/examples/compare_recipes.gif "Item Info")
 
 You can also ask ADA to calculate an optimal production chains and produce visualizations.
 
-![alt text](/images/examples/optimization.png "Optimization")
+![alt text](/images/examples/optimize.gif "Optimization")
 
 ADA is also available as a command line tool.
 
