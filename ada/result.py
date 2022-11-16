@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractclassmethod
 from typing import List
 
 from discord import Embed
+from discord.utils import MISSING
 
 from ada.breadcrumbs import Breadcrumbs
 
@@ -9,8 +10,8 @@ from ada.breadcrumbs import Breadcrumbs
 class ResultMessage:
     def __init__(self) -> None:
         self.content = None
-        self.embed = None
-        self.file = None
+        self.embed = MISSING
+        self.file = MISSING
         self.reactions = []
 
 
