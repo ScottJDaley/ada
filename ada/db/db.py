@@ -148,7 +148,7 @@ class DB:
     def _add_item(self, item: Item):
         if item.var() in self.__items:
             existing = self.__items[item.var()]
-            print(f"Found duplicate item var {item.var()}, old class {existing.class_name()}, new class {item.class_name()}")
+            print(f"Found duplicate item var {item.var()}, old {existing.class_name()}, new {item.class_name()}")
         self.__items[item.var()] = item
 
     def items(self):

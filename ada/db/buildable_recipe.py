@@ -21,6 +21,7 @@ def parse_recipe_item(raw: str) -> Tuple[str, int]:
     class_name = component_map["ItemClass"].split(".")[1][:-2]
     return class_name, int(component_map["Amount"])
 
+
 class BuildableRecipeItem:
     def __init__(self, item: Item, amount: int) -> None:
         self.__item = item
@@ -55,7 +56,6 @@ class BuildableRecipe:
             class_name, amount = parse_recipe_item(product)
             for buildable in buildables:
                 if buildable.class_name() != class_name:
-
                     continue
                 self.__product = buildable
                 break
