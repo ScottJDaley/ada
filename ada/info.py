@@ -110,3 +110,6 @@ class InfoResult(Result):
             query = selected_var.human_readable_name()
             breadcrumbs.add_query(query)
         return query
+
+    def entities(self):
+        return self._vars
