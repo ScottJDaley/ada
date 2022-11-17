@@ -21,8 +21,7 @@ class ResultMessage:
             content=self.content,
             embed=self.embed,
             file=self.file,
-            view=self.view,
-            ephemeral=True
+            view=self.view
         )
 
     async def edit(self, interaction: discord.Interaction):
