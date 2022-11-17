@@ -38,7 +38,7 @@ class BuildableRecipeItem:
 
 
 class BuildableRecipe:
-    def __init__(self, data: Dict[str, str], buildables) -> None:
+    def __init__(self, data: Dict[str, str], items) -> None:
         self.__data = data
 
         # item var => recipe item
@@ -46,18 +46,18 @@ class BuildableRecipe:
         self.__product = None
         for ingredient in parse_list(data["mIngredients"]):
             class_name, amount = parse_recipe_item(ingredient)
-            for buildable in buildables:
-                if buildable.class_name() != class_name:
+            for item in items:
+                if item.class_name() != class_name:
                     continue
-                self.__ingredients[buildable.var()] = BuildableRecipeItem(
-                    buildable, amount
+                self.__ingredients[item.var()] = BuildableRecipeItem(
+                    item, amount
                 )
         for product in parse_list(data["mProduct"]):
             class_name, amount = parse_recipe_item(product)
-            for buildable in buildables:
-                if buildable.class_name() != class_name:
+            for item in items:
+                if item.class_name() != class_name:
                     continue
-                self.__product = buildable
+                self.__product = item
                 break
         if not self.__product:
             print(f"Could not find product for buildable recipe {self.class_name()}, var {self.var()}")

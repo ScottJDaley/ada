@@ -165,9 +165,6 @@ class DB:
             for item_var in self.__item_vars_from_native_class_name[class_name]
         ]
 
-    def buildables(self):
-        return self.__buildables
-
     def recipes(self):
         return self.__recipes
 

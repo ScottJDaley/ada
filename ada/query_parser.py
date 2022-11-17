@@ -248,8 +248,6 @@ class QueryParser:
             allowed_vars.update(
                 [item for item in self._db.items().values() if not item.is_resource()]
             )
-        if "buildable" in allowed_types:
-            allowed_vars.update(self._db.buildables().values())
         if "recipe" in allowed_types:
             allowed_vars.update(self._db.recipes().values())
         if "buildable-recipe" in allowed_types:
@@ -420,7 +418,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["item", "crafter", "extractor", "generator", "buildable"],
+            ["item", "crafter", "extractor", "generator"],
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -444,7 +442,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["resource", "item", "crafter", "extractor", "generator", "buildable"],
+            ["resource", "item", "crafter", "extractor", "generator"],
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -547,7 +545,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["resource", "item", "crafter", "extractor", "generator", "buildable"],
+            ["resource", "item", "crafter", "extractor", "generator"],
         )
         if len(non_recipe_matches) > 0:
             query.vars.extend(non_recipe_matches)
