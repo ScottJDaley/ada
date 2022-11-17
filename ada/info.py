@@ -76,7 +76,7 @@ class InfoResult(Result):
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
-        message.view = MultiEntityView(self._processor)
+        message.view = MultiEntityView(self._vars, self._processor)
         return [message]
 
     def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:

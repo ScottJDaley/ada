@@ -98,13 +98,16 @@ class Item:
     def is_liquid(self) -> bool:
         return self.__data["mForm"] == "RF_LIQUID"
 
+    def description(self):
+        return self.__data["mDescription"]
+
     def details(self):
         out = [
             self.human_readable_name(),
             "  var: " + self.var(),
             "  stack size: " + str(self.stack_size()),
             "  sink value: " + str(self.sink_value()),
-            self.__data["mDescription"],
+            self.description(),
             ""
         ]
         return "\n".join(out)
