@@ -9,7 +9,6 @@ from ada.db.item import Item
 from ada.processor import Processor
 from ada.result import Result, ResultMessage
 from ada.views.multi_entity import MultiEntityView
-from ada.views.single_entity import SingleEntityView
 
 
 class InfoQuery:
@@ -87,9 +86,11 @@ class InfoResult(Result):
             return [message]
         if len(self._vars) > 1:
             return self._get_info_page(breadcrumbs)
+
+        breadcrumbs.replace_primary_query(self._vars[0].var())
         message = ResultMessage()
         message.embed = self._vars[0].embed()
-        message.view = SingleEntityView(self._processor)
+        message.view = self._vars[0].view(self._processor)
         message.content = str(breadcrumbs)
         message.reactions = [ada.emoji.PREVIOUS_PAGE]
         return [message]

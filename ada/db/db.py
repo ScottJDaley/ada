@@ -206,3 +206,9 @@ class DB:
     def generators(self):
         return self.__generators
 
+    def lookup(self, var: str):
+        all_vars = self.__items | self.__crafters | self.__extractors | self.__generators | self.__recipes
+        if var in all_vars:
+            return all_vars[var]
+        return None
+

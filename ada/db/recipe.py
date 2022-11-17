@@ -1,9 +1,14 @@
 import math
 from typing import Dict, List, Tuple
 
+import discord
+
 from ada.db.crafter import Crafter
 from ada.db.item import Item
 from discord import Embed
+
+from ada.processor import Processor
+from ada.views.recipe_view import RecipeView
 
 
 def parse_list(raw: str) -> List[str]:
@@ -181,6 +186,10 @@ class Recipe:
             name="Building", value=self.crafter().human_readable_name(), inline=True
         )
         return embed
+
+    @staticmethod
+    def view(processor: Processor) -> discord.ui.View:
+        return RecipeView(processor)
 
     def ingredients(self) -> Dict[str, RecipeItem]:
         return self.__ingredients

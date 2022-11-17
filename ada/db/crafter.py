@@ -1,7 +1,12 @@
 from typing import Dict
 
+import discord
+
 import ada.image_fetcher
 from discord import Embed
+
+from ada.processor import Processor
+from ada.views.crafter_view import CrafterView
 
 
 class Crafter:
@@ -52,3 +57,7 @@ class Crafter:
         )
         # TODO
         return embed
+
+    @staticmethod
+    def view(processor: Processor) -> discord.ui.View:
+        return CrafterView(processor)

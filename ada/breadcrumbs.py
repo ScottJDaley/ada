@@ -36,6 +36,10 @@ class Breadcrumbs:
     def goto_prev_query(self):
         self._queries.pop()
 
+    def replace_primary_query(self, query):
+        self._queries.pop()
+        self._queries.append(query)
+
     @classmethod
     def extract(cls, content):
         content_lines = content.splitlines()

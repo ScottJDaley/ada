@@ -5,6 +5,8 @@ import discord
 from typing import Dict
 
 import ada.image_fetcher
+from ada.processor import Processor
+from ada.views.item_view import ItemView
 
 STACK_SIZES = {
     "SS_HUGE": 500,
@@ -129,3 +131,7 @@ class Item:
         embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
         embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
         return embed
+
+    @staticmethod
+    def view(processor: Processor) -> discord.ui.View:
+        return ItemView(processor)

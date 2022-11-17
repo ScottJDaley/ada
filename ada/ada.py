@@ -35,3 +35,7 @@ class Ada(Processor):
         if isinstance(query, RecipeCompareQuery):
             return RecipeCompareResult(await self.__recipe_comp.compare(query))
         return ErrorResult("Unknown query.")
+
+    def lookup(self, var: str):
+        return self.__db.lookup(var)
+

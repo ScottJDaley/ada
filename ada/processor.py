@@ -8,3 +8,7 @@ class Processor(ABC):
         self, raw_query: str
     ) -> Result:
         pass
+
+    @abstractmethod
+    def lookup(self, var: str):
+        pass

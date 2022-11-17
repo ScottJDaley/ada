@@ -15,9 +15,15 @@ class EntityDropdown(discord.ui.Select):
 
         options = []
         for var in vars_:
-            options.append(discord.SelectOption(label=var.human_readable_name(), description=var.var()))
+            options.append(discord.SelectOption(label=var.var(), description=var.human_readable_name()))
+            if len(options) >= 25:
+                break
 
-        super().__init__(placeholder=f'Found {len(vars_)} matches', min_values=1, max_values=1, options=options)
+        placeholder = f'Found {len(vars_)} matches'
+        if len(vars_) > 25:
+            placeholder = f'Showing {len(options)} out of {len(vars_)} matches'
+
+        super().__init__(placeholder=placeholder, min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
