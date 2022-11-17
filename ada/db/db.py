@@ -3,7 +3,6 @@
 
 import json
 
-from ada.db.buildable import Buildable
 from ada.db.buildable_recipe import BuildableRecipe
 from ada.db.crafter import Crafter
 from ada.db.extractor import Extractor
@@ -21,9 +20,9 @@ ITEM_CLASSES = [
     "Class'/Script/FactoryGame.FGItemDescriptorBiomass'",
     "Class'/Script/FactoryGame.FGItemDescriptorNuclearFuel'",
     "Class'/Script/FactoryGame.FGConsumableDescriptor'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeColorCartridge'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeProjectile'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeInstantHit'",
+    "Class'/Script/FactoryGame.FGBuildingDescriptor'",
+    "Class'/Script/FactoryGame.FGPoleDescriptor'",
+    "Class'/Script/FactoryGame.FGVehicleDescriptor'",
 ]
 CRAFTER_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildableManufacturer'",
@@ -39,7 +38,6 @@ GENERATOR_CLASSES = [
 RECIPE_CLASSES = [
     "Class'/Script/FactoryGame.FGRecipe'",
 ]
-BUILDABLE_CLASSES_PREFIX = "Class'/Script/FactoryGame.FGBuild"
 
 
 class DB:
@@ -52,22 +50,6 @@ class DB:
         for native_class in data:
             native_classes[native_class["NativeClass"]] = native_class["Classes"]
 
-        # Parse buildables (besides crafters, extractors, and generators)
-        self.__buildables = {}
-        for native_class in native_classes:
-            if not native_class.startswith(BUILDABLE_CLASSES_PREFIX):
-                continue
-            if native_class in set().union(
-                CRAFTER_CLASSES, EXTRACTOR_CLASSES, GENERATOR_CLASSES
-            ):
-                continue
-            buildable_class_short = native_class.split(".")[1][:-1]
-            for buildable_data in native_classes[native_class]:
-                if not buildable_data["mDisplayName"]:
-                    continue
-                buildable = Buildable(buildable_data, buildable_class_short)
-                self.__buildables[buildable.var()] = buildable
-
         self.__items = {}
         self.__item_var_from_class_name = {}
         self.__item_vars_from_native_class_name = {}
@@ -78,12 +60,11 @@ class DB:
             self.__item_vars_from_native_class_name[resource_class_short] = []
             for resource_data in native_classes[resource_class]:
                 item = Item(resource_data, resource_class_short, is_resource=True)
-                self.__items[item.var()] = item
+                self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[resource_class_short].append(
                     item.var()
                 )
-                self.__buildables[item.var()] = item
 
         # Parse items
         for item_class in ITEM_CLASSES:
@@ -91,12 +72,11 @@ class DB:
             self.__item_vars_from_native_class_name[item_class_short] = []
             for item_data in native_classes[item_class]:
                 item = Item(item_data, item_class_short, is_resource=False)
-                self.__items[item.var()] = item
+                self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[item_class_short].append(
                     item.var()
                 )
-                self.__buildables[item.var()] = item
 
         # Parse crafters
         self.__crafters = {}
@@ -106,7 +86,6 @@ class DB:
                 crafter = Crafter(building_data)
                 self.__crafters[crafter.var()] = crafter
                 self.__crafter_var_from_class_name[crafter.class_name()] = crafter.var()
-                self.__buildables[crafter.var()] = crafter
 
         # Parse extractors
         self.__extractors = {}
@@ -118,7 +97,6 @@ class DB:
                 self.__extractors_var_from_class_name[
                     extractor.class_name()
                 ] = extractor.var()
-                self.__buildables[extractor.var()] = extractor
 
         # Parse generators
         self.__generators = {}
@@ -126,7 +104,6 @@ class DB:
             for generator_data in native_classes[generator_class]:
                 generator = PowerGenerator(generator_data, self.__items.values())
                 self.__generators[generator.var()] = generator
-                self.__buildables[generator.var()] = generator
 
         # Parse recipes
         # Create a dictionary from product => [recipe]
@@ -142,7 +119,7 @@ class DB:
                 )
                 if not recipe.is_craftable_in_building():
                     buildable_recipe = BuildableRecipe(
-                        recipe_data, self.__buildables.values()
+                        recipe_data, self.__items.values()
                     )
                     self.__buildable_recipes[buildable_recipe.var()] = buildable_recipe
                 else:
@@ -164,8 +141,15 @@ class DB:
                 if fuel_item.energy_value() <= 0:
                     continue
                 power_recipe = PowerRecipe(fuel_item, generator)
+                # print(f"Found power recipe var {power_recipe.var()}")
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
+
+    def _add_item(self, item: Item):
+        if item.var() in self.__items:
+            existing = self.__items[item.var()]
+            print(f"Found duplicate item var {item.var()}, old class {existing.class_name()}, new class {item.class_name()}")
+        self.__items[item.var()] = item
 
     def items(self):
         return self.__items
@@ -224,3 +208,4 @@ class DB:
 
     def generators(self):
         return self.__generators
+

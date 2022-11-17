@@ -1,3 +1,5 @@
+import re
+
 from typing import Dict
 
 import ada.image_fetcher
@@ -21,7 +23,14 @@ class Item:
         self.__is_resource = is_resource
 
     def slug(self) -> str:
-        return self.__data["mDisplayName"].lower().replace(" ", "-")
+        display_name = self.__data["mDisplayName"]
+        if display_name:
+            slug = self.__data["mDisplayName"].lower().replace(" ", "-")
+        else:
+            slug = self.class_name().removesuffix("_C").removeprefix("Build_").replace("_", "-")
+            slug = re.sub(r'(?<!^)(?=[A-Z])', '-', slug).lower()
+            slug = re.sub(r'\-+', '-', slug)
+        return slug
 
     def var(self) -> str:
         if self.__is_resource:
@@ -57,7 +66,12 @@ class Item:
         return out
 
     def human_readable_name(self) -> str:
-        return "".join(i for i in self.__data["mDisplayName"] if ord(i) < 128)
+        display_name = self.__data["mDisplayName"]
+        if not display_name:
+            display_name = self.class_name().removesuffix("_C").removeprefix("Desc_").replace("_", " ")
+            display_name = re.sub(r'(?<!^)(?=[A-Z])', ' ', display_name)
+            display_name = re.sub(r' +', ' ', display_name)
+        return "".join(i for i in display_name if ord(i) < 128)
 
     def human_readable_underscored(self) -> str:
         return self.human_readable_name().replace(" ", "_")

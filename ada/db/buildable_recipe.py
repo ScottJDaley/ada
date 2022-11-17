@@ -1,3 +1,5 @@
+import re
+
 from typing import Dict, List, Tuple
 
 from ada.db.item import Item
@@ -18,7 +20,6 @@ def parse_recipe_item(raw: str) -> Tuple[str, int]:
         component_map[key_value[0]] = key_value[1]
     class_name = component_map["ItemClass"].split(".")[1][:-2]
     return class_name, int(component_map["Amount"])
-
 
 class BuildableRecipeItem:
     def __init__(self, item: Item, amount: int) -> None:
@@ -53,36 +54,26 @@ class BuildableRecipe:
         for product in parse_list(data["mProduct"]):
             class_name, amount = parse_recipe_item(product)
             for buildable in buildables:
-                buildable_class_name_suffix = (
-                    buildable.class_name().removeprefix("Build_").removeprefix("Desc_")
-                )
-                product_class_name_suffix = class_name.removeprefix(
-                    "Desc_"
-                ).removeprefix("Build_")
-                if buildable_class_name_suffix != product_class_name_suffix:
-                    # if buildable.class_name() != class_name:
-                    # if "Ladder" in class_name and "Ladder" in buildable.class_name():
-                    #     print(
-                    #         f"What the fuck {buildable.class_name()} vs. {class_name}"
-                    #     )
-                    # if "Ladder" in class_name:
-                    #     print(f"considering {buildable.class_name()}")
+                if buildable.class_name() != class_name:
+
                     continue
                 self.__product = buildable
                 break
-        # if self.__product:
-        #     print(f"Product var {self.__product.var()}")
-        # else:
-        #     # print(f"Could not find product class {class_name}")
-        #     print(f"Could not find {product_class_name_suffix}")
         if not self.__product:
-            print(f"Could not find product class '{class_name}'")
+            print(f"Could not find product for buildable recipe {self.class_name()}, var {self.var()}")
 
     def slug(self) -> str:
-        return self.__data["mDisplayName"].lower().replace(" ", "-").replace(":", "")
+        slug = self.class_name().removesuffix("_C").removeprefix("Desc_").removeprefix("Recipe_").removeprefix(
+            "Build_").replace("_", "-")
+        slug = re.sub(r'(?<!^)(?=[A-Z])', '-', slug).lower()
+        slug = re.sub(r'\-+', '-', slug)
+        return slug
 
     def var(self) -> str:
         return "buildable-recipe:" + self.slug()
+
+    def class_name(self) -> str:
+        return self.__data["ClassName"]
 
     def human_readable_name(self) -> str:
         return "Recipe: " + self.__data["mDisplayName"]
