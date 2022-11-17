@@ -145,6 +145,9 @@ class DB:
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
 
+        self.__all_entities = self.__items | self.__crafters | self.__extractors | self.__generators \
+                              | self.__recipes | self.__buildable_recipes | self.__power_recipes
+
     def _add_item(self, item: Item):
         if item.var() in self.__items:
             existing = self.__items[item.var()]
@@ -207,8 +210,6 @@ class DB:
         return self.__generators
 
     def lookup(self, var: str):
-        all_vars = self.__items | self.__crafters | self.__extractors | self.__generators | self.__recipes
-        if var in all_vars:
-            return all_vars[var]
+        if var in self.__all_entities:
+            return self.__all_entities[var]
         return None
-
