@@ -71,9 +71,7 @@ class InfoResult(Result):
             if breadcrumbs.page() < self._num_pages():
                 message.reactions.append(ada.emoji.NEXT_PAGE)
 
-        message.embed = Embed(title=f"Found {len(self._vars)} matches:")
-        message.embed.description = "\n".join(out)
-        message.embed.set_footer(text=self._footer(breadcrumbs.page()))
+        message.embed = None
         message.content = str(breadcrumbs)
         message.view = MultiEntityView(self._vars, self._processor)
         return [message]
