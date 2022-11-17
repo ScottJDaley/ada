@@ -37,7 +37,6 @@ class EntityDropdown(discord.ui.Select):
         result = await self.__processor.do(query)
         message = result.messages(breadcrumbs)[0]
         message.view = WithPreviousView(message.view, self.__processor)
-
         await message.edit(interaction)
 
 
