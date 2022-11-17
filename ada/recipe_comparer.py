@@ -568,7 +568,7 @@ class RecipeCompareResult(Result):
 
         # return str(self.__stats)
 
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
+    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         message = ResultMessage()
         # message.embed = Embed(title="Error")
         # message.embed.description = "hello"  # "```{}```".format(str(self))
@@ -587,7 +587,4 @@ class RecipeCompareResult(Result):
         message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
         if len(message.content) > 2000:
             message.content = "Output was too long"
-        return [message]
-
-    def handle_reaction(self, emoji, breadcrumbs):
-        return None
+        return message

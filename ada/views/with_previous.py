@@ -18,7 +18,7 @@ class WithPreviousView(discord.ui.View):
         breadcrumbs.goto_prev_query()
         query = breadcrumbs.primary_query()
         result = await self.__processor.do(query)
-        message = result.messages(breadcrumbs)[0]
+        message = result.message(breadcrumbs)
         if breadcrumbs.has_prev_query():
             message.view = WithPreviousView(message.view, self.__processor)
         await message.edit(interaction)

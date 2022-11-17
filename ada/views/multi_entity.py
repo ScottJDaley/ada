@@ -20,10 +20,11 @@ class EntityDropdown(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = f"{self.values[0]}"
+        selection_option = self.values[0]
+        query = selection_option
         breadcrumbs.add_query(query)
         result = await self.__processor.do(query)
-        message = result.messages(breadcrumbs)[0]
+        message = result.message(breadcrumbs)
         message.view = WithPreviousView(message.view, self.__processor)
         await message.edit(interaction)
 
@@ -41,9 +42,9 @@ class EntityDropdown(discord.ui.Select):
     async def update_options(self, interaction: discord.Interaction, start: int):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         breadcrumbs.set_start_index(start)
-        query = f"{breadcrumbs.primary_query()}"
+        query = breadcrumbs.primary_query()
         result = await self.__processor.do(query)
-        message = result.messages(breadcrumbs)[0]
+        message = result.message(breadcrumbs)
         if breadcrumbs.has_prev_query():
             message.view = WithPreviousView(message.view, self.__processor)
         print("Message content:", message.content)

@@ -16,7 +16,7 @@ class ItemView(discord.ui.View):
         query = f"recipes for {breadcrumbs.primary_query()}"
         breadcrumbs.add_query(query)
         result = await self.__processor.do(query)
-        message = result.messages(breadcrumbs)[0]
+        message = result.message(breadcrumbs)
         message.view = WithPreviousView(message.view, self.__processor)
         await message.edit(interaction)
         self.stop()

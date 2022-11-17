@@ -231,7 +231,7 @@ class OptimizationResult(Result):
             return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()
 
-    def __solution_messages(self, breadcrumbs):
+    def __solution_message(self, breadcrumbs):
         message = ResultMessage()
         message.embed = Embed(title="Optimization Query")
 
@@ -255,16 +255,17 @@ class OptimizationResult(Result):
         if len(buildings) > 0:
             sections.append("**Buildings**\n" + "\n".join(buildings))
 
-        descriptions = []
-        curr_description = ""
+        # descriptions = []
+        description = ""
         for section in sections:
-            if len(curr_description) + len(section) >= 4096:
-                descriptions.append(curr_description)
-                curr_description = ""
-            curr_description += section + "\n\n"
-        descriptions.append(curr_description)
+            # TODO: Handle this another way
+            # if len(curr_description) + len(section) >= 4096:
+            #     descriptions.append(curr_description)
+            #     curr_description = ""
+            description += section + "\n\n"
+        # descriptions.append(curr_description)
 
-        message.embed.description = descriptions[0]
+        message.embed.description = description
 
         filename = "output.gv"
         filepath = "output/" + filename
@@ -275,27 +276,24 @@ class OptimizationResult(Result):
         message.file = file
         message.content = str(breadcrumbs)
 
-        messages = [message]
+        # messages = message
+        #
+        # if len(descriptions) > 1:
+        #     for i in range(1, len(descriptions)):
+        #         next_message = ResultMessage()
+        #         next_message.embed = Embed()
+        #         next_message.embed.description = descriptions[i]
+        #         messages.append(next_message)
 
-        if len(descriptions) > 1:
-            for i in range(1, len(descriptions)):
-                next_message = ResultMessage()
-                next_message.embed = Embed()
-                next_message.embed.description = descriptions[i]
-                messages.append(next_message)
+        return message
 
-        return messages
-
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
+    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         if self.__status is LpStatusOptimal:
-            return self.__solution_messages(breadcrumbs)
+            return self.__solution_message(breadcrumbs)
         message = ResultMessage()
         message.embed = Embed(title=str(self))
         message.content = str(breadcrumbs)
-        return [message]
-
-    def handle_reaction(self, emoji, breadcrumbs):
-        return None
+        return message
 
     def __add_nodes(self, s, objs):
         for obj in objs:

@@ -52,5 +52,5 @@ class AdaCog(commands.Cog):
 
     async def query_and_respond(self, query: str, interaction: discord.Interaction):
         result = await self.ada.do(query)
-        message = result.messages(Breadcrumbs.create(query))[0]
+        message = result.message(Breadcrumbs.create(query))
         await message.send(interaction)

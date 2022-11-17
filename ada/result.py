@@ -14,7 +14,6 @@ class ResultMessage:
         self.embed = MISSING
         self.file = MISSING
         self.view = MISSING
-        self.reactions = []
 
     async def send(self, interaction: discord.Interaction):
         await interaction.response.send_message(
@@ -34,11 +33,7 @@ class ResultMessage:
 
 class Result(ABC):
     @abstractmethod
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
-        pass
-
-    @abstractmethod
-    def handle_reaction(self, emoji: str, breadcrumbs: Breadcrumbs) -> str:
+    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         pass
 
 
@@ -49,12 +44,9 @@ class ErrorResult(Result):
     def __str__(self):
         return self.__msg
 
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
+    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         message = ResultMessage()
         message.embed = Embed(title="Error")
         message.embed.description = self.__msg
         message.content = str(breadcrumbs)
-        return [message]
-
-    def handle_reaction(self, emoji: str, breadcrumbs: Breadcrumbs):
-        return None
+        return message
