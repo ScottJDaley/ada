@@ -25,6 +25,13 @@ class ResultMessage:
             ephemeral=True
         )
 
+    async def edit(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(
+            content=self.content,
+            embed=self.embed,
+            view=self.view
+        )
+
 
 class Result(ABC):
     @abstractmethod

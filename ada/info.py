@@ -8,6 +8,8 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.db.item import Item
 from ada.processor import Processor
 from ada.result import Result, ResultMessage
+from ada.views.multi_entity import MultiEntityView
+from ada.views.single_entity import SingleEntityView
 
 
 class InfoQuery:
@@ -74,6 +76,7 @@ class InfoResult(Result):
         message.embed.description = "\n".join(out)
         message.embed.set_footer(text=self._footer(breadcrumbs.page()))
         message.content = str(breadcrumbs)
+        message.view = MultiEntityView(self._processor)
         return [message]
 
     def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
@@ -86,7 +89,7 @@ class InfoResult(Result):
             return self._get_info_page(breadcrumbs)
         message = ResultMessage()
         message.embed = self._vars[0].embed()
-        message.view = self._vars[0].view(self._processor)
+        message.view = SingleEntityView(self._processor)
         message.content = str(breadcrumbs)
         message.reactions = [ada.emoji.PREVIOUS_PAGE]
         return [message]
