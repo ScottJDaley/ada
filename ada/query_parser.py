@@ -23,6 +23,7 @@ from pyparsing.results import ParseResults
 
 from ada.db.crafter import Crafter
 from ada.db.db import DB
+from ada.db.entity import Entity
 from ada.db.extractor import Extractor
 from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
@@ -238,7 +239,7 @@ class QueryParser:
 
     def _get_matches(
         self, expr: str, allowed_types: List[str]
-    ) -> List[Union[Any, Item]]:
+    ) -> List[Entity]:
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(

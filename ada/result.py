@@ -41,10 +41,6 @@ class Result(ABC):
     def handle_reaction(self, emoji: str, breadcrumbs: Breadcrumbs) -> str:
         pass
 
-    @abstractmethod
-    def entities(self):
-        pass
-
 
 class ErrorResult(Result):
     def __init__(self, msg: str) -> None:

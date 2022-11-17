@@ -1,9 +1,14 @@
+import discord
+
+from ada.db.entity import Entity
 from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
 from discord import Embed
 
+from ada.processor import Processor
 
-class PowerRecipe:
+
+class PowerRecipe(Entity):
     def __init__(self, fuel_item: Item, generator: PowerGenerator) -> None:
         # item var => recipe item
         self.__fuel_item = fuel_item
@@ -84,3 +89,8 @@ class PowerRecipe:
 
     def generator(self) -> PowerGenerator:
         return self.__generator
+
+    def view(self, processor: Processor) -> discord.ui.View:
+        pass
+
+

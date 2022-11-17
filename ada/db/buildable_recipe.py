@@ -2,8 +2,13 @@ import re
 
 from typing import Dict, List, Tuple
 
+import discord
+
+from ada.db.entity import Entity
 from ada.db.item import Item
 from discord import Embed
+
+from ada.processor import Processor
 
 
 def parse_list(raw: str) -> List[str]:
@@ -37,7 +42,7 @@ class BuildableRecipeItem:
         return f"{self.item().human_readable_name()}: {self.amount()}"
 
 
-class BuildableRecipe:
+class BuildableRecipe(Entity):
     def __init__(self, data: Dict[str, str], items) -> None:
         self.__data = data
 
@@ -96,6 +101,9 @@ class BuildableRecipe:
         )
         embed.add_field(name="Ingredients", value=ingredients, inline=True)
         return embed
+
+    def view(self, processor: Processor) -> discord.ui.View:
+        pass
 
     def ingredients(self) -> Dict[str, BuildableRecipeItem]:
         return self.__ingredients

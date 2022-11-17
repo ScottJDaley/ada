@@ -5,6 +5,7 @@ import json
 
 from ada.db.buildable_recipe import BuildableRecipe
 from ada.db.crafter import Crafter
+from ada.db.entity import Entity
 from ada.db.extractor import Extractor
 from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
@@ -209,7 +210,7 @@ class DB:
     def generators(self):
         return self.__generators
 
-    def lookup(self, var: str):
+    def lookup(self, var: str) -> Entity | None:
         if var in self.__all_entities:
             return self.__all_entities[var]
         return None

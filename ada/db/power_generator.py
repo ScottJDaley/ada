@@ -1,11 +1,16 @@
 from typing import Any, List, Union
 
+import discord
+
 from ada import image_fetcher
+from ada.db.entity import Entity
 from ada.db.item import Item
 from discord import Embed
 
+from ada.processor import Processor
 
-class PowerGenerator:
+
+class PowerGenerator(Entity):
     def __init__(self, data, items):
         self.__data = data
         self.__fuel_items = []
@@ -76,3 +81,6 @@ class PowerGenerator:
         )
         # TODO
         return embed
+
+    def view(self, processor: Processor) -> discord.ui.View:
+        pass

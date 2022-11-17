@@ -1,10 +1,15 @@
 from typing import Dict
 
+import discord
+
 import ada.image_fetcher
 from discord import Embed
 
+from ada.db.entity import Entity
+from ada.processor import Processor
 
-class Extractor:
+
+class Extractor(Entity):
     def __init__(self, data: Dict[str, str]) -> None:
         self.__data = data
 
@@ -69,3 +74,6 @@ class Extractor:
         )
         # TODO
         return embed
+
+    def view(self, processor: Processor) -> discord.ui.View:
+        pass

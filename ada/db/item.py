@@ -5,6 +5,7 @@ import discord
 from typing import Dict
 
 import ada.image_fetcher
+from ada.db.entity import Entity
 from ada.processor import Processor
 from ada.views.item_view import ItemView
 
@@ -17,7 +18,7 @@ STACK_SIZES = {
 }
 
 
-class Item:
+class Item(Entity):
     def __init__(
         self, data: Dict[str, str], native_class_name: str, is_resource: bool
     ) -> None:
@@ -132,6 +133,5 @@ class Item:
         embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
         return embed
 
-    @staticmethod
-    def view(processor: Processor) -> discord.ui.View:
+    def view(self, processor: Processor) -> discord.ui.View:
         return ItemView(processor)

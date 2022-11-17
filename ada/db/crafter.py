@@ -5,11 +5,12 @@ import discord
 import ada.image_fetcher
 from discord import Embed
 
+from ada.db.entity import Entity
 from ada.processor import Processor
 from ada.views.crafter_view import CrafterView
 
 
-class Crafter:
+class Crafter(Entity):
     def __init__(self, data: Dict[str, str]) -> None:
         self.__data = data
 
@@ -58,6 +59,5 @@ class Crafter:
         # TODO
         return embed
 
-    @staticmethod
-    def view(processor: Processor) -> discord.ui.View:
+    def view(self, processor: Processor) -> discord.ui.View:
         return CrafterView(processor)

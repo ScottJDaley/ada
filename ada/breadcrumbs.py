@@ -8,37 +8,36 @@ class BreadcrumbsException(Exception):
 
 
 class Breadcrumbs:
-    def __init__(self, queries: List[str], page: int) -> None:
-        self._queries = queries
-        self._page = page
+    def __init__(self, queries: List[str], start_index: int) -> None:
+        self.__queries = queries
+        self.__start_index = start_index
 
     def __str__(self) -> str:
-        return "```" + str(self._page) + "\n" + " > ".join(self._queries) + "\n```"
+        return "```" + str(self.__start_index) + "\n" + " > ".join(self.__queries) + "\n```"
 
     def primary_query(self):
-        return self._queries[-1]
+        return self.__queries[-1]
 
-    def page(self):
-        return self._page
+    def start_index(self):
+        return self.__start_index
 
-    def goto_next_page(self):
-        self._page += 1
-
-    def goto_prev_page(self):
-        self._page -= 1
+    def set_start_index(self, index: int):
+        self.__start_index = index
 
     def add_query(self, query):
-        self._queries.append(query)
+        self.set_start_index(0)
+        self.__queries.append(query)
 
     def has_prev_query(self):
-        return len(self._queries) > 1
+        return len(self.__queries) > 1
 
     def goto_prev_query(self):
-        self._queries.pop()
+        self.set_start_index(0)
+        self.__queries.pop()
 
     def replace_primary_query(self, query):
-        self._queries.pop()
-        self._queries.append(query)
+        self.goto_prev_query()
+        self.add_query(query)
 
     @classmethod
     def extract(cls, content):
@@ -60,11 +59,11 @@ class Breadcrumbs:
                 + " content:\n"
                 + str(content_lines)
             )
-        page = int(content_lines[0][3:])
+        start_index = int(content_lines[0][3:])
         query_line = content_lines[1]
         queries = [x.strip() for x in query_line.split(">")]
-        return cls(queries, page)
+        return cls(queries, start_index)
 
     @classmethod
     def create(cls, query: str) -> Breadcrumbs:
-        return cls(queries=[query], page=1)
+        return cls(queries=[query], start_index=0)

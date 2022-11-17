@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 import discord
 
 from ada.db.crafter import Crafter
+from ada.db.entity import Entity
 from ada.db.item import Item
 from discord import Embed
 
@@ -48,7 +49,7 @@ class RecipeItem:
         )
 
 
-class Recipe:
+class Recipe(Entity):
     def __init__(self, data: Dict[str, str], items, crafters) -> None:
         self.__data = data
         self.__crafter = None
@@ -187,8 +188,7 @@ class Recipe:
         )
         return embed
 
-    @staticmethod
-    def view(processor: Processor) -> discord.ui.View:
+    def view(self, processor: Processor) -> discord.ui.View:
         return RecipeView(processor)
 
     def ingredients(self) -> Dict[str, RecipeItem]:
