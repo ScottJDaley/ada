@@ -6,6 +6,7 @@ from discord.embeds import Embed
 import ada.emoji
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.item import Item
+from ada.processor import Processor
 from ada.result import Result, ResultMessage
 
 
@@ -23,10 +24,11 @@ class InfoQuery:
 class InfoResult(Result):
     num_on_page = 9
 
-    def __init__(self, vars_: List[Item], raw_query: str) -> None:
+    def __init__(self, vars_: List[Item], raw_query: str, processor: Processor) -> None:
         self._vars = sorted(vars_, key=lambda var_: var_.human_readable_name())
         self._raw_query = raw_query
         self._add_reaction_selectors = False
+        self._processor = processor
 
     def __str__(self):
         if len(self._vars) == 1:
@@ -84,6 +86,7 @@ class InfoResult(Result):
             return self._get_info_page(breadcrumbs)
         message = ResultMessage()
         message.embed = self._vars[0].embed()
+        message.view = self._vars[0].view(self._processor)
         message.content = str(breadcrumbs)
         message.reactions = [ada.emoji.PREVIOUS_PAGE]
         return [message]

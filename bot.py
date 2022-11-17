@@ -1,10 +1,12 @@
 import os
+from typing import Optional, Literal
 
 import discord
 from discord.ext import commands
+from discord.ext.commands import Context, Greedy
 from dotenv import load_dotenv
 
-from ada.cog import Cog
+from ada.cog import AdaCog
 
 
 class Bot(commands.Bot):
@@ -15,10 +17,12 @@ class Bot(commands.Bot):
         if not cmd_prefix:
             cmd_prefix = "ada "
         print(f"Discord Prefix: '{cmd_prefix}'")
+        intents = discord.Intents.default()
         super().__init__(
             command_prefix=commands.when_mentioned_or(cmd_prefix),
-            intents=discord.Intents.default()
+            intents=intents,
         )
+        self.sync = not os.getenv("DONT_SYNC")
         self.guild = None
         restrict_slash_commands_to_guild = os.getenv("RESTRICT_SLASH_COMMANDS_TO_GUILD")
         print(restrict_slash_commands_to_guild)
@@ -38,11 +42,14 @@ class Bot(commands.Bot):
         guilds = None
         if self.guild:
             guilds = [self.guild]
-        await self.add_cog(Cog(self), guilds=guilds)
-        if self.guild:
-            await self.tree.sync(guild=self.guild)
-        else:
-            await self.tree.sync()
+        await self.add_cog(AdaCog(self), guilds=guilds)
+        if self.sync:
+            if self.guild:
+                print(f"Syncing commands to guild {self.guild}")
+                await self.tree.sync(guild=self.guild)
+            else:
+                print(f"Syncing commands globally")
+                await self.tree.sync()
         print("Loaded cogs")
 
     def run(self, **kwargs):

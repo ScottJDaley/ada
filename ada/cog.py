@@ -8,7 +8,7 @@ from ada.ada import Ada
 from ada.breadcrumbs import Breadcrumbs
 
 
-class Cog(commands.Cog):
+class AdaCog(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.ada = Ada()
@@ -53,9 +53,4 @@ class Cog(commands.Cog):
     async def query_and_respond(self, query: str, interaction: discord.Interaction):
         result = await self.ada.do(query)
         message = result.messages(Breadcrumbs.create(query))[0]
-        await interaction.response.send_message(
-            content=message.content,
-            embed=message.embed,
-            file=message.file,
-            ephemeral=True
-        )
+        await message.send(interaction)

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+import discord
 from discord import Embed
 from discord.utils import MISSING
 
@@ -12,7 +13,17 @@ class ResultMessage:
         self.content = None
         self.embed = MISSING
         self.file = MISSING
+        self.view = MISSING
         self.reactions = []
+
+    async def send(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            content=self.content,
+            embed=self.embed,
+            file=self.file,
+            view=self.view,
+            ephemeral=True
+        )
 
 
 class Result(ABC):
