@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import discord
 import pulp
@@ -15,18 +15,13 @@ from pulp.constants import (
 )
 from pulp.pulp import LpProblem, LpVariable
 
-import ada.views.optimization_view
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
-from ada.db.item import Item
-from ada.db.recipe import Recipe
+from ada.optimization_result_data import OptimizationResultData
 from ada.processor import Processor
 from ada.result import Result, ResultMessage
-from ada.views.optimization_view import InputsCategoryView
-from ada.views.optimization_view import OutputsCategoryView
-from ada.views.optimization_view import RecipesCategoryView
-from ada.views.optimization_view import BuildingsCategoryView
-from ada.views.optimization_view import GeneralCategoryView
+from ada.views.optimization_view import OptimizationSelectorView
+from ada.views.with_previous import WithPreviousView
 
 
 class OptimizationQuery:
@@ -117,50 +112,44 @@ class OptimizationResult(Result):
         self.__processor = processor
         # Dictionaries from var -> (obj, value)
         # TODO: Use these in the functions below
-        self.__inputs = {
+        inputs = {
             item.var(): (item, -self.__get_value(item.var()))
             for item in self.__db.items().values()
             if self.__has_value(item.var()) and self.__get_value(item.var()) < 0
         }
-        self.__outputs = {
+        outputs = {
             item.var(): (item, self.__get_value(item.var()))
             for item in self.__db.items().values()
             if self.__has_value(item.var()) and self.__get_value(item.var()) > 0
         }
-        self.__recipes = {
+        recipes = {
             recipe.var(): (recipe, self.__get_value(recipe.var()))
             for recipe in self.__db.recipes().values()
             if self.__has_value(recipe.var())
         }
-        self.__crafters = {
+        crafters = {
             crafter.var(): (crafter, self.__get_value(crafter.var()))
             for crafter in self.__db.crafters().values()
             if self.__has_value(crafter.var())
         }
-        self.__generators = {
+        generators = {
             generator.var(): (generator, self.__get_value(generator.var()))
             for generator in self.__db.generators().values()
             if self.__has_value(generator.var())
         }
-        self.__net_power = self.__get_value("power") if self.__has_value("power") else 0
+        net_power = self.__get_value("power") if self.__has_value("power") else 0
 
-    def inputs(self) -> Dict[str, Tuple[Item, float]]:
-        return self.__inputs
+        self.__result_data = OptimizationResultData(
+            inputs=inputs,
+            outputs=outputs,
+            recipes=recipes,
+            crafters=crafters,
+            generators=generators,
+            net_power=net_power
+        )
 
-    def outputs(self):
-        return self.__outputs
-
-    def recipes(self) -> Dict[str, Tuple[Recipe, float]]:
-        return self.__recipes
-
-    def crafters(self):
-        return self.__crafters
-
-    def generators(self):
-        return self.__generators
-
-    def net_power(self) -> float:
-        return self.__net_power
+    def result_data(self) -> OptimizationResultData:
+        return self.__result_data
 
     def __has_value(self, var):
         return (
@@ -284,8 +273,12 @@ class OptimizationResult(Result):
         # The image already shows up from the attached file, so no need to place it in the embed as well.
         message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
+        if len(breadcrumbs.current_page().custom_ids()) == 0:
+            breadcrumbs.current_page().add_custom_id("inputs")
         message.content = str(breadcrumbs)
-        message.view = self.get_optimization_view(self.__processor, breadcrumbs.custom_id())
+        message.view = OptimizationSelectorView.get_view(breadcrumbs, self.__processor, self.__result_data)
+        if breadcrumbs.has_prev_page():
+            message.view = WithPreviousView(message.view, self.__processor)
 
         # messages = message
         #
@@ -298,21 +291,21 @@ class OptimizationResult(Result):
 
         return message
 
-    def get_optimization_view(self, processor: Processor, custom_id: str) -> discord.ui.View:
-        # parts = custom_id.split(".")
-        # category = parts[0] if len(parts) > 0 else ""
-        # selected = "".join(parts)
-        if custom_id == "inputs":
-            return InputsCategoryView(processor, self.inputs())
-        if custom_id == "outputs":
-            return OutputsCategoryView(processor)
-        if custom_id == "recipes":
-            return RecipesCategoryView(processor)
-        if custom_id == "buildings":
-            return BuildingsCategoryView(processor)
-        if custom_id == "general":
-            return GeneralCategoryView(processor)
-        return InputsCategoryView(processor, self.inputs())
+    # def get_optimization_view(self, processor: Processor, custom_id: str) -> discord.ui.View:
+    #     # parts = custom_id.split(".")
+    #     # category = parts[0] if len(parts) > 0 else ""
+    #     # selected = "".join(parts)
+    #     if custom_id == "inputs":
+    #         return InputsCategoryView(processor, self.inputs())
+    #     if custom_id == "outputs":
+    #         return OutputsCategoryView(processor)
+    #     if custom_id == "recipes":
+    #         return RecipesCategoryView(processor)
+    #     if custom_id == "buildings":
+    #         return BuildingsCategoryView(processor)
+    #     if custom_id == "general":
+    #         return GeneralCategoryView(processor)
+    #     return InputsCategoryView(processor, self.inputs())
 
     def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         if self.__status is LpStatusOptimal:

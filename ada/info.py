@@ -47,13 +47,13 @@ class InfoResult(Result):
         var_index = (page - 1) * InfoResult.num_on_page + index
         return self.__entities[var_index]
 
-    def _get_info_page(self, breadcrumbs) -> ResultMessage:
+    def _get_info_page(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         message = ResultMessage()
         message.embed = None
+        message.file = None
         message.content = str(breadcrumbs)
-        print(f"Constructing info page with custom_id: {breadcrumbs.custom_id()}")
-        message.view = MultiEntityView(self.__entities, breadcrumbs.custom_id(), self.__processor)
-        if breadcrumbs.has_prev_query():
+        message.view = MultiEntityView(self.__entities, breadcrumbs.current_page().custom_ids()[0], self.__processor)
+        if breadcrumbs.has_prev_page():
             message.view = WithPreviousView(message.view, self.__processor)
         return message
 
@@ -66,11 +66,12 @@ class InfoResult(Result):
         if len(self.__entities) > 1:
             return self._get_info_page(breadcrumbs)
 
-        breadcrumbs.replace_primary_query(self.__entities[0].var())
+        breadcrumbs.current_page().replace_query(self.__entities[0].var())
         message = ResultMessage()
         message.embed = self.__entities[0].embed()
+        message.file = None
         message.view = self.__entities[0].view(self.__processor)
-        if breadcrumbs.has_prev_query():
+        if breadcrumbs.has_prev_page():
             message.view = WithPreviousView(message.view, self.__processor)
         message.content = str(breadcrumbs)
         return message

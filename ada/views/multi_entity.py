@@ -21,8 +21,8 @@ class EntityDropdown(discord.ui.Select):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         selection_option = self.values[0]
         query = selection_option
-        breadcrumbs.add_query(query)
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
+        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
 
     @staticmethod
     def _get_options(entities: List[Entity], start: int) -> list[discord.SelectOption]:
@@ -37,9 +37,8 @@ class EntityDropdown(discord.ui.Select):
 
     async def update_options(self, interaction: discord.Interaction, start: int):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        breadcrumbs.set_custom_id(str(start))
-        query = breadcrumbs.primary_query()
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
+        breadcrumbs.current_page().set_single_custom_id(str(start))
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
 
 
 class ButtonWithCallback(discord.ui.Button):

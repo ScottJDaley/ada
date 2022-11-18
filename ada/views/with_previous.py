@@ -15,7 +15,6 @@ class WithPreviousView(discord.ui.View):
     @discord.ui.button(label="Back", style=discord.ButtonStyle.primary, row=4)
     async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        breadcrumbs.goto_prev_query()
-        query = breadcrumbs.primary_query()
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
+        breadcrumbs.goto_prev_page()
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
         self.stop()

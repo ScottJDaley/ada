@@ -359,12 +359,12 @@ class RecipeComparer:
 
         result = await self.__opt.optimize(query)
 
-        inputs.update(result.inputs())
+        inputs.update(result.result_data().inputs())
 
         return ProductionStats(
             inputs,
-            -result.net_power() + recipe.crafter().power_consumption(),
-            len(result.recipes()) + len(inputs) + 1,
+            -result.result_data().net_power() + recipe.crafter().power_consumption(),
+            len(result.result_data().recipes()) + len(inputs) + 1,
         )
 
     async def compute_recipe_stats(

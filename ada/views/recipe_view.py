@@ -12,12 +12,12 @@ class RecipeView(discord.ui.View):
     @discord.ui.button(label="Building", style=discord.ButtonStyle.grey)
     async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        recipe = self.__processor.lookup(breadcrumbs.primary_query())
+        recipe = self.__processor.lookup(breadcrumbs.current_page().query())
         if not recipe:
             return
 
         building = recipe.crafter()
-        query = f"{building.var()}"
-        breadcrumbs.add_query(query)
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
+        query = building.var()
+        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
         self.stop()

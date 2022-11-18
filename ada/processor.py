@@ -17,7 +17,7 @@ class Processor(ABC):
     def lookup(self, var: str):
         pass
 
-    async def do_and_edit(self, query: str, breadcrumbs: Breadcrumbs, interaction: discord.Interaction):
-        result = await self.do(query)
+    async def do_and_edit(self, breadcrumbs: Breadcrumbs, interaction: discord.Interaction):
+        result = await self.do(breadcrumbs.current_page().query())
         message = result.message(breadcrumbs)
         await message.edit(interaction)

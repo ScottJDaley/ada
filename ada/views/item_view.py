@@ -12,7 +12,7 @@ class ItemView(discord.ui.View):
     @discord.ui.button(label="Recipes", style=discord.ButtonStyle.secondary)
     async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = f"recipes for {breadcrumbs.primary_query()}"
-        breadcrumbs.add_query(query)
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
+        query = f"recipes for {breadcrumbs.current_page().query()}"
+        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
         self.stop()
