@@ -2,6 +2,7 @@ import os
 import sys
 from typing import Dict, List, Tuple
 
+import discord
 import pulp
 from discord import Embed, File
 from graphviz import Digraph
@@ -21,7 +22,11 @@ from ada.db.item import Item
 from ada.db.recipe import Recipe
 from ada.processor import Processor
 from ada.result import Result, ResultMessage
-from ada.views.optimization_view import OptimizationView
+from ada.views.optimization_view import InputsCategoryView
+from ada.views.optimization_view import OutputsCategoryView
+from ada.views.optimization_view import RecipesCategoryView
+from ada.views.optimization_view import BuildingsCategoryView
+from ada.views.optimization_view import GeneralCategoryView
 
 
 class OptimizationQuery:
@@ -280,7 +285,7 @@ class OptimizationResult(Result):
         message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = str(breadcrumbs)
-        message.view = OptimizationView.get(self.__processor, breadcrumbs.custom_id())
+        message.view = self.get_optimization_view(self.__processor, breadcrumbs.custom_id())
 
         # messages = message
         #
@@ -292,6 +297,22 @@ class OptimizationResult(Result):
         #         messages.append(next_message)
 
         return message
+
+    def get_optimization_view(self, processor: Processor, custom_id: str) -> discord.ui.View:
+        # parts = custom_id.split(".")
+        # category = parts[0] if len(parts) > 0 else ""
+        # selected = "".join(parts)
+        if custom_id == "inputs":
+            return InputsCategoryView(processor, self.inputs())
+        if custom_id == "outputs":
+            return OutputsCategoryView(processor)
+        if custom_id == "recipes":
+            return RecipesCategoryView(processor)
+        if custom_id == "buildings":
+            return BuildingsCategoryView(processor)
+        if custom_id == "general":
+            return GeneralCategoryView(processor)
+        return InputsCategoryView(processor, self.inputs())
 
     def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
         if self.__status is LpStatusOptimal:

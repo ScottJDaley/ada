@@ -1,6 +1,10 @@
+from typing import Callable
+
 import discord
 
 from ada.breadcrumbs import Breadcrumbs
+from ada.db.entity import Entity
+from ada.db.item import Item
 from ada.processor import Processor
 
 
@@ -21,21 +25,6 @@ class OptimizationCategoryButton(discord.ui.Button):
         breadcrumbs.set_custom_id(self.custom_id)
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
 
-class OptimizationView:
-    @staticmethod
-    def get(processor: Processor, custom_id: str) -> discord.ui.View:
-        if custom_id == "inputs":
-            return InputsCategoryView(processor)
-        if custom_id == "outputs":
-            return OutputsCategoryView(processor)
-        if custom_id == "recipes":
-            return RecipesCategoryView(processor)
-        if custom_id == "buildings":
-            return BuildingsCategoryView(processor)
-        if custom_id == "general":
-            return GeneralCategoryView(processor)
-        return InputsCategoryView(processor)
-
 
 class OptimizationCategoryView(discord.ui.View):
     def __init__(self, processor: Processor, active_category: str):
@@ -54,9 +43,32 @@ class OptimizationCategoryView(discord.ui.View):
                 processor=processor
             ))
 
+
+class EntityDropdown(discord.ui.Select):
+    def __init__(self, entities: list[Entity], processor: Processor, callback: Callable[[str], None]):
+        self.__processor = processor
+        self.__callback = callback
+        options = []
+        for entity in entities:
+            options.append(discord.SelectOption(label=entity.var(), description=entity.human_readable_name()))
+        super().__init__(placeholder="Select an input", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        selection_option = self.values[0]
+        self.__callback(selection_option)
+
+
 class InputsCategoryView(OptimizationCategoryView):
-    def __init__(self, processor: Processor):
+    def __init__(self, processor: Processor, inputs: dict[str, tuple[Item, float]]):
         super().__init__(processor, "inputs")
+        self.__inputs = inputs
+        entities = []
+        for item, value in inputs.values():
+            entities.append(item)
+        self.add_item(EntityDropdown(entities, processor, self.on_select))
+
+    def on_select(self, var: str):
+        print("on_select", var)
 
 
 class OutputsCategoryView(OptimizationCategoryView):
