@@ -279,7 +279,7 @@ class OptimizationResult(Result):
         message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = str(breadcrumbs)
-        message.view = OptimizationView(self.__processor)
+        message.view = OptimizationView(self.__processor, breadcrumbs.custom_id())
 
         # messages = message
         #

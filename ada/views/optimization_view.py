@@ -4,47 +4,39 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.processor import Processor
 
 
-class OptimizationView(discord.ui.View):
-    def __init__(self, processor: Processor):
-        super().__init__()
+class OptimizationCategoryButton(discord.ui.Button):
+    def __init__(
+            self,
+            label: str,
+            custom_id: str,
+            disabled: bool,
+            processor: Processor
+    ):
+        super().__init__(style=discord.ButtonStyle.primary, label=label, disabled=disabled, custom_id=custom_id, row=0)
         self.__processor = processor
 
-    @discord.ui.button(label="Inputs", style=discord.ButtonStyle.primary)
-    async def inputs(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def callback(self, interaction: discord.Interaction):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_custom_id("inputs")
+        breadcrumbs.set_custom_id(self.custom_id)
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
-        self.stop()
 
-    @discord.ui.button(label="Outputs", style=discord.ButtonStyle.primary)
-    async def outputs(self, interaction: discord.Interaction, button: discord.ui.Button):
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = breadcrumbs.primary_query()
-        breadcrumbs.set_custom_id("outputs")
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
-        self.stop()
 
-    @discord.ui.button(label="Recipes", style=discord.ButtonStyle.primary)
-    async def recipes(self, interaction: discord.Interaction, button: discord.ui.Button):
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = breadcrumbs.primary_query()
-        breadcrumbs.set_custom_id("recipes")
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
-        self.stop()
+class OptimizationView(discord.ui.View):
+    def __init__(self, processor: Processor, custom_id: str):
+        super().__init__(timeout=None)
+        self.__processor = processor
 
-    @discord.ui.button(label="Buildings", style=discord.ButtonStyle.primary)
-    async def buildings(self, interaction: discord.Interaction, button: discord.ui.Button):
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = breadcrumbs.primary_query()
-        breadcrumbs.set_custom_id("buildings")
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
-        self.stop()
+        active_category = custom_id if custom_id else "inputs"
+        self._add_categories(active_category, processor)
 
-    @discord.ui.button(label="General", style=discord.ButtonStyle.primary)
-    async def general(self, interaction: discord.Interaction, button: discord.ui.Button):
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = breadcrumbs.primary_query()
-        breadcrumbs.set_custom_id("general")
-        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
-        self.stop()
+    def _add_categories(self, active_category: str, processor: Processor):
+        for category in ["Inputs", "Outputs", "Recipes", "Buildings", "General"]:
+            custom_id = category.lower()
+            disabled = custom_id == active_category
+            self.add_item(OptimizationCategoryButton(
+                label=category,
+                custom_id=custom_id,
+                disabled=disabled,
+                processor=processor
+            ))
