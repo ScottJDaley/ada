@@ -20,14 +20,15 @@ class ResultMessage:
             content=self.content,
             embed=self.embed,
             file=self.file,
-            view=self.view
+            view=self.view,
         )
 
     async def edit(self, interaction: discord.Interaction):
         await interaction.response.edit_message(
             content=self.content,
             embed=self.embed,
-            view=self.view
+            attachments=[self.file] if self.file else [],
+            view=self.view,
         )
 
 
