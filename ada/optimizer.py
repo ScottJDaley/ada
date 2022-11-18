@@ -18,7 +18,9 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
 from ada.db.item import Item
 from ada.db.recipe import Recipe
+from ada.processor import Processor
 from ada.result import Result, ResultMessage
+from ada.views.optimization_view import OptimizationView
 
 
 class OptimizationQuery:
@@ -99,12 +101,14 @@ class OptimizationResult(Result):
         prob: LpProblem,
         status: int,
         query: OptimizationQuery,
+        processor: Processor,
     ) -> None:
         self.__db = db
         self.__prob = prob
         self.__vars = vars_
         self.__status = status
         self.__query = query
+        self.__processor = processor
         # Dictionaries from var -> (obj, value)
         # TODO: Use these in the functions below
         self.__inputs = {
@@ -272,9 +276,10 @@ class OptimizationResult(Result):
         self.generate_graph_viz(filepath)
         file = File(filepath + ".png")
         # The image already shows up from the attached file, so no need to place it in the embed as well.
-        # message.embed.set_image(url="attachment://" + filename + ".png")
+        message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = str(breadcrumbs)
+        message.view = OptimizationView(self.__processor)
 
         # messages = message
         #
@@ -698,7 +703,7 @@ class Optimizer:
             if power_recipe_var not in enabled_power_recipes:
                 prob += self.__variables[power_recipe_var] == 0
 
-    async def optimize(self, query: OptimizationQuery) -> OptimizationResult:
+    async def optimize(self, query: OptimizationQuery, processor: Processor) -> OptimizationResult:
         print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
@@ -799,6 +804,6 @@ class Optimizer:
 
         # Solve
         status = prob.solve()
-        result = OptimizationResult(self.__db, self.__variables, prob, status, query)
+        result = OptimizationResult(self.__db, self.__variables, prob, status, query, processor)
 
         return result

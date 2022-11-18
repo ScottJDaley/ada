@@ -29,7 +29,7 @@ class Ada(Processor):
         if isinstance(query, HelpQuery):
             return HelpResult()
         if isinstance(query, OptimizationQuery):
-            return await self.__opt.optimize(query)
+            return await self.__opt.optimize(query, self)
         if isinstance(query, InfoQuery):
             return InfoResult(query.vars, query.raw_query, self)
         if isinstance(query, RecipeCompareQuery):
