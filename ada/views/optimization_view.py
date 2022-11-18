@@ -13,7 +13,7 @@ class OptimizationView(discord.ui.View):
     async def inputs(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_start_index(0)
+        breadcrumbs.set_custom_id("inputs")
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()
 
@@ -21,7 +21,7 @@ class OptimizationView(discord.ui.View):
     async def outputs(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_start_index(1)
+        breadcrumbs.set_custom_id("outputs")
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()
 
@@ -29,7 +29,7 @@ class OptimizationView(discord.ui.View):
     async def recipes(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_start_index(2)
+        breadcrumbs.set_custom_id("recipes")
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()
 
@@ -37,7 +37,7 @@ class OptimizationView(discord.ui.View):
     async def buildings(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_start_index(3)
+        breadcrumbs.set_custom_id("buildings")
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()
 
@@ -45,6 +45,6 @@ class OptimizationView(discord.ui.View):
     async def general(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.primary_query()
-        breadcrumbs.set_start_index(4)
+        breadcrumbs.set_custom_id("general")
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()

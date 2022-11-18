@@ -37,7 +37,7 @@ class EntityDropdown(discord.ui.Select):
 
     async def update_options(self, interaction: discord.Interaction, start: int):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        breadcrumbs.set_start_index(start)
+        breadcrumbs.set_custom_id(str(start))
         query = breadcrumbs.primary_query()
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
 
@@ -63,10 +63,11 @@ class ButtonWithCallback(discord.ui.Button):
 
 
 class MultiEntityView(discord.ui.View):
-    def __init__(self, entities: List[Entity], start_index: int, processor: Processor):
+    def __init__(self, entities: List[Entity], custom_id: str, processor: Processor):
         super().__init__()
 
         self.__processor = processor
+        start_index = int(custom_id) if custom_id.isdigit() else 0
         self.__dropdown = EntityDropdown(entities, start_index, processor)
 
         num_entities = len(entities)

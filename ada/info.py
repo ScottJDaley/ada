@@ -51,8 +51,8 @@ class InfoResult(Result):
         message = ResultMessage()
         message.embed = None
         message.content = str(breadcrumbs)
-        print(f"Constructing info page with start index: {breadcrumbs.start_index()}")
-        message.view = MultiEntityView(self.__entities, breadcrumbs.start_index(), self.__processor)
+        print(f"Constructing info page with custom_id: {breadcrumbs.custom_id()}")
+        message.view = MultiEntityView(self.__entities, breadcrumbs.custom_id(), self.__processor)
         if breadcrumbs.has_prev_query():
             message.view = WithPreviousView(message.view, self.__processor)
         return message

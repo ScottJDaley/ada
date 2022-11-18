@@ -8,31 +8,34 @@ class BreadcrumbsException(Exception):
 
 
 class Breadcrumbs:
-    def __init__(self, queries: List[str], start_index: int) -> None:
+    def __init__(self, queries: List[str], custom_id: str) -> None:
         self.__queries = queries
-        self.__start_index = start_index
+        self.__custom_id = custom_id
 
     def __str__(self) -> str:
-        return "```" + str(self.__start_index) + "\n" + " > ".join(self.__queries) + "\n```"
+        return "```" + self.__custom_id + "\n" + " > ".join(self.__queries) + "\n```"
 
     def primary_query(self):
         return self.__queries[-1]
 
-    def start_index(self):
-        return self.__start_index
+    def custom_id(self):
+        return self.__custom_id
 
-    def set_start_index(self, index: int):
-        self.__start_index = index
+    def set_custom_id(self, custom_id: str):
+        self.__custom_id = custom_id
+
+    def clear_custom_id(self):
+        self.__custom_id = ""
 
     def add_query(self, query):
-        self.set_start_index(0)
+        self.clear_custom_id()
         self.__queries.append(query)
 
     def has_prev_query(self):
         return len(self.__queries) > 1
 
     def goto_prev_query(self):
-        self.set_start_index(0)
+        self.clear_custom_id()
         self.__queries.pop()
 
     def replace_primary_query(self, query):
@@ -52,18 +55,11 @@ class Breadcrumbs:
             raise BreadcrumbsException(
                 "Content missing code section:\n" + str(content_lines)
             )
-        if not content_lines[0][3:].isdigit():
-            raise BreadcrumbsException(
-                "Page was not a digit: "
-                + content_lines[0][3:]
-                + " content:\n"
-                + str(content_lines)
-            )
-        start_index = int(content_lines[0][3:])
+        custom_id = content_lines[0][3:]
         query_line = content_lines[1]
         queries = [x.strip() for x in query_line.split(">")]
-        return cls(queries, start_index)
+        return cls(queries, custom_id)
 
     @classmethod
     def create(cls, query: str) -> Breadcrumbs:
-        return cls(queries=[query], start_index=0)
+        return cls(queries=[query], custom_id="")
