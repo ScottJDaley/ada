@@ -2,7 +2,6 @@ import discord
 
 from ada.breadcrumbs import Breadcrumbs
 from ada.processor import Processor
-from ada.views.with_previous import WithPreviousView
 
 
 class ItemView(discord.ui.View):
@@ -10,13 +9,10 @@ class ItemView(discord.ui.View):
         super().__init__()
         self.__processor = processor
 
-    @discord.ui.button(label="Recipes", style=discord.ButtonStyle.grey)
+    @discord.ui.button(label="Recipes", style=discord.ButtonStyle.secondary)
     async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = f"recipes for {breadcrumbs.primary_query()}"
         breadcrumbs.add_query(query)
-        result = await self.__processor.do(query)
-        message = result.message(breadcrumbs)
-        message.view = WithPreviousView(message.view, self.__processor)
-        await message.edit(interaction)
+        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()

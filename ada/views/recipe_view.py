@@ -2,7 +2,6 @@ import discord
 
 from ada.breadcrumbs import Breadcrumbs
 from ada.processor import Processor
-from ada.views.with_previous import WithPreviousView
 
 
 class RecipeView(discord.ui.View):
@@ -20,8 +19,5 @@ class RecipeView(discord.ui.View):
         building = recipe.crafter()
         query = f"{building.var()}"
         breadcrumbs.add_query(query)
-        result = await self.__processor.do(query)
-        message = result.message(breadcrumbs)
-        message.view = WithPreviousView(message.view, self.__processor)
-        await message.edit(interaction)
+        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
         self.stop()

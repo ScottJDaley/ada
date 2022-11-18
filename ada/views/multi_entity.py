@@ -7,7 +7,6 @@ from discord import ButtonStyle, Emoji, PartialEmoji
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.entity import Entity
 from ada.processor import Processor
-from ada.views.with_previous import WithPreviousView
 
 
 # See https://github.com/Rapptz/discord.py/blob/master/examples/views/dropdown.py
@@ -23,10 +22,7 @@ class EntityDropdown(discord.ui.Select):
         selection_option = self.values[0]
         query = selection_option
         breadcrumbs.add_query(query)
-        result = await self.__processor.do(query)
-        message = result.message(breadcrumbs)
-        message.view = WithPreviousView(message.view, self.__processor)
-        await message.edit(interaction)
+        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
 
     @staticmethod
     def _get_options(entities: List[Entity], start: int) -> list[discord.SelectOption]:
@@ -43,12 +39,7 @@ class EntityDropdown(discord.ui.Select):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         breadcrumbs.set_start_index(start)
         query = breadcrumbs.primary_query()
-        result = await self.__processor.do(query)
-        message = result.message(breadcrumbs)
-        if breadcrumbs.has_prev_query():
-            message.view = WithPreviousView(message.view, self.__processor)
-        print("Message content:", message.content)
-        await message.edit(interaction)
+        await self.__processor.do_and_edit(query, breadcrumbs, interaction)
 
 
 class ButtonWithCallback(discord.ui.Button):

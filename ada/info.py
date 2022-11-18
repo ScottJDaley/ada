@@ -8,6 +8,7 @@ from ada.db.entity import Entity
 from ada.processor import Processor
 from ada.result import Result, ResultMessage
 from ada.views.multi_entity import MultiEntityView
+from ada.views.with_previous import WithPreviousView
 
 
 class InfoQuery:
@@ -52,6 +53,8 @@ class InfoResult(Result):
         message.content = str(breadcrumbs)
         print(f"Constructing info page with start index: {breadcrumbs.start_index()}")
         message.view = MultiEntityView(self.__entities, breadcrumbs.start_index(), self.__processor)
+        if breadcrumbs.has_prev_query():
+            message.view = WithPreviousView(message.view, self.__processor)
         return message
 
     def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
@@ -67,5 +70,7 @@ class InfoResult(Result):
         message = ResultMessage()
         message.embed = self.__entities[0].embed()
         message.view = self.__entities[0].view(self.__processor)
+        if breadcrumbs.has_prev_query():
+            message.view = WithPreviousView(message.view, self.__processor)
         message.content = str(breadcrumbs)
         return message
