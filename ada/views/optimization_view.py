@@ -21,13 +21,26 @@ class OptimizationCategoryButton(discord.ui.Button):
         breadcrumbs.set_custom_id(self.custom_id)
         await self.__processor.do_and_edit(query, breadcrumbs, interaction)
 
+class OptimizationView:
+    @staticmethod
+    def get(processor: Processor, custom_id: str) -> discord.ui.View:
+        if custom_id == "inputs":
+            return InputsCategoryView(processor)
+        if custom_id == "outputs":
+            return OutputsCategoryView(processor)
+        if custom_id == "recipes":
+            return RecipesCategoryView(processor)
+        if custom_id == "buildings":
+            return BuildingsCategoryView(processor)
+        if custom_id == "general":
+            return GeneralCategoryView(processor)
+        return InputsCategoryView(processor)
 
-class OptimizationView(discord.ui.View):
-    def __init__(self, processor: Processor, custom_id: str):
+
+class OptimizationCategoryView(discord.ui.View):
+    def __init__(self, processor: Processor, active_category: str):
         super().__init__(timeout=None)
         self.__processor = processor
-
-        active_category = custom_id if custom_id else "inputs"
         self._add_categories(active_category, processor)
 
     def _add_categories(self, active_category: str, processor: Processor):
@@ -40,3 +53,27 @@ class OptimizationView(discord.ui.View):
                 disabled=disabled,
                 processor=processor
             ))
+
+class InputsCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor):
+        super().__init__(processor, "inputs")
+
+
+class OutputsCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor):
+        super().__init__(processor, "outputs")
+
+
+class RecipesCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor):
+        super().__init__(processor, "recipes")
+
+
+class BuildingsCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor):
+        super().__init__(processor, "buildings")
+
+
+class GeneralCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor):
+        super().__init__(processor, "general")

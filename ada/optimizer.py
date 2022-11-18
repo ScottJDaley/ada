@@ -14,6 +14,7 @@ from pulp.constants import (
 )
 from pulp.pulp import LpProblem, LpVariable
 
+import ada.views.optimization_view
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
 from ada.db.item import Item
@@ -279,7 +280,7 @@ class OptimizationResult(Result):
         message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
         message.content = str(breadcrumbs)
-        message.view = OptimizationView(self.__processor, breadcrumbs.custom_id())
+        message.view = OptimizationView.get(self.__processor, breadcrumbs.custom_id())
 
         # messages = message
         #
