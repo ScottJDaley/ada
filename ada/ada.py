@@ -5,6 +5,7 @@ from ada.help import HelpQuery, HelpResult
 from ada.info import InfoQuery, InfoResult
 from ada.optimizer import OptimizationQuery, Optimizer
 from ada.processor import Processor
+from ada.query import Query
 from ada.query_parser import QueryParseException, QueryParser
 from ada.recipe_comparer import RecipeCompareQuery, RecipeComparer, RecipeCompareResult
 from ada.result import Result, ErrorResult
@@ -17,15 +18,18 @@ class Ada(Processor):
         self.__opt = Optimizer(self.__db)
         self.__recipe_comp = RecipeComparer(self.__db, self.__opt)
 
-    async def do(
-        self, raw_query: str
-    ) -> Result:
-        print("Query: " + raw_query + "\n")
+    async def do(self, raw_query: str) -> Result:
         try:
-            query = self.__parser.parse(raw_query)
+            query = self.parse(raw_query)
         except QueryParseException as parse_exception:
             return ErrorResult(str(parse_exception))
+        return await self.execute(query)
 
+    def parse(self, raw_query: str) -> Query:
+        print("Query: " + raw_query + "\n")
+        return self.__parser.parse(raw_query)
+
+    async def execute(self, query: Query) -> Result:
         if isinstance(query, HelpQuery):
             return HelpResult()
         if isinstance(query, OptimizationQuery):

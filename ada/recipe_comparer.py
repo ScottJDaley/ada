@@ -7,10 +7,11 @@ from ada.db.db import DB
 from ada.db.item import Item
 from ada.db.recipe import Recipe
 from ada.optimizer import OptimizationQuery, Optimizer
+from ada.query import Query
 from ada.result import Result, ResultMessage
 
 
-class RecipeCompareQuery:
+class RecipeCompareQuery(Query):
     def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.product_item = None

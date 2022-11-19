@@ -19,12 +19,13 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
 from ada.optimization_result_data import OptimizationResultData
 from ada.processor import Processor
+from ada.query import Query
 from ada.result import Result, ResultMessage
 from ada.views.optimization_view import OptimizationSelectorView
 from ada.views.with_previous import WithPreviousView
 
 
-class OptimizationQuery:
+class OptimizationQuery(Query):
     def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.maximize_objective = True

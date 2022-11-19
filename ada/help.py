@@ -1,12 +1,11 @@
-from typing import List
-
 from discord import Embed
 
 from ada.breadcrumbs import Breadcrumbs
+from ada.query import Query
 from ada.result import Result, ResultMessage
 
 
-class HelpQuery:
+class HelpQuery(Query):
     pass
 
 

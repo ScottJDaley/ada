@@ -1,4 +1,4 @@
-from typing import Callable, Awaitable
+from typing import Callable, Awaitable, cast
 
 import discord
 
@@ -6,7 +6,9 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.db.entity import Entity
 from ada.db.item import Item
 from ada.optimization_result_data import OptimizationResultData
+from ada.optimizer import OptimizationQuery
 from ada.processor import Processor
+from ada.query_parser import QueryParseException
 from ada.views.with_previous import WithPreviousView
 
 
@@ -159,8 +161,17 @@ class InputCategoryView(OptimizationSelectorView):
     async def on_minimize_button(self, interaction: discord.Interaction):
         print("minimize button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = breadcrumbs.current_page().query() + " from ? " + self.__info_button.label
-        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        raw_query = breadcrumbs.current_page().query()
+        try:
+            query = self.__processor.parse(raw_query)
+        except QueryParseException as parse_exception:
+            return
+        query = cast(OptimizationQuery, query)
+        query.maximize_objective = False
+        input_var = breadcrumbs.current_page().custom_ids()[-1]
+        query.objective_coefficients = {input_var: -1}
+        # TODO
+        # breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__processor.do_and_edit(breadcrumbs, interaction)
         self.stop()
 

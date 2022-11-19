@@ -6,12 +6,13 @@ import discord
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.entity import Entity
 from ada.processor import Processor
+from ada.query import Query
 from ada.result import Result, ResultMessage
 from ada.views.multi_entity import MultiEntityView
 from ada.views.with_previous import WithPreviousView
 
 
-class InfoQuery:
+class InfoQuery(Query):
     def __init__(self, raw_query: str) -> None:
         self.raw_query = raw_query
         self.vars = []
