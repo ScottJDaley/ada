@@ -207,12 +207,15 @@ class OptimizationQuery(Query):
             for exclude in category.elements.values():
                 excludes.append(f"{exclude.var}")
 
-        output_str = f"produce {' and '.join(outputs)}"
-        input_str = f"from {' and '.join(inputs)}" if len(inputs) > 0 else ""
-        include_str = f"using {' and '.join(includes)}" if len(includes) > 0 else ""
-        exclude_str = f"without {' or '.join(excludes)}" if len(excludes) > 0 else ""
+        parts = [f"produce {' and '.join(outputs)}"]
+        if len(inputs) > 0:
+            parts.append(f"from {' and '.join(inputs)}")
+        if len(includes) > 0:
+            parts.append(f"using {' and '.join(includes)}")
+        if len(excludes) > 0:
+            parts.append(f"without {' or '.join(excludes)}")
 
-        return " ".join([output_str, input_str, include_str, exclude_str])
+        return " ".join(parts)
 
     def print(self):
         print(self)
