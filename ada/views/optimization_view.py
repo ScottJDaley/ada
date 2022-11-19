@@ -134,7 +134,7 @@ class InputCategoryView(OptimizationSelectorView):
             label=input.human_readable_name(),
             style=discord.ButtonStyle.secondary,
             custom_id="input_info")
-        self.__info_button.callback = self.on_info_button
+        self.__info_button.callback = self.on_info
         self.add_item(self.__info_button)
 
         self.__amount_button = discord.ui.Button(
@@ -148,10 +148,17 @@ class InputCategoryView(OptimizationSelectorView):
             label="Minimize",
             style=discord.ButtonStyle.success,
             custom_id="minimize")
-        self.__minimize_button.callback = self.on_minimize_button
+        self.__minimize_button.callback = self.on_minimize
         self.add_item(self.__minimize_button)
 
-    async def on_info_button(self, interaction: discord.Interaction):
+        self.__exclude_button = discord.ui.Button(
+            label="Exclude",
+            style=discord.ButtonStyle.danger,
+            custom_id="exclude")
+        self.__exclude_button.callback = self.on_exclude
+        self.add_item(self.__exclude_button)
+
+    async def on_info(self, interaction: discord.Interaction):
         print("info button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = self.__info_button.label
@@ -159,13 +166,14 @@ class InputCategoryView(OptimizationSelectorView):
         await self.__processor.do_and_edit(breadcrumbs, interaction)
         self.stop()
 
-    async def on_minimize_button(self, interaction: discord.Interaction):
+    async def on_minimize(self, interaction: discord.Interaction):
         print("minimize button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
             query = self.__processor.parse(raw_query)
         except QueryParseException as parse_exception:
+            print(f"Failed to parse {raw_query}: {parse_exception}")
             return
         query = cast(OptimizationQuery, query)
         input_var = breadcrumbs.current_page().custom_ids()[-1]
@@ -174,7 +182,25 @@ class InputCategoryView(OptimizationSelectorView):
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
-        # self.stop()
+        self.stop()
+
+    async def on_exclude(self, interaction: discord.Interaction):
+        print("exclude button clicked")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        raw_query = breadcrumbs.current_page().query()
+        try:
+            query = self.__processor.parse(raw_query)
+        except QueryParseException as parse_exception:
+            print(f"Failed to parse {raw_query}: {parse_exception}")
+            return
+        query = cast(OptimizationQuery, query)
+        input_var = breadcrumbs.current_page().custom_ids()[-1]
+        query.add_input("items", input_var, 0, False)
+        result = await self.__processor.execute(query)
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        message = result.message(breadcrumbs)
+        await message.edit(interaction)
+        self.stop()
 
 #
 # class OutputsCategoryView(OptimizationCategoryView):

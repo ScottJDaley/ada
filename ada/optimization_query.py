@@ -80,9 +80,7 @@ def _add_element(dictionary: dict[str, Category], category: str, var: str, eleme
 
 
 class OptimizationQuery(Query):
-    def __init__(self, raw_query: str) -> None:
-        self.raw_query = raw_query
-
+    def __init__(self) -> None:
         self.inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
         self.outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
         self.includes: dict[str, Category[Include]] = {"crafter": Category("crafter", False),
@@ -198,8 +196,8 @@ class OptimizationQuery(Query):
                 outputs.append(f"{output.amount} {output.var}")
 
         for category in self.inputs.values():
-            for inputs in category.elements.values():
-                inputs.append(f"{inputs.amount} {inputs.var}")
+            for input in category.elements.values():
+                inputs.append(f"{input.amount} {input.var}")
 
         for category in self.includes.values():
             for include in category.elements.values():
@@ -209,10 +207,10 @@ class OptimizationQuery(Query):
             for exclude in category.elements.values():
                 excludes.append(f"{exclude.var}")
 
-        output_str = f"produce {'and'.join(outputs)}"
-        input_str = f"from {'and'.join(inputs)}" if len(inputs) > 0 else ""
-        include_str = f"using {'and'.join(includes)}" if len(includes) > 0 else ""
-        exclude_str = f"without {'or'.join(excludes)}" if len(excludes) > 0 else ""
+        output_str = f"produce {' and '.join(outputs)}"
+        input_str = f"from {' and '.join(inputs)}" if len(inputs) > 0 else ""
+        include_str = f"using {' and '.join(includes)}" if len(includes) > 0 else ""
+        exclude_str = f"without {' or '.join(excludes)}" if len(excludes) > 0 else ""
 
         return " ".join([output_str, input_str, include_str, exclude_str])
 

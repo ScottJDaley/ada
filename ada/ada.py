@@ -27,10 +27,13 @@ class Ada(Processor):
         return await self.execute(query)
 
     def parse(self, raw_query: str) -> Query:
-        print("Query: " + raw_query + "\n")
-        return self.__parser.parse(raw_query)
+        print(f"Parsing raw query: {raw_query}\n")
+        query = self.__parser.parse(raw_query)
+        print(f"Parsed query: {query}\n")
+        return query
 
     async def execute(self, query: Query) -> Result:
+        print("Executing query: " + str(query) + "\n")
         if isinstance(query, HelpQuery):
             return HelpResult()
         if isinstance(query, OptimizationQuery):

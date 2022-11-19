@@ -52,9 +52,9 @@ POWER = CaselessKeyword("power")
 TICKETS = CaselessKeyword("tickets")
 SPACE = CaselessKeyword("space")
 RESOURCES = CaselessKeyword("resources")
-UNWEIGHTED_RESOURCES = CaselessKeyword("unweighted resources")
-WEIGHTED_RESOURCES = CaselessKeyword("weighted resources")
-ALTERNATE_RECIPES = CaselessKeyword("alternate recipes")
+UNWEIGHTED_RESOURCES = CaselessKeyword("unweighted resources") | CaselessKeyword("unweighted-resources")
+WEIGHTED_RESOURCES = CaselessKeyword("weighted resources") | CaselessKeyword("weighted-resources")
+ALTERNATE_RECIPES = CaselessKeyword("alternate recipes") | CaselessKeyword("alternate-recipes")
 RECIPES = CaselessKeyword("recipes")
 RECIPE = CaselessKeyword("recipe")
 BYPRODUCTS = CaselessKeyword("byproducts")
@@ -392,7 +392,7 @@ class QueryParser:
     def _parse_optimization_query(
         self, raw_query: str, parse_results: ParseResults
     ) -> OptimizationQuery:
-        query = OptimizationQuery(raw_query)
+        query = OptimizationQuery()
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
