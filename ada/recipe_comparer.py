@@ -6,21 +6,10 @@ from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
 from ada.db.item import Item
 from ada.db.recipe import Recipe
-from ada.optimizer import OptimizationQuery, Optimizer
-from ada.query import Query
+from ada.optimization_query import OptimizationQuery
+from ada.optimizer import Optimizer
+from ada.recipe_compare_query import RecipeCompareQuery
 from ada.result import Result, ResultMessage
-
-
-class RecipeCompareQuery(Query):
-    def __init__(self, raw_query: str) -> None:
-        self.raw_query = raw_query
-        self.product_item = None
-        self.base_recipe = None
-        self.related_recipes = None
-        self.include_alternates = False
-
-    def __str__(self):
-        return self.raw_query
 
 
 class ProductionStats:

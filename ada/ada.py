@@ -3,7 +3,8 @@ from typing import Union
 from ada.db.db import DB
 from ada.help import HelpQuery, HelpResult
 from ada.info import InfoQuery, InfoResult
-from ada.optimizer import OptimizationQuery, Optimizer
+from ada.optimization_query import OptimizationQuery
+from ada.optimizer import Optimizer
 from ada.processor import Processor
 from ada.query import Query
 from ada.query_parser import QueryParseException, QueryParser

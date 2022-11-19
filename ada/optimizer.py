@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Dict, List
+from typing import Dict, List, TypeVar, Generic
 
 import discord
 import pulp
@@ -17,82 +17,12 @@ from pulp.pulp import LpProblem, LpVariable
 
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.db import DB
+from ada.optimization_query import OptimizationQuery
 from ada.optimization_result_data import OptimizationResultData
 from ada.processor import Processor
-from ada.query import Query
 from ada.result import Result, ResultMessage
 from ada.views.optimization_view import OptimizationSelectorView
 from ada.views.with_previous import WithPreviousView
-
-
-class OptimizationQuery(Query):
-    def __init__(self, raw_query: str) -> None:
-        self.raw_query = raw_query
-        self.maximize_objective = True
-        self.objective_coefficients = {}
-        self.eq_constraints = {}
-        self.ge_constraints = {}
-        self.le_constraints = {}
-        self.strict_inputs = False
-        self.strict_outputs = False
-        self.strict_crafters = False
-        self.strict_generators = False
-        self.strict_recipes = False
-        self.strict_power_recipes = False
-        self.has_power_output = False
-
-    def __str__(self) -> str:
-        out = ["Objective:"]
-        func = "minimize"
-        if self.maximize_objective:
-            func = "maximize"
-
-        def get_str_coeff(coeff):
-            if coeff == 1:
-                return ""
-            if coeff == -1:
-                return "-"
-            return str(coeff) + "*"
-
-        objective = [
-            get_str_coeff(coeff) + var
-            for var, coeff in self.objective_coefficients.items()
-        ]
-        out.append("  " + func + " " + " + ".join(objective))
-        out.append("Constraints:")
-        for var, val in self.eq_constraints.items():
-            out.append("  " + var + " = " + str(val))
-        for var, val in self.ge_constraints.items():
-            out.append("  " + var + " >= " + str(val))
-        for var, val in self.le_constraints.items():
-            out.append("  " + var + " <= " + str(val))
-        if self.strict_inputs:
-            out.append("  strict inputs")
-        if self.strict_outputs:
-            out.append("  strict outputs")
-        if self.strict_crafters:
-            out.append("  strict crafters")
-        if self.strict_generators:
-            out.append("  strict generators")
-        if self.strict_recipes:
-            out.append("  strict recipes")
-        if self.strict_power_recipes:
-            out.append("  strict power recipes")
-        return "\n".join(out)
-
-    def print(self):
-        print(self)
-
-    def query_vars(self) -> List[str]:
-        query_vars = []
-        query_vars.extend(self.objective_coefficients.keys())
-        for var in self.eq_constraints:
-            query_vars.append(var)
-        for var in self.ge_constraints:
-            query_vars.append(var)
-        for var in self.le_constraints:
-            query_vars.append(var)
-        return query_vars
 
 
 class OptimizationResult(Result):
@@ -479,6 +409,9 @@ class Optimizer:
         self.__variables[ALTERNATE_RECIPES] = pulp.LpVariable(
             ALTERNATE_RECIPES, lowBound=0
         )
+        self.__variables[BYPRODUCTS] = pulp.LpVariable(
+            BYPRODUCTS, lowBound=0
+        )
 
         self.__equalities = []
 
@@ -620,28 +553,28 @@ class Optimizer:
         inputs = []
         outputs = []
 
-        for var, coeff in query.objective_coefficients.items():
+        for var, coeff in query.objective_coefficients().items():
             if var not in self.__db.items() and var != POWER:
                 continue
             if coeff < 0:
                 inputs.append(var)
             elif coeff >= 0:
                 outputs.append(var)
-        for var, value in query.eq_constraints.items():
+        for var, value in query.eq_constraints().items():
             if var not in self.__db.items() and var != POWER:
                 continue
             if value < 0:
                 inputs.append(var)
             elif value > 0:
                 outputs.append(var)
-        for var, value in query.le_constraints.items():
+        for var, value in query.le_constraints().items():
             if var not in self.__db.items() and var != POWER:
                 continue
             if value <= 0:
                 inputs.append(var)
             elif value > 0:
                 outputs.append(var)
-        for var, value in query.ge_constraints.items():
+        for var, value in query.ge_constraints().items():
             if var not in self.__db.items() and var != POWER:
                 continue
             if value < 0:
@@ -723,7 +656,7 @@ class Optimizer:
         print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
-        if query.maximize_objective:
+        if query.maximize_objective():
             prob = pulp.LpProblem("max-problem", pulp.LpMaximize)
         else:
             prob = pulp.LpProblem("min-problem", pulp.LpMinimize)
@@ -733,15 +666,15 @@ class Optimizer:
         prob += pulp.LpAffineExpression(
             [
                 (self.__variables[var], coeff)
-                for var, coeff in query.objective_coefficients.items()
+                for var, coeff in query.objective_coefficients().items()
             ]
         )
 
-        for var, bound in query.eq_constraints.items():
+        for var, bound in query.eq_constraints().items():
             prob += self.__variables[var] == bound
-        for var, bound in query.ge_constraints.items():
+        for var, bound in query.ge_constraints().items():
             prob += self.__variables[var] >= bound
-        for var, bound in query.le_constraints.items():
+        for var, bound in query.le_constraints().items():
             prob += self.__variables[var] <= bound
 
         # Display the problem before all recipes are added
@@ -756,32 +689,32 @@ class Optimizer:
             if item.var() in query_vars:
                 continue
             if item.is_resource():
-                if query.strict_inputs:
+                if query.strict_inputs():
                     prob.addConstraint(self.__variables[item.var()] == 0, item.var())
                 else:
                     prob.addConstraint(self.__variables[item.var()] <= 0, item.var())
             else:
-                if query.strict_outputs:
+                if query.strict_outputs():
                     prob.addConstraint(self.__variables[item.var()] == 0, item.var())
                 else:
                     prob.addConstraint(self.__variables[item.var()] >= 0, item.var())
 
-        if query.strict_crafters:
+        if query.strict_crafters():
             for crafter_var in self.__db.crafters():
                 if crafter_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[crafter_var] == 0, crafter_var)
-        if query.strict_generators:
+        if query.strict_generators():
             for generator_var in self.__db.generators():
                 if generator_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[generator_var] == 0, generator_var)
-        if query.strict_recipes:
+        if query.strict_recipes():
             for recipe_var in self.__db.recipes():
                 if recipe_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[recipe_var] == 0, recipe_var)
-        if query.strict_power_recipes:
+        if query.strict_power_recipes():
             for power_recipe_var in self.__db.power_recipes():
                 if power_recipe_var in query_vars:
                     continue
@@ -792,7 +725,7 @@ class Optimizer:
         self.enable_related_recipes(query, prob, debug=False)
 
         # Disable power recipes unless the query specifies something about power
-        if not query.has_power_output:
+        if not query.has_power_output():
             for power_recipe_var in self.__db.power_recipes():
                 prob.addConstraint(
                     self.__variables[power_recipe_var] == 0, power_recipe_var

@@ -5,6 +5,7 @@ import discord
 from ada.breadcrumbs import Breadcrumbs
 from ada.db.entity import Entity
 from ada.db.item import Item
+from ada.optimization_query import Objective
 from ada.optimization_result_data import OptimizationResultData
 from ada.optimizer import OptimizationQuery
 from ada.processor import Processor
@@ -167,13 +168,13 @@ class InputCategoryView(OptimizationSelectorView):
         except QueryParseException as parse_exception:
             return
         query = cast(OptimizationQuery, query)
-        query.maximize_objective = False
         input_var = breadcrumbs.current_page().custom_ids()[-1]
-        query.objective_coefficients = {input_var: -1}
-        # TODO
-        # breadcrumbs.add_page(Breadcrumbs.Page(query))
-        await self.__processor.do_and_edit(breadcrumbs, interaction)
-        self.stop()
+        query.objective = Objective(input_var, False, -1)
+        result = await self.__processor.execute(query)
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        message = result.message(breadcrumbs)
+        await message.edit(interaction)
+        # self.stop()
 
 #
 # class OutputsCategoryView(OptimizationCategoryView):

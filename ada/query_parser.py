@@ -29,8 +29,8 @@ from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
 from ada.help import HelpQuery
 from ada.info import InfoQuery
-from ada.optimizer import OptimizationQuery
-from ada.recipe_comparer import RecipeCompareQuery
+from ada.optimization_query import OptimizationQuery, Objective, Output
+from ada.recipe_compare_query import RecipeCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
 MAKE = CaselessKeyword("make")
@@ -193,7 +193,7 @@ class QueryParser:
 
     @staticmethod
     def _check_var(
-        expr: str, var: Union[Crafter, Extractor, PowerGenerator, Item]
+        expr: str, var: Entity
     ) -> bool:
         # Support the following:
         # 1. singular human-readable name
@@ -239,29 +239,29 @@ class QueryParser:
 
     def _get_matches(
         self, expr: str, allowed_types: List[str]
-    ) -> List[Entity]:
+    ) -> list[(Entity, str)]:
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(
-                [item for item in self._db.items().values() if item.is_resource()]
+                [(item, "item") for item in self._db.items().values() if item.is_resource()]
             )
         if "item" in allowed_types:
             allowed_vars.update(
-                [item for item in self._db.items().values() if not item.is_resource()]
+                [(item, "item") for item in self._db.items().values() if not item.is_resource()]
             )
         if "recipe" in allowed_types:
-            allowed_vars.update(self._db.recipes().values())
+            allowed_vars.update((recipe, "recipes") for recipe in self._db.recipes().values())
         if "buildable-recipe" in allowed_types:
-            allowed_vars.update(self._db.buildable_recipes().values())
+            allowed_vars.update((recipe, "buildable-recipe") for recipe in self._db.buildable_recipes().values())
         if "power-recipe" in allowed_types:
-            allowed_vars.update(self._db.power_recipes().values())
+            allowed_vars.update((recipe, "power-recipe") for recipe in self._db.power_recipes().values())
         if "crafter" in allowed_types:
-            allowed_vars.update(self._db.crafters().values())
+            allowed_vars.update((crafter, "crafters") for crafter in self._db.crafters().values())
         if "extractor" in allowed_types:
-            allowed_vars.update(self._db.extractors().values())
+            allowed_vars.update((extractor, "extractors") for extractor in self._db.extractors().values())
         if "generator" in allowed_types:
-            allowed_vars.update(self._db.generators().values())
-        return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
+            allowed_vars.update((generator, "generators") for generator in self._db.generators().values())
+        return [(var, category) for (var, category) in allowed_vars if QueryParser._check_var(expr, var)]
 
     def _parse_outputs(self, outputs: ParseResults, query: OptimizationQuery) -> None:
         if not outputs:
@@ -269,30 +269,25 @@ class QueryParser:
         for output in outputs:
             output_vars = []
             if "literal" in output:
-                output_vars = [output["literal"]]
+                output_vars = [(output["literal"], output["literal"])]
             if "entity" in output:
                 output_vars.extend(
-                    [var.var() for var in self._get_matches(output["entity"], ["item"])]
+                    [(var.var(), category) for (var, category) in self._get_matches(output["entity"], ["item"])]
                 )
                 if len(output_vars) == 0:
                     raise QueryParseException(
                         "Could not parse item expression '" + output["entity"] + "'."
                     )
+            strict = output["strict"]
             value = output["value"]
-            if value == "?":
-                if len(query.objective_coefficients) > 0:
-                    raise QueryParseException("Only one objective may be specified.")
-                query.maximize_objective = True
-                query.objective_coefficients = {var: 1 for var in output_vars}
-            elif value == "_":
-                query.ge_constraints.update({var: 0 for var in output_vars})
-            else:
-                query.eq_constraints.update({var: value for var in output_vars})
-            if output["strict"]:
-                query.strict_outputs = True
-            if "power" in output:
-                print("has power output")
-                query.has_power_output = True
+            for output_var, category in output_vars:
+                if value == "?":
+                    if query.objective:
+                        raise QueryParseException("Only one objective may be specified.")
+                    query.objective = Objective(output_var, True, 1)
+                else:
+                    amount = None if value == "_" else int(value)
+                    query.add_output(category, output_var, amount, strict)
 
     def _parse_inputs(self, inputs: ParseResults, query: OptimizationQuery) -> None:
         if not inputs:
@@ -300,12 +295,12 @@ class QueryParser:
         for input_ in inputs:
             input_vars = []
             if "literal" in input_:
-                input_vars = [input_["literal"]]
+                input_vars = [(input_["literal"], input_["literal"])]
             elif "entity" in input_:
                 input_vars.extend(
                     [
-                        var.var()
-                        for var in self._get_matches(
+                        (var.var(), category)
+                        for (var, category) in self._get_matches(
                             input_["entity"], ["resource", "item"]
                         )
                     ]
@@ -316,18 +311,16 @@ class QueryParser:
                         + input_["entity"]
                         + "'."
                     )
+            strict = input_["strict"]
             value = input_["value"]
-            if value == "?":
-                if len(query.objective_coefficients) > 0:
-                    raise QueryParseException("Only one objective may be specified.")
-                query.maximize_objective = False
-                query.objective_coefficients = {var: -1 for var in input_vars}
-            elif value == "_":
-                query.le_constraints.update({var: 0 for var in input_vars})
-            else:
-                query.ge_constraints.update({var: -value for var in input_vars})
-            if input_["strict"]:
-                query.strict_inputs = True
+            for input_var, category in input_vars:
+                if value == "?":
+                    if query.objective:
+                        raise QueryParseException("Only one objective may be specified.")
+                    query.objective = Objective(input_var, False, -1)
+                else:
+                    amount = None if value == "_" else int(value)
+                    query.add_input(category, input_var, -amount, strict)
 
     def _parse_includes(self, includes: ParseResults, query: OptimizationQuery) -> None:
         if not includes:
@@ -335,12 +328,12 @@ class QueryParser:
         for include in includes:
             include_vars = []
             if "literal" in include:
-                include_vars = [include["literal"]]
+                include_vars = [(include["literal"], include["literal"])]
             elif "entity" in include:
                 include_vars.extend(
                     [
-                        var.var()
-                        for var in self._get_matches(
+                        (var.var(), category)
+                        for (var, category) in self._get_matches(
                             include["entity"],
                             [
                                 "recipe",
@@ -358,16 +351,8 @@ class QueryParser:
                         + include["entity"]
                         + "'."
                     )
-            query.ge_constraints.update({var: 0 for var in include_vars})
-            for var in include_vars:
-                if var.startswith("recipe:"):
-                    query.strict_recipes = True
-                if var.startswith("power-recipe:"):
-                    query.strict_power_recipes = True
-                if var.startswith("crafter:"):
-                    query.strict_crafters = True
-                if var.startswith("generator:"):
-                    query.strict_generators = True
+            for include_var, category in include_vars:
+                query.add_include(category, include_var)
 
     def _parse_excludes(self, excludes: ParseResults, query: OptimizationQuery) -> None:
         if not excludes:
@@ -375,12 +360,12 @@ class QueryParser:
         for exclude in excludes:
             exclude_vars = []
             if "literal" in exclude:
-                exclude_vars = [exclude["literal"]]
+                exclude_vars = [(exclude["literal"], exclude["literal"])]
             elif "entity" in exclude:
                 exclude_vars.extend(
                     [
-                        var.var()
-                        for var in self._get_matches(
+                        (var.var(), category)
+                        for (var, category) in self._get_matches(
                             exclude["entity"],
                             [
                                 "recipe",
@@ -398,9 +383,11 @@ class QueryParser:
                         + exclude["entity"]
                         + "'."
                     )
+
             if "byproducts" in exclude:
-                query.strict_outputs = True
-            query.eq_constraints.update({var: 0 for var in exclude_vars})
+                query.outputs["items"].strict = True
+            for exclude_var, category in exclude_vars:
+                query.add_exclude(category, exclude_var)
 
     def _parse_optimization_query(
         self, raw_query: str, parse_results: ParseResults
@@ -410,9 +397,8 @@ class QueryParser:
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if not query.objective_coefficients:
-            query.maximize_objective = False
-            query.objective_coefficients = {"unweighted-resources": -1}
+        if not query.objective:
+            query.objective = Objective("unweighted-resources", False, -1)
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):
