@@ -1,12 +1,10 @@
+from functools import partial
 from typing import Callable, Awaitable, cast
 
 import discord
 
 from ada.breadcrumbs import Breadcrumbs
-from ada.db.crafter import Crafter
 from ada.db.entity import Entity
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
 from ada.optimization_query import Objective
 from ada.optimization_result_data import OptimizationResultData
 from ada.optimizer import OptimizationQuery
@@ -15,41 +13,41 @@ from ada.query_parser import QueryParseException
 from ada.views.with_previous import WithPreviousView
 
 
-class OptimizationCategoryButton(discord.ui.Button):
-    def __init__(
-            self,
-            label: str,
-            custom_id: str,
-            disabled: bool,
-            processor: Processor
-    ):
-        super().__init__(style=discord.ButtonStyle.primary, label=label, disabled=disabled, custom_id=custom_id, row=0)
-        self.__processor = processor
-
-    async def callback(self, interaction: discord.Interaction):
-        print("Category button clicked")
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        breadcrumbs.current_page().set_single_custom_id(self.custom_id)
-        await self.__processor.do_and_edit(breadcrumbs, interaction)
-
-
 class OptimizationCategoryView(discord.ui.View):
-    def __init__(self, processor: Processor, active_category: str):
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, active_category: str):
         super().__init__(timeout=None)
         self.__processor = processor
-        self._add_categories(active_category, processor)
+        self.__data = data
+        self.__query = query
+        self._add_categories(active_category)
 
-    def _add_categories(self, active_category: str, processor: Processor):
+    def _add_categories(self, active_category: str):
         print("Adding category buttons")
         for category in ["Inputs", "Outputs", "Recipes", "Buildings", "Settings"]:
             custom_id = category.lower()
             disabled = custom_id == active_category
-            self.add_item(OptimizationCategoryButton(
+            button = discord.ui.Button(
                 label=category,
+                style=discord.ButtonStyle.primary,
                 custom_id=custom_id,
                 disabled=disabled,
-                processor=processor
-            ))
+                row=0,
+            )
+            button.callback = partial(self.on_category, custom_id)
+            self.add_item(button)
+
+    async def on_category(self, custom_id: str, interaction: discord.Interaction):
+        print("Category button clicked")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        breadcrumbs.current_page().clear_custom_ids()
+        breadcrumbs.current_page().add_custom_id(custom_id)
+        # We don't need to rerun the query here if we have the data.
+        # Instead, just construct the correct view and update the breadcrumbs
+        # TODO: check if self.__data is None and, if so, do a query instead
+        view = OptimizationSelectorView.get_view(breadcrumbs, self.__processor, self.__data, self.__query)
+        if breadcrumbs.has_prev_page():
+            view = WithPreviousView(view, self.__processor)
+        await interaction.response.edit_message(content=str(breadcrumbs), view=view)
 
 
 class EntityDropdown(discord.ui.Select):
@@ -73,7 +71,7 @@ class EntityDropdown(discord.ui.Select):
 
 class OptimizationSelectorView(OptimizationCategoryView):
     def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, category: str):
-        super().__init__(processor, category)
+        super().__init__(processor, data, query, category)
         self.__processor = processor
         self.__data = data
         self.__query = query
@@ -100,7 +98,7 @@ class OptimizationSelectorView(OptimizationCategoryView):
         custom_ids = breadcrumbs.current_page().custom_ids()
         category = custom_ids[0]
         if category == "settings":
-            return SettingsCategoryView(processor, query)
+            return SettingsCategoryView(processor, data, query)
         if len(breadcrumbs.current_page().custom_ids()) != 2:
             return OptimizationSelectorView(processor, data, query, category)
         selected = custom_ids[1]
@@ -415,8 +413,8 @@ class BuildingsCategoryView(OptimizationSelectorView):
 
 
 class SettingsCategoryView(OptimizationCategoryView):
-    def __init__(self, processor: Processor, query: OptimizationQuery):
-        super().__init__(processor, "settings")
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery):
+        super().__init__(processor, data, query, "settings")
 
         self.__processor = processor
 
