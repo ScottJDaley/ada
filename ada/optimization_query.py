@@ -72,7 +72,8 @@ def for_all_elements(section: dict[str, Category[T]], func: Callable[[str, T], N
             func(var, element)
 
 
-def _add_element(dictionary: dict[str, Category], category: str, var: str, element: T, strict: bool):
+def _add_element(dictionary: dict[str, Category], var: str, element: T, strict: bool):
+    category = var.split(":")[0]
     if category not in dictionary:
         dictionary[category] = Category(category, strict)
     dictionary[category].elements[var] = element
@@ -90,21 +91,21 @@ class OptimizationQuery(Query):
         self.excludes: dict[str, Category[Exclude]] = {}
         self.objective: Objective | None = None
 
-    def add_output(self, category: str, var: str, amount: int | None, strict: bool):
-        print(f"Adding output, cat={category}, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.outputs, category, var, Output(var, amount), strict)
+    def add_output(self, var: str, amount: int | None, strict: bool):
+        print(f"Adding output, var={var}, amount={amount}, strict={strict}")
+        _add_element(self.outputs, var, Output(var, amount), strict)
 
-    def add_input(self, category: str, var: str, amount: int | None, strict: bool):
-        print(f"Adding input, cat={category}, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.inputs, category, var, Input(var, amount), strict)
+    def add_input(self,  var: str, amount: int | None, strict: bool):
+        print(f"Adding input, var={var}, amount={amount}, strict={strict}")
+        _add_element(self.inputs, var, Input(var, amount), strict)
 
-    def add_include(self, category: str, var: str):
-        print(f"Adding include, cat={category}, var={var}")
-        _add_element(self.includes, category, var, Include(var), True)
+    def add_include(self, var: str):
+        print(f"Adding include, var={var}")
+        _add_element(self.includes, var, Include(var), True)
 
-    def add_exclude(self, category: str, var: str):
-        print(f"Adding exclude, cat={category}, var={var}")
-        _add_element(self.excludes, category, var, Exclude(var), False)
+    def add_exclude(self, var: str):
+        print(f"Adding exclude, var={var}")
+        _add_element(self.excludes,  var, Exclude(var), False)
 
     def maximize_objective(self) -> bool:
         return self.objective.maximize

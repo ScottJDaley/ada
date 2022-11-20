@@ -237,29 +237,29 @@ class QueryParser:
 
     def _get_matches(
         self, expr: str, allowed_types: List[str]
-    ) -> list[(Entity, str)]:
+    ) -> list[Entity]:
         allowed_vars = set()
         if "resource" in allowed_types:
             allowed_vars.update(
-                [(item, "item") for item in self._db.items().values() if item.is_resource()]
+                [item for item in self._db.items().values() if item.is_resource()]
             )
         if "item" in allowed_types:
             allowed_vars.update(
-                [(item, "item") for item in self._db.items().values() if not item.is_resource()]
+                [item for item in self._db.items().values() if not item.is_resource()]
             )
         if "recipe" in allowed_types:
-            allowed_vars.update((recipe, "recipes") for recipe in self._db.recipes().values())
+            allowed_vars.update(recipe for recipe in self._db.recipes().values())
         if "buildable-recipe" in allowed_types:
-            allowed_vars.update((recipe, "buildable-recipe") for recipe in self._db.buildable_recipes().values())
+            allowed_vars.update(recipe for recipe in self._db.buildable_recipes().values())
         if "power-recipe" in allowed_types:
-            allowed_vars.update((recipe, "power-recipe") for recipe in self._db.power_recipes().values())
+            allowed_vars.update(recipe for recipe in self._db.power_recipes().values())
         if "crafter" in allowed_types:
-            allowed_vars.update((crafter, "crafters") for crafter in self._db.crafters().values())
+            allowed_vars.update(crafter for crafter in self._db.crafters().values())
         if "extractor" in allowed_types:
-            allowed_vars.update((extractor, "extractors") for extractor in self._db.extractors().values())
+            allowed_vars.update(extractor for extractor in self._db.extractors().values())
         if "generator" in allowed_types:
-            allowed_vars.update((generator, "generators") for generator in self._db.generators().values())
-        return [(var, category) for (var, category) in allowed_vars if QueryParser._check_var(expr, var)]
+            allowed_vars.update(generator for generator in self._db.generators().values())
+        return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
 
     def _parse_outputs(self, outputs: ParseResults, query: OptimizationQuery) -> None:
         if not outputs:
@@ -267,10 +267,10 @@ class QueryParser:
         for output in outputs:
             output_vars = []
             if "literal" in output:
-                output_vars = [(output["literal"], output["literal"])]
+                output_vars = [output["literal"]]
             if "entity" in output:
                 output_vars.extend(
-                    [(var.var(), category) for (var, category) in self._get_matches(output["entity"], ["item"])]
+                    [var.var() for var in self._get_matches(output["entity"], ["item"])]
                 )
                 if len(output_vars) == 0:
                     raise QueryParseException(
@@ -278,14 +278,14 @@ class QueryParser:
                     )
             strict = output["strict"]
             value = output["value"]
-            for output_var, category in output_vars:
+            for output_var in output_vars:
                 if value == "?":
                     if query.objective:
                         raise QueryParseException("Only one objective may be specified.")
                     query.objective = Objective(output_var, True, 1)
                 else:
                     amount = None if value == "_" else int(value)
-                    query.add_output(category, output_var, amount, strict)
+                    query.add_output(output_var, amount, strict)
 
     def _parse_inputs(self, inputs: ParseResults, query: OptimizationQuery) -> None:
         if not inputs:
@@ -293,16 +293,9 @@ class QueryParser:
         for input_ in inputs:
             input_vars = []
             if "literal" in input_:
-                input_vars = [(input_["literal"], input_["literal"])]
+                input_vars = [input_["literal"]]
             elif "entity" in input_:
-                input_vars.extend(
-                    [
-                        (var.var(), category)
-                        for (var, category) in self._get_matches(
-                            input_["entity"], ["resource", "item"]
-                        )
-                    ]
-                )
+                input_vars.extend([var.var()for var in self._get_matches(input_["entity"], ["resource", "item"])])
                 if len(input_vars) == 0:
                     raise QueryParseException(
                         "Could not parse resource or item expression '"
@@ -311,14 +304,14 @@ class QueryParser:
                     )
             strict = input_["strict"]
             value = input_["value"]
-            for input_var, category in input_vars:
+            for input_var in input_vars:
                 if value == "?":
                     if query.objective:
                         raise QueryParseException("Only one objective may be specified.")
                     query.objective = Objective(input_var, False, -1)
                 else:
                     amount = None if value == "_" else int(value)
-                    query.add_input(category, input_var, -amount, strict)
+                    query.add_input(input_var, -amount, strict)
 
     def _parse_includes(self, includes: ParseResults, query: OptimizationQuery) -> None:
         if not includes:
@@ -326,12 +319,12 @@ class QueryParser:
         for include in includes:
             include_vars = []
             if "literal" in include:
-                include_vars = [(include["literal"], include["literal"])]
+                include_vars = [include["literal"]]
             elif "entity" in include:
                 include_vars.extend(
                     [
-                        (var.var(), category)
-                        for (var, category) in self._get_matches(
+                        var.var()
+                        for var in self._get_matches(
                             include["entity"],
                             [
                                 "recipe",
@@ -349,8 +342,8 @@ class QueryParser:
                         + include["entity"]
                         + "'."
                     )
-            for include_var, category in include_vars:
-                query.add_include(category, include_var)
+            for include_var in include_vars:
+                query.add_include(include_var)
 
     def _parse_excludes(self, excludes: ParseResults, query: OptimizationQuery) -> None:
         if not excludes:
@@ -358,12 +351,12 @@ class QueryParser:
         for exclude in excludes:
             exclude_vars = []
             if "literal" in exclude:
-                exclude_vars = [(exclude["literal"], exclude["literal"])]
+                exclude_vars = [exclude["literal"]]
             elif "entity" in exclude:
                 exclude_vars.extend(
                     [
-                        (var.var(), category)
-                        for (var, category) in self._get_matches(
+                        var.var()
+                        for var in self._get_matches(
                             exclude["entity"],
                             [
                                 "recipe",
@@ -384,8 +377,8 @@ class QueryParser:
 
             if "byproducts" in exclude:
                 query.outputs["items"].strict = True
-            for exclude_var, category in exclude_vars:
-                query.add_exclude(category, exclude_var)
+            for exclude_var in exclude_vars:
+                query.add_exclude(exclude_var)
 
     def _parse_optimization_query(
         self, raw_query: str, parse_results: ParseResults
