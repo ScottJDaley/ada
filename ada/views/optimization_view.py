@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Awaitable, cast
+from typing import Callable, Awaitable, cast, Optional
 
 import discord
 
@@ -11,6 +11,34 @@ from ada.optimizer import OptimizationQuery
 from ada.processor import Processor
 from ada.query_parser import QueryParseException
 from ada.views.with_previous import WithPreviousView
+
+# TODO: Finish up persistence work here:
+# class OptimizationContainer:
+#     def __init__(
+#             self,
+#             processor: Processor,
+#             data: Optional[OptimizationResultData] = None,
+#             query: Optional[OptimizationQuery] = None):
+#         self.__processor = processor
+#         self.__data = data
+#         self.__query = query
+#
+#     def _restore_query(self, breadcrumbs: Breadcrumbs):
+#         raw_query = breadcrumbs.current_page().query()
+#         query = self.__processor.parse(raw_query)
+#         self.__query = cast(OptimizationQuery, query)
+#
+#     def query(self, breadcrumbs: Breadcrumbs) -> OptimizationQuery:
+#         if not self.__query:
+#             self._restore_query(breadcrumbs)
+#         return self.__query
+#
+#     def _restore_data(self, breadcrumbs: Breadcrumbs):
+#         if not self.__query:
+#             self._restore_query(breadcrumbs)
+#         result = await self.__processor.execute(self.__query)
+#         # TODO: need to get OptimizationResultData here, but only if we cast to an OptimizationResult which
+#         # results in a circular dependency
 
 
 class OptimizationCategoryView(discord.ui.View):
