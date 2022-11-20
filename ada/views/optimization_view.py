@@ -60,12 +60,13 @@ class EntityDropdown(discord.ui.Select):
         self.__callback = callback
         options = []
         for entity in entities:
-            options.append(discord.SelectOption(label=entity.var(), description=entity.human_readable_name()))
+            options.append(discord.SelectOption(label=entity.human_readable_name(), description=entity.var()))
         super().__init__(placeholder="Select one", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         selection_option = self.values[0]
-        await self.__callback(selection_option, interaction)
+        selection_var = next(option.description for option in self.options if selection_option == option.label)
+        await self.__callback(selection_var, interaction)
 
 
 class OptimizationSelectorView(OptimizationCategoryView):
@@ -73,13 +74,21 @@ class OptimizationSelectorView(OptimizationCategoryView):
         super().__init__(processor, category)
         self.__processor = processor
         self.__data = data
-        entities = []
+        entities: list[Entity] = []
         if category == "inputs":
             for item, _ in data.inputs().values():
                 entities.append(item)
         elif category == "outputs":
             for item, _ in data.outputs().values():
                 entities.append(item)
+        elif category == "recipes":
+            for recipe, _ in data.recipes().values():
+                entities.append(recipe)
+        elif category == "buildings":
+            for crafter, _ in data.crafters().values():
+                entities.append(crafter)
+            for generator, _ in data.generators().values():
+                entities.append(generator)
         # TODO: add cases for other categories
         self.add_item(EntityDropdown(entities, processor, self.on_select))
 
@@ -97,8 +106,8 @@ class OptimizationSelectorView(OptimizationCategoryView):
             return InputCategoryView(processor, data, selected)
         if category == "outputs":
             return OutputsCategoryView(processor, data, selected)
-        # if category == "recipes":
-        #     return RecipesCategoryView(processor)
+        if category == "recipes":
+            return RecipesCategoryView(processor, data, selected)
         # if category == "buildings":
         #     return BuildingsCategoryView(processor)
         # if category == "general":
@@ -134,7 +143,8 @@ class InputCategoryView(OptimizationSelectorView):
         self.__info_button = discord.ui.Button(
             label=input.human_readable_name(),
             style=discord.ButtonStyle.secondary,
-            custom_id="input_info")
+            custom_id="input_info"
+        )
         self.__info_button.callback = self.on_info
         self.add_item(self.__info_button)
 
@@ -142,27 +152,30 @@ class InputCategoryView(OptimizationSelectorView):
             label=str(amount),
             style=discord.ButtonStyle.secondary,
             custom_id="input_amount",
-            disabled=True)
+            disabled=True
+        )
         self.add_item(self.__amount_button)
 
         self.__minimize_button = discord.ui.Button(
             label="Minimize",
             style=discord.ButtonStyle.success,
-            custom_id="input_minimize")
+            custom_id="input_minimize"
+        )
         self.__minimize_button.callback = self.on_minimize
         self.add_item(self.__minimize_button)
 
         self.__exclude_button = discord.ui.Button(
             label="Exclude",
             style=discord.ButtonStyle.danger,
-            custom_id="input_exclude")
+            custom_id="input_exclude"
+        )
         self.__exclude_button.callback = self.on_exclude
         self.add_item(self.__exclude_button)
 
     async def on_info(self, interaction: discord.Interaction):
         print("info button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = self.__info_button.label
+        query = breadcrumbs.current_page().custom_ids()[-1]
         breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__processor.do_and_edit(breadcrumbs, interaction)
 
@@ -212,7 +225,8 @@ class OutputsCategoryView(OptimizationSelectorView):
         self.__info_button = discord.ui.Button(
             label=output.human_readable_name(),
             style=discord.ButtonStyle.secondary,
-            custom_id="output_info")
+            custom_id="output_info"
+        )
         self.__info_button.callback = self.on_info
         self.add_item(self.__info_button)
 
@@ -220,13 +234,15 @@ class OutputsCategoryView(OptimizationSelectorView):
             label=str(amount),
             style=discord.ButtonStyle.secondary,
             custom_id="output_amount",
-            disabled=True)
+            disabled=True
+        )
         self.add_item(self.__amount_button)
 
         self.__maximize_button = discord.ui.Button(
             label="Maximize",
             style=discord.ButtonStyle.success,
-            custom_id="output_maximize")
+            custom_id="output_maximize"
+        )
         self.__maximize_button.callback = self.on_maximize
         self.add_item(self.__maximize_button)
 
@@ -234,14 +250,15 @@ class OutputsCategoryView(OptimizationSelectorView):
             label="Exclude",
             style=discord.ButtonStyle.danger,
             custom_id="output_exclude",
-            disabled=len(data.outputs()) <= 1)
+            disabled=len(data.outputs()) <= 1
+        )
         self.__exclude_button.callback = self.on_exclude
         self.add_item(self.__exclude_button)
 
     async def on_info(self, interaction: discord.Interaction):
         print("info button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        query = self.__info_button.label
+        query = breadcrumbs.current_page().custom_ids()[-1]
         breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__processor.do_and_edit(breadcrumbs, interaction)
 
@@ -278,12 +295,65 @@ class OutputsCategoryView(OptimizationSelectorView):
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
-#
-# class RecipesCategoryView(OptimizationCategoryView):
-#     def __init__(self, processor: Processor):
-#         super().__init__(processor, "recipes")
-#
-#
+
+
+class RecipesCategoryView(OptimizationSelectorView):
+    def __init__(self, processor: Processor, data: OptimizationResultData, selected: str):
+        super().__init__(processor, data, "recipes")
+
+        self.__processor = processor
+
+        recipe, amount = data.recipes()[selected]
+
+        self.__info_button = discord.ui.Button(
+            label=recipe.human_readable_name(),
+            style=discord.ButtonStyle.secondary,
+            custom_id="recipe_info"
+        )
+        self.__info_button.callback = self.on_info
+        self.add_item(self.__info_button)
+
+        self.__amount_button = discord.ui.Button(
+            label=str(amount),
+            style=discord.ButtonStyle.secondary,
+            custom_id="recipe_amount",
+            disabled=True
+        )
+        self.add_item(self.__amount_button)
+
+        self.__exclude_button = discord.ui.Button(
+            label="Exclude",
+            style=discord.ButtonStyle.danger,
+            custom_id="recipe_exclude"
+        )
+        self.__exclude_button.callback = self.on_exclude
+        self.add_item(self.__exclude_button)
+
+    async def on_info(self, interaction: discord.Interaction):
+        print("info button clicked")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        query = breadcrumbs.current_page().custom_ids()[-1]
+        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        await self.__processor.do_and_edit(breadcrumbs, interaction)
+
+    async def on_exclude(self, interaction: discord.Interaction):
+        print("exclude button clicked")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        raw_query = breadcrumbs.current_page().query()
+        try:
+            query = self.__processor.parse(raw_query)
+        except QueryParseException as parse_exception:
+            print(f"Failed to parse {raw_query}: {parse_exception}")
+            return
+        query = cast(OptimizationQuery, query)
+        recipe_var = breadcrumbs.current_page().custom_ids()[-1]
+        query.add_exclude("recipe", recipe_var)
+        result = await self.__processor.execute(query)
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        message = result.message(breadcrumbs)
+        await message.edit(interaction)
+
+
 # class BuildingsCategoryView(OptimizationCategoryView):
 #     def __init__(self, processor: Processor):
 #         super().__init__(processor, "buildings")

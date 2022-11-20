@@ -97,8 +97,6 @@ class QueryParser:
         | exclude_kw
         | and_kw
         | or_kw
-        | RECIPE
-        | RECIPES
         | StringEnd()
     )
     entity_expr = Combine(
