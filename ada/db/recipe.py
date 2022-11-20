@@ -2,12 +2,11 @@ import math
 from typing import Dict, List, Tuple
 
 import discord
+from discord import Embed
 
 from ada.db.crafter import Crafter
 from ada.db.entity import Entity
 from ada.db.item import Item
-from discord import Embed
-
 from ada.processor import Processor
 from ada.views.recipe_view import RecipeView
 
@@ -103,16 +102,16 @@ class Recipe(Entity):
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
         out += (
-            '<TD COLSPAN="4" BGCOLOR="lightgray">'
-            + str(round(amount, 2))
-            + "x "
-            + self.crafter().human_readable_name()
-            + " ("
-            + str(num_buildings)
-            + "x @"
-            + underclock_str
-            + ")"
-            + "</TD>"
+                '<TD COLSPAN="4" BGCOLOR="lightgray">'
+                + str(round(amount, 2))
+                + "x "
+                + self.crafter().human_readable_name()
+                + " ("
+                + str(num_buildings)
+                + "x @"
+                + underclock_str
+                + ")"
+                + "</TD>"
         )
         out += "</TR>"
         out += "<TR>"
@@ -128,9 +127,9 @@ class Recipe(Entity):
             out += "<TD>" + ingredient.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(ingredient, amount) + "</TD>"
             out += (
-                "<TD>"
-                + get_component_amount_label(ingredient, amount / num_buildings)
-                + " each</TD>"
+                    "<TD>"
+                    + get_component_amount_label(ingredient, amount / num_buildings)
+                    + " each</TD>"
             )
             out += "</TR>"
         for product in self.products().values():
@@ -139,9 +138,9 @@ class Recipe(Entity):
             out += "<TD>" + product.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(product, amount) + "</TD>"
             out += (
-                "<TD>"
-                + get_component_amount_label(product, amount / num_buildings)
-                + " each</TD>"
+                    "<TD>"
+                    + get_component_amount_label(product, amount / num_buildings)
+                    + " each</TD>"
             )
             out += "</TR>"
         out += "</TABLE>>"

@@ -1,12 +1,11 @@
 from typing import Any, List, Union
 
 import discord
+from discord import Embed
 
 from ada import image_fetcher
 from ada.db.entity import Entity
 from ada.db.item import Item
-from discord import Embed
-
 from ada.processor import Processor
 
 
@@ -64,7 +63,7 @@ class PowerGenerator(Entity):
 
     def wiki(self):
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self):

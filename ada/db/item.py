@@ -1,8 +1,7 @@
 import re
+from typing import Dict
 
 import discord
-
-from typing import Dict
 
 import ada.image_fetcher
 from ada.db.entity import Entity
@@ -20,7 +19,7 @@ STACK_SIZES = {
 
 class Item(Entity):
     def __init__(
-        self, data: Dict[str, str], native_class_name: str, is_resource: bool
+            self, data: Dict[str, str], native_class_name: str, is_resource: bool
     ) -> None:
         self.__data = data
         self.__native_class_name = native_class_name
@@ -58,11 +57,11 @@ class Item(Entity):
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
         out += (
-            '<TD COLSPAN="2" BGCOLOR="'
-            + color
-            + '">'
-            + str(round(abs(amount), 2))
-            + "/m"
+                '<TD COLSPAN="2" BGCOLOR="'
+                + color
+                + '">'
+                + str(round(abs(amount), 2))
+                + "/m"
         )
         out += "<BR/>" + self.human_readable_name() + "</TD>"
         out += "</TR>"
@@ -117,7 +116,7 @@ class Item(Entity):
 
     def wiki(self) -> str:
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self) -> str:

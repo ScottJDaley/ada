@@ -1,8 +1,7 @@
 import os
 import sys
-from typing import Dict, List, TypeVar, Generic
+from typing import Dict
 
-import discord
 import pulp
 from discord import Embed, File
 from graphviz import Digraph
@@ -27,13 +26,13 @@ from ada.views.with_previous import WithPreviousView
 
 class OptimizationResult(Result):
     def __init__(
-        self,
-        db: DB,
-        vars_: Dict[str, LpVariable],
-        prob: LpProblem,
-        status: int,
-        query: OptimizationQuery,
-        processor: Processor,
+            self,
+            db: DB,
+            vars_: Dict[str, LpVariable],
+            prob: LpProblem,
+            status: int,
+            query: OptimizationQuery,
+            processor: Processor,
     ) -> None:
         self.__db = db
         self.__prob = prob
@@ -84,8 +83,8 @@ class OptimizationResult(Result):
 
     def __has_value(self, var):
         return (
-            self.__vars[var].value()
-            and abs(self.__vars[var].value()) > sys.float_info.epsilon
+                self.__vars[var].value()
+                and abs(self.__vars[var].value()) > sys.float_info.epsilon
         )
 
     def __get_value(self, var):
@@ -337,11 +336,11 @@ class OptimizationResult(Result):
                 continue
             fuel_item = power_recipe.fuel_item()
             fuel_amount = (
-                self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate()
+                    self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate()
             )
             add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
             power_production = (
-                self.__get_value(power_recipe.var()) * power_recipe.power_production()
+                    self.__get_value(power_recipe.var()) * power_recipe.power_production()
             )
             power_output += power_production
             s.edge(
@@ -545,7 +544,7 @@ class Optimizer:
         self.__equalities.append(pulp.LpAffineExpression(alternate_coeffs) == 0)
 
     def enable_related_recipes(
-        self, query: OptimizationQuery, prob: LpProblem, debug: bool = False
+            self, query: OptimizationQuery, prob: LpProblem, debug: bool = False
     ) -> None:
         query_vars = query.query_vars()
         if UNWEIGHTED_RESOURCES in query_vars:

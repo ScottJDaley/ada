@@ -1,10 +1,9 @@
 from typing import Dict
 
 import discord
-
-import ada.image_fetcher
 from discord import Embed
 
+import ada.image_fetcher
 from ada.db.entity import Entity
 from ada.processor import Processor
 from ada.views.crafter_view import CrafterView
@@ -41,7 +40,7 @@ class Crafter(Entity):
 
     def wiki(self):
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self):

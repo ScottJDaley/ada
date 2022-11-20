@@ -1,13 +1,11 @@
 import re
-
 from typing import Dict, List, Tuple
 
 import discord
+from discord import Embed
 
 from ada.db.entity import Entity
 from ada.db.item import Item
-from discord import Embed
-
 from ada.processor import Processor
 
 
@@ -69,7 +67,8 @@ class BuildableRecipe(Entity):
 
     def slug(self) -> str:
         slug = self.class_name().removesuffix("_C").removeprefix("Desc_").removeprefix("Recipe_").removeprefix(
-            "Build_").replace("_", "-")
+            "Build_"
+        ).replace("_", "-")
         slug = re.sub(r'(?<!^)(?=[A-Z])', '-', slug).lower()
         slug = re.sub(r'\-+', '-', slug)
         return slug

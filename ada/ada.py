@@ -1,5 +1,3 @@
-from typing import Union
-
 from ada.db.db import DB
 from ada.help import HelpQuery, HelpResult
 from ada.info import InfoQuery, InfoResult
@@ -8,8 +6,8 @@ from ada.optimizer import Optimizer
 from ada.processor import Processor
 from ada.query import Query
 from ada.query_parser import QueryParseException, QueryParser
-from ada.recipe_comparer import RecipeCompareQuery, RecipeComparer, RecipeCompareResult
-from ada.result import Result, ErrorResult
+from ada.recipe_comparer import RecipeCompareQuery, RecipeCompareResult, RecipeComparer
+from ada.result import ErrorResult, Result
 
 
 class Ada(Processor):
@@ -46,4 +44,3 @@ class Ada(Processor):
 
     def lookup(self, var: str):
         return self.__db.lookup(var)
-

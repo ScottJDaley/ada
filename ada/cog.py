@@ -34,12 +34,16 @@ class AdaCog(commands.Cog):
         await self.query_and_respond(query, interaction)
 
     @app_commands.command(name="optimize", description="Compute an optimal production chain.")
-    @app_commands.describe(output="Specify what you want to produce",
-                           input="Specify what the inputs are",
-                           include="Specify constraints for what should be included",
-                           exclude="Specify constraints for what should be excluded")
-    async def optimize(self, interaction: discord.Interaction, output: str, input: Optional[str],
-                       include: Optional[str], exclude: Optional[str]) -> None:
+    @app_commands.describe(
+        output="Specify what you want to produce",
+        input="Specify what the inputs are",
+        include="Specify constraints for what should be included",
+        exclude="Specify constraints for what should be excluded"
+    )
+    async def optimize(
+            self, interaction: discord.Interaction, output: str, input: Optional[str],
+            include: Optional[str], exclude: Optional[str]
+    ) -> None:
         """ /compare-recipes """
         query = f"produce {output}"
         if input:

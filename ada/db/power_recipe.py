@@ -1,10 +1,9 @@
 import discord
+from discord import Embed
 
 from ada.db.entity import Entity
 from ada.db.item import Item
 from ada.db.power_generator import PowerGenerator
-from discord import Embed
-
 from ada.processor import Processor
 
 
@@ -58,7 +57,7 @@ class PowerRecipe(Entity):
     def embed(self):
         embed = Embed(title=self.human_readable_name())
         embed.description = (
-            "Produces power from " + self.fuel_item().human_readable_name()
+                "Produces power from " + self.fuel_item().human_readable_name()
         )
 
         embed.add_field(
@@ -78,7 +77,7 @@ class PowerRecipe(Entity):
         # 300 MJ energy value of coal
         # 4500 MJ/m / 300 MJ/coal = 15 coal/m
         return (
-            self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
+                self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
         )
 
     def power_production(self) -> float:
@@ -92,5 +91,3 @@ class PowerRecipe(Entity):
 
     def view(self, processor: Processor) -> discord.ui.View:
         pass
-
-

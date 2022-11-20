@@ -80,5 +80,5 @@ class Breadcrumbs:
             if custom_ids_start < 0:
                 return cls(content)
             query = content[:custom_ids_start].strip()
-            custom_ids = content[custom_ids_start+1:-1].strip().split(" ")
+            custom_ids = content[custom_ids_start + 1:-1].strip().split(" ")
             return cls(query, custom_ids)

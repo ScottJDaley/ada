@@ -21,4 +21,3 @@ class Entity(ABC):
     @abstractmethod
     def view(self, processor: Processor) -> discord.ui.View:
         pass
-

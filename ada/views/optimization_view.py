@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Awaitable, cast, Optional
+from typing import Awaitable, Callable, cast
 
 import discord
 
@@ -11,6 +11,7 @@ from ada.optimizer import OptimizationQuery
 from ada.processor import Processor
 from ada.query_parser import QueryParseException
 from ada.views.with_previous import WithPreviousView
+
 
 # TODO: Finish up persistence work here:
 # class OptimizationContainer:
@@ -42,7 +43,13 @@ from ada.views.with_previous import WithPreviousView
 
 
 class OptimizationCategoryView(discord.ui.View):
-    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, active_category: str):
+    def __init__(
+            self,
+            processor: Processor,
+            data: OptimizationResultData,
+            query: OptimizationQuery,
+            active_category: str
+    ):
         super().__init__(timeout=None)
         self.__processor = processor
         self.__data = data
@@ -83,7 +90,8 @@ class EntityDropdown(discord.ui.Select):
             self,
             entities: list[Entity],
             processor: Processor,
-            callback: Callable[[str, discord.Interaction], Awaitable[None]]):
+            callback: Callable[[str, discord.Interaction], Awaitable[None]]
+    ):
         self.__processor = processor
         self.__callback = callback
         options = []
@@ -122,7 +130,10 @@ class OptimizationSelectorView(OptimizationCategoryView):
         self.add_item(EntityDropdown(entities, processor, self.on_select))
 
     @staticmethod
-    def get_view(breadcrumbs: Breadcrumbs, processor: Processor, data: OptimizationResultData, query: OptimizationQuery) -> discord.ui.View:
+    def get_view(
+            breadcrumbs: Breadcrumbs, processor: Processor, data: OptimizationResultData,
+            query: OptimizationQuery
+    ) -> discord.ui.View:
         custom_ids = breadcrumbs.current_page().custom_ids()
         category = custom_ids[0]
         if category == "settings":

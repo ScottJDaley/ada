@@ -1,10 +1,9 @@
 from typing import Dict
 
 import discord
-
-import ada.image_fetcher
 from discord import Embed
 
+import ada.image_fetcher
 from ada.db.entity import Entity
 from ada.processor import Processor
 
@@ -30,9 +29,9 @@ class Extractor(Entity):
 
     def minute_rate(self) -> float:
         raw_minute_rate = (
-            60
-            * float(self.__data["mItemsPerCycle"])
-            / float(self.__data["mExtractCycleTime"])
+                60
+                * float(self.__data["mItemsPerCycle"])
+                / float(self.__data["mExtractCycleTime"])
         )
         if self.is_liquid_extractor():
             return raw_minute_rate / 1000
@@ -54,7 +53,7 @@ class Extractor(Entity):
 
     def wiki(self):
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self):

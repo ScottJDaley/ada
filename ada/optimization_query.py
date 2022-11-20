@@ -1,7 +1,6 @@
-from typing import TypeVar, Generic, Callable, Any
+from typing import Callable, Generic, TypeVar
 
 from ada.query import Query
-
 
 
 class Input:
@@ -108,7 +107,7 @@ class OptimizationQuery(Query):
         print(f"Adding output, var={var}, amount={amount}, strict={strict}")
         _add_element(self.outputs, var, Output(var, amount), strict)
 
-    def add_input(self,  var: str, amount: int | None, strict: bool):
+    def add_input(self, var: str, amount: int | None, strict: bool):
         print(f"Adding input, var={var}, amount={amount}, strict={strict}")
         _add_element(self.inputs, var, Input(var, amount), strict)
 
@@ -122,7 +121,7 @@ class OptimizationQuery(Query):
 
     def add_exclude(self, var: str):
         print(f"Adding exclude, var={var}")
-        _add_element(self.excludes,  var, Exclude(var), False)
+        _add_element(self.excludes, var, Exclude(var), False)
 
     def maximize_objective(self) -> bool:
         return self.objective.maximize

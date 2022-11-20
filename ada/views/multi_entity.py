@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Union, Callable, Awaitable
+from typing import Awaitable, Callable, List, Optional, Union
 
 import discord
 from discord import ButtonStyle, Emoji, PartialEmoji
@@ -54,7 +54,15 @@ class ButtonWithCallback(discord.ui.Button):
             row: Optional[int] = None,
             callback: Callable[[discord.Interaction], Awaitable[None]],
     ):
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
+        super().__init__(
+            style=style,
+            label=label,
+            disabled=disabled,
+            custom_id=custom_id,
+            url=url,
+            emoji=emoji,
+            row=row
+        )
         self.__callback = callback
 
     async def callback(self, interaction: discord.Interaction):
@@ -102,7 +110,7 @@ class MultiEntityView(discord.ui.View):
         start_index -= 25
         if start_index <= 0:
             start_index = 0
-        await self._update_buttons( interaction, start_index)
+        await self._update_buttons(interaction, start_index)
 
     async def _next(self, interaction: discord.Interaction):
         num_entities = self._get_num_entities()
