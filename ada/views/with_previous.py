@@ -17,4 +17,3 @@ class WithPreviousView(discord.ui.View):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         breadcrumbs.goto_prev_page()
         await self.__processor.do_and_edit(breadcrumbs, interaction)
-        self.stop()

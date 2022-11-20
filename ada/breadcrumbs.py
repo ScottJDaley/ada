@@ -12,7 +12,7 @@ class Breadcrumbs:
         self.__pages = pages
 
     def __str__(self) -> str:
-        return "```\n" + " > ".join(str(page) for page in self.__pages) + "\n```"
+        return "```\n" + "\n> ".join(str(page) for page in self.__pages) + "\n```"
 
     def current_page(self) -> Page:
         return self.__pages[-1]
@@ -31,10 +31,10 @@ class Breadcrumbs:
         content_lines = content.splitlines()
         if len(content_lines) <= 2:
             raise BreadcrumbsException("Content only had " + str(len(content_lines)) + " lines")
-        if not content_lines[0].startswith("```") or not content_lines[2].startswith("```"):
+        if not content_lines[0].startswith("```") or not content_lines[-1].startswith("```"):
             raise BreadcrumbsException("Content missing code section:\n" + str(content_lines))
 
-        pages = [Breadcrumbs.Page.extract(x.strip()) for x in content_lines[1].split(">")]
+        pages = [Breadcrumbs.Page.extract(x.removeprefix("> ").strip()) for x in content_lines[1:-1]]
         return cls(pages)
 
     @classmethod

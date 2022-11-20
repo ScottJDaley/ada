@@ -20,4 +20,3 @@ class RecipeView(discord.ui.View):
         query = building.var()
         breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__processor.do_and_edit(breadcrumbs, interaction)
-        self.stop()

@@ -15,4 +15,3 @@ class CrafterView(discord.ui.View):
         query = f"recipes for {breadcrumbs.current_page().query()}"
         breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__processor.do_and_edit(breadcrumbs, interaction)
-        self.stop()
