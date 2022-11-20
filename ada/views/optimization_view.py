@@ -72,10 +72,11 @@ class EntityDropdown(discord.ui.Select):
 
 
 class OptimizationSelectorView(OptimizationCategoryView):
-    def __init__(self, processor: Processor, data: OptimizationResultData, category: str):
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, category: str):
         super().__init__(processor, category)
         self.__processor = processor
         self.__data = data
+        self.__query = query
         entities: list[Entity] = []
         if category == "inputs":
             for item, _ in data.inputs().values():
@@ -101,17 +102,17 @@ class OptimizationSelectorView(OptimizationCategoryView):
         if category == "settings":
             return SettingsCategoryView(processor, query)
         if len(breadcrumbs.current_page().custom_ids()) != 2:
-            return OptimizationSelectorView(processor, data, category)
+            return OptimizationSelectorView(processor, data, query, category)
         selected = custom_ids[1]
         if category == "inputs":
-            return InputCategoryView(processor, data, selected)
+            return InputCategoryView(processor, data, query, selected)
         if category == "outputs":
-            return OutputsCategoryView(processor, data, selected)
+            return OutputsCategoryView(processor, data, query, selected)
         if category == "recipes":
-            return RecipesCategoryView(processor, data, selected)
+            return RecipesCategoryView(processor, data, query, selected)
         if category == "buildings":
-            return BuildingsCategoryView(processor, data, selected)
-        return OptimizationSelectorView(processor, data, category)
+            return BuildingsCategoryView(processor, data, query, selected)
+        return OptimizationSelectorView(processor, data, query, category)
 
     async def on_select(self, selected: str, interaction: discord.Interaction):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
@@ -123,15 +124,15 @@ class OptimizationSelectorView(OptimizationCategoryView):
         # We don't need to rerun the query here if we have the data.
         # Instead, just construct the correct view and update the breadcrumbs
         # TODO: check if self.__data is None and, if so, do a query instead
-        view = OptimizationSelectorView.get_view(breadcrumbs, self.__processor, self.__data)
+        view = OptimizationSelectorView.get_view(breadcrumbs, self.__processor, self.__data, self.__query)
         if breadcrumbs.has_prev_page():
             view = WithPreviousView(view, self.__processor)
         await interaction.response.edit_message(content=str(breadcrumbs), view=view)
 
 
 class InputCategoryView(OptimizationSelectorView):
-    def __init__(self, processor: Processor, data: OptimizationResultData, selected: str):
-        super().__init__(processor, data, "inputs")
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, selected: str):
+        super().__init__(processor, data, query, "inputs")
 
         # discord.utils.get(self.children, custom_id="input_info")
 
@@ -208,14 +209,14 @@ class InputCategoryView(OptimizationSelectorView):
         input_var = breadcrumbs.current_page().custom_ids()[-1]
         query.add_input(input_var, 0, False)
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), [breadcrumbs.current_page().custom_ids()[0]]))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
 
 class OutputsCategoryView(OptimizationSelectorView):
-    def __init__(self, processor: Processor, data: OptimizationResultData, selected: str):
-        super().__init__(processor, data, "outputs")
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, selected: str):
+        super().__init__(processor, data, query, "outputs")
 
         self.__processor = processor
 
@@ -291,14 +292,14 @@ class OutputsCategoryView(OptimizationSelectorView):
         output_var = breadcrumbs.current_page().custom_ids()[-1]
         query.add_output(output_var, 0, False)
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), [breadcrumbs.current_page().custom_ids()[0]]))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
 
 class RecipesCategoryView(OptimizationSelectorView):
-    def __init__(self, processor: Processor, data: OptimizationResultData, selected: str):
-        super().__init__(processor, data, "recipes")
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, selected: str):
+        super().__init__(processor, data, query, "recipes")
 
         self.__processor = processor
 
@@ -348,14 +349,14 @@ class RecipesCategoryView(OptimizationSelectorView):
         recipe_var = breadcrumbs.current_page().custom_ids()[-1]
         query.add_exclude(recipe_var)
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), [breadcrumbs.current_page().custom_ids()[0]]))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
 
 class BuildingsCategoryView(OptimizationSelectorView):
-    def __init__(self, processor: Processor, data: OptimizationResultData, selected: str):
-        super().__init__(processor, data, "buildings")
+    def __init__(self, processor: Processor, data: OptimizationResultData, query: OptimizationQuery, selected: str):
+        super().__init__(processor, data, query, "buildings")
 
         self.__processor = processor
 
@@ -408,7 +409,7 @@ class BuildingsCategoryView(OptimizationSelectorView):
         building_var = breadcrumbs.current_page().custom_ids()[-1]
         query.add_exclude(building_var)
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), [breadcrumbs.current_page().custom_ids()[0]]))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
@@ -454,7 +455,7 @@ class SettingsCategoryView(OptimizationCategoryView):
         else:
             query.add_include("alternate-recipes")
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
@@ -470,6 +471,6 @@ class SettingsCategoryView(OptimizationCategoryView):
         query = cast(OptimizationQuery, query)
         query.set_strict_outputs(not query.strict_outputs())
         result = await self.__processor.execute(query)
-        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
         message = result.message(breadcrumbs)
         await message.edit(interaction)
