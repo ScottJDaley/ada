@@ -206,8 +206,14 @@ class OptimizationResult(Result):
         message.file = file
         if len(breadcrumbs.current_page().custom_ids()) == 0:
             breadcrumbs.current_page().add_custom_id("inputs")
+        breadcrumbs.current_page().replace_query(str(self.__query))
         message.content = str(breadcrumbs)
-        message.view = OptimizationSelectorView.get_view(breadcrumbs, self.__processor, self.__result_data)
+        message.view = OptimizationSelectorView.get_view(
+            breadcrumbs,
+            self.__processor,
+            self.__result_data,
+            self.__query
+        )
         if breadcrumbs.has_prev_page():
             message.view = WithPreviousView(message.view, self.__processor)
 

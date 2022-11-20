@@ -376,7 +376,7 @@ class QueryParser:
                     )
 
             if "byproducts" in exclude:
-                query.outputs["items"].strict = True
+                query.set_strict_outputs(True)
             for exclude_var in exclude_vars:
                 query.add_exclude(exclude_var)
 

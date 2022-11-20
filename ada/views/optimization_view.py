@@ -41,7 +41,7 @@ class OptimizationCategoryView(discord.ui.View):
 
     def _add_categories(self, active_category: str, processor: Processor):
         print("Adding category buttons")
-        for category in ["Inputs", "Outputs", "Recipes", "Buildings", "General"]:
+        for category in ["Inputs", "Outputs", "Recipes", "Buildings", "Settings"]:
             custom_id = category.lower()
             disabled = custom_id == active_category
             self.add_item(OptimizationCategoryButton(
@@ -95,12 +95,11 @@ class OptimizationSelectorView(OptimizationCategoryView):
         self.add_item(EntityDropdown(entities, processor, self.on_select))
 
     @staticmethod
-    def get_view(breadcrumbs: Breadcrumbs, processor: Processor, data: OptimizationResultData) -> discord.ui.View:
-        # parts = custom_id.split(".")
-        # category = parts[0] if len(parts) > 0 else ""
-        # selected = "".join(parts)
+    def get_view(breadcrumbs: Breadcrumbs, processor: Processor, data: OptimizationResultData, query: OptimizationQuery) -> discord.ui.View:
         custom_ids = breadcrumbs.current_page().custom_ids()
         category = custom_ids[0]
+        if category == "settings":
+            return SettingsCategoryView(processor, query)
         if len(breadcrumbs.current_page().custom_ids()) != 2:
             return OptimizationSelectorView(processor, data, category)
         selected = custom_ids[1]
@@ -112,8 +111,6 @@ class OptimizationSelectorView(OptimizationCategoryView):
             return RecipesCategoryView(processor, data, selected)
         if category == "buildings":
             return BuildingsCategoryView(processor, data, selected)
-        # if category == "general":
-        #     return GeneralCategoryView(processor, data, selected)
         return OptimizationSelectorView(processor, data, category)
 
     async def on_select(self, selected: str, interaction: discord.Interaction):
@@ -415,11 +412,64 @@ class BuildingsCategoryView(OptimizationSelectorView):
         message = result.message(breadcrumbs)
         await message.edit(interaction)
 
-# class BuildingsCategoryView(OptimizationCategoryView):
-#     def __init__(self, processor: Processor):
-#         super().__init__(processor, "buildings")
-#
-#
-# class GeneralCategoryView(OptimizationCategoryView):
-#     def __init__(self, processor: Processor):
-#         super().__init__(processor, "general")
+
+class SettingsCategoryView(OptimizationCategoryView):
+    def __init__(self, processor: Processor, query: OptimizationQuery):
+        super().__init__(processor, "settings")
+
+        self.__processor = processor
+
+        allows_alternate_recipes = "alternate-recipes" in query.query_vars()
+        self.__alternate_recipes_button = discord.ui.Button(
+            label="Exclude Alternate Recipes" if allows_alternate_recipes else "Allow Alternate Recipes",
+            style=discord.ButtonStyle.danger if allows_alternate_recipes else discord.ButtonStyle.success,
+            custom_id="settings_alternate_recipes"
+        )
+        self.__alternate_recipes_button.callback = self.on_alternate_recipes
+        self.add_item(self.__alternate_recipes_button)
+
+        allows_byproducts = not query.strict_outputs()
+        self.__byproducts_button = discord.ui.Button(
+            label="Exclude Byproducts" if allows_byproducts else "Allow Byproducts",
+            style=discord.ButtonStyle.danger if allows_byproducts else discord.ButtonStyle.success,
+            custom_id="settings_byproducts"
+        )
+        self.__byproducts_button.callback = self.on_byproducts
+        self.add_item(self.__byproducts_button)
+
+        # TODO: Add button for allowing byproducts
+
+    async def on_alternate_recipes(self, interaction: discord.Interaction):
+        print("alternate recipes button clicks")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        raw_query = breadcrumbs.current_page().query()
+        try:
+            query = self.__processor.parse(raw_query)
+        except QueryParseException as parse_exception:
+            print(f"Failed to parse {raw_query}: {parse_exception}")
+            return
+        query = cast(OptimizationQuery, query)
+        if "alternate-recipes" in query.query_vars():
+            query.remove_include("alternate-recipes")
+        else:
+            query.add_include("alternate-recipes")
+        result = await self.__processor.execute(query)
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        message = result.message(breadcrumbs)
+        await message.edit(interaction)
+
+    async def on_byproducts(self, interaction: discord.Interaction):
+        print("byproducts clicked")
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        raw_query = breadcrumbs.current_page().query()
+        try:
+            query = self.__processor.parse(raw_query)
+        except QueryParseException as parse_exception:
+            print(f"Failed to parse {raw_query}: {parse_exception}")
+            return
+        query = cast(OptimizationQuery, query)
+        query.set_strict_outputs(not query.strict_outputs())
+        result = await self.__processor.execute(query)
+        breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
+        message = result.message(breadcrumbs)
+        await message.edit(interaction)

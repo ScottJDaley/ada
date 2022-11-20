@@ -80,14 +80,27 @@ def _add_element(dictionary: dict[str, Category], var: str, element: T, strict: 
     dictionary[category].strict |= strict
 
 
+def _remove_element(dictionary: dict[str, Category], var: str):
+    print(f"Attempting to remove var {var}")
+    category = var.split(":")[0]
+    if category not in dictionary:
+        print(f"Can't find category {category} to remove")
+        return
+    if var not in dictionary[category].elements:
+        print(f"Can't find var {var} to remove")
+    dictionary[category].elements.pop(var)
+
+
 class OptimizationQuery(Query):
     def __init__(self) -> None:
         self.inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
         self.outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
-        self.includes: dict[str, Category[Include]] = {"crafter": Category("crafter", False),
-                                                       "generator": Category("generator", False),
-                                                       "recipe": Category("recipe", False),
-                                                       "power-recipe": Category("power-recipe", False),}
+        self.includes: dict[str, Category[Include]] = {
+            "crafter": Category("crafter", True),
+            "generator": Category("generator", True),
+            "recipe": Category("recipe", True),
+            "power-recipe": Category("power-recipe", True),
+        }
         self.excludes: dict[str, Category[Exclude]] = {}
         self.objective: Objective | None = None
 
@@ -101,7 +114,11 @@ class OptimizationQuery(Query):
 
     def add_include(self, var: str):
         print(f"Adding include, var={var}")
-        _add_element(self.includes, var, Include(var), True)
+        _add_element(self.includes, var, Include(var), False)
+
+    def remove_include(self, var: str):
+        print(f"Remove include, var={var}")
+        _remove_element(self.includes, var)
 
     def add_exclude(self, var: str):
         print(f"Adding exclude, var={var}")
@@ -160,22 +177,25 @@ class OptimizationQuery(Query):
         return result
 
     def strict_inputs(self):
-        return self.inputs["item"].strict
+        return self.inputs["item"].strict and len(self.inputs["item"].elements) > 0
 
     def strict_outputs(self):
         return self.outputs["item"].strict
 
+    def set_strict_outputs(self, value: bool):
+        self.outputs["item"].strict = value
+
     def strict_crafters(self):
-        return self.includes["crafter"].strict
+        return self.includes["crafter"].strict and len(self.includes["crafter"].elements) > 0
 
     def strict_generators(self):
-        return self.includes["generator"].strict
+        return self.includes["generator"].strict and len(self.includes["generator"].elements) > 0
 
     def strict_recipes(self):
-        return self.includes["recipe"].strict
+        return self.includes["recipe"].strict and len(self.includes["recipe"].elements) > 0
 
     def strict_power_recipes(self):
-        return self.includes["power-recipe"].strict
+        return self.includes["power-recipe"].strict and len(self.includes["power-recipe"].elements) > 0
 
     def has_power_output(self):
         return "power" in self.outputs
@@ -194,19 +214,19 @@ class OptimizationQuery(Query):
 
         for category in self.outputs.values():
             for output in category.elements.values():
-                outputs.append(f"{output.amount} {output.var}")
+                outputs.append(f"{'only ' if category.strict else ''}{output.amount} {output.var}")
 
         for category in self.inputs.values():
             for input in category.elements.values():
-                inputs.append(f"{input.amount} {input.var}")
+                inputs.append(f"{'only ' if category.strict else ''}{input.amount} {input.var}")
 
         for category in self.includes.values():
             for include in category.elements.values():
-                includes.append(f"{include.var}")
+                includes.append(f"{'only ' if category.strict else ''}{include.var}")
 
         for category in self.excludes.values():
             for exclude in category.elements.values():
-                excludes.append(f"{exclude.var}")
+                excludes.append(f"{'only ' if category.strict else ''}{exclude.var}")
 
         parts = [f"produce {' and '.join(outputs)}"]
         if len(inputs) > 0:
