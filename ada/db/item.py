@@ -1,5 +1,5 @@
 import re
-from typing import Dict
+from typing import Dict, Optional
 
 from .entity import Entity
 from ..utils import image_fetcher
@@ -87,8 +87,8 @@ class Item(Entity):
             return STACK_SIZES[self.__data["mStackSize"]]
         return -1
 
-    def sink_value(self) -> int:
-        return int(self.__data["mResourceSinkPoints"])
+    def sink_value(self) -> Optional[int]:
+        return int(self.__data["mResourceSinkPoints"]) if "mResourceSinkPoints" in self.__data else None
 
     def is_resource(self) -> bool:
         return self.__is_resource

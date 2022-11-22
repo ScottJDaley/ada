@@ -152,7 +152,7 @@ class Recipe(Entity):
             self.human_readable_name(),
             "  var: " + self.var(),
             "  time: " + str(float(self.__data["mManufactoringDuration"])) + "s",
-            "  crafted in: " + self.crafter().human_readable_name(),
+            "  crafted in: " + self.crafter().human_readable_name() if self.crafter() else "None",
             "  ingredients:"
         ]
         for ingredient in self.__ingredients.values():
@@ -195,5 +195,5 @@ class Recipe(Entity):
             ("Ingredients", ingredients),
             ("Products", products),
             ("Crafting Time", str(float(self.__data["mManufactoringDuration"])) + " seconds"),
-            ("Building", self.crafter().human_readable_name())
+            ("Building", self.crafter().human_readable_name() if self.crafter() else "None")
         ]

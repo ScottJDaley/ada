@@ -18,9 +18,9 @@ class ResultMessage:
     async def send(self, interaction: discord.Interaction):
         await interaction.response.send_message(
             content=self.breadcrumbs.format_content(self.content),
-            embed=self.embed,
-            file=self.file,
-            view=self.view,
+            embed=self.embed if self.embed else discord.utils.MISSING,
+            file=self.file if self.file else discord.utils.MISSING,
+            view=self.view if self.view else discord.utils.MISSING,
         )
 
     async def replace(self, interaction: discord.Interaction):
