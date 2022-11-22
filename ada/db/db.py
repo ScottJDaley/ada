@@ -146,8 +146,8 @@ class DB:
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
 
-        self.__all_entities = self.__items | self.__crafters | self.__extractors | self.__generators \
-                              | self.__recipes | self.__buildable_recipes | self.__power_recipes
+        self.__all_entities = self.__items | self.__crafters | self.__extractors | self.__generators | self.__recipes \
+                              | self.__buildable_recipes | self.__power_recipes
 
     def _add_item(self, item: Item):
         if item.var() in self.__items:

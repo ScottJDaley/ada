@@ -1,5 +1,5 @@
 import re
-from typing import List, Union
+from typing import List, Union, cast
 
 import inflect
 from pyparsing import (
@@ -23,6 +23,7 @@ from pyparsing.results import ParseResults
 
 from .db.db import DB
 from .db.entity import Entity
+from .db.item import Item
 from .help import HelpQuery
 from .info import InfoQuery
 from .optimization_query import Objective, OptimizationQuery
@@ -483,7 +484,7 @@ class QueryParser:
                 + "\n   ".join([match.human_readable_name() for match in matches])
                 + "\nPlease repeat the command with a more specific item name."
             )
-        product_item = matches[0]
+        product_item: Item = cast(Item, matches[0])
         related_recipes = list(self._db.recipes_for_product(product_item.var()))
         base_recipe = None
         if len(related_recipes) == 0:

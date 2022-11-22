@@ -26,7 +26,7 @@ class InfoResult(Result):
 
     def __str__(self):
         if len(self.__entities) == 1:
-            return self.__entities[0].details()
+            return self.__entities[0].description()
         var_names = [var.human_readable_name() for var in self.__entities]
         var_names.sort()
         return "\n".join(var_names)

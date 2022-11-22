@@ -25,6 +25,7 @@ from ..recipe_comparer import RecipeCompareResult
 from ..result import ErrorResult, Result
 
 
+# noinspection PyMethodParameters
 class ResultMessageFactory:
     @staticmethod
     def from_result(result: Result, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:

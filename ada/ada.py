@@ -37,7 +37,7 @@ class Ada:
         if isinstance(query, OptimizationQuery):
             return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):
-            return InfoResult(query.vars, query.raw_query, self)
+            return InfoResult(query.vars, query.raw_query)
         if isinstance(query, RecipeCompareQuery):
             return RecipeCompareResult(await self.__recipe_comp.compare(query))
         return ErrorResult("Unknown query.")

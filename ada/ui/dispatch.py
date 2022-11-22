@@ -80,6 +80,6 @@ class Dispatch(ABC):
         await interaction.response.edit_message(
             content=str(breadcrumbs),
             embed=embed,
-            attachments=[file] if file else [],
+            attachments=[file] if file else discord.utils.MISSING,
             view=view,
         )
