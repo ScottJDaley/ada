@@ -2,6 +2,7 @@
 # into data\Docs.json
 
 import json
+import pkgutil
 
 from .crafter import Crafter
 from .entity import Entity
@@ -43,8 +44,10 @@ RECIPE_CLASSES = [
 class DB:
     def __init__(self):
         # Parse data file
-        with open("data/Docs.json", encoding="utf8") as f:
-            data = json.load(f)
+        raw = pkgutil.get_data("ada.data", "Docs.json")
+        if not raw:
+            raise FileNotFoundError("Cannot find data file 'data/Docs.json'")
+        data = json.loads(raw)
 
         native_classes = {}
         for native_class in data:
