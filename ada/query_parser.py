@@ -441,6 +441,8 @@ class QueryParser:
                     query.vars.append(recipe)
             elif var.startswith("crafter"):
                 for recipe in self._db.recipes().values():
+                    if not recipe.is_craftable_in_building():
+                        continue
                     if recipe.crafter().var() == var:
                         query.vars.append(recipe)
             elif var.startswith("generator"):

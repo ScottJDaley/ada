@@ -75,10 +75,9 @@ class ButtonWithCallback(discord.ui.Button):
 
 
 class MultiEntityView(discord.ui.View):
-    def __init__(self, entities: List[Entity], custom_id: str, dispatch: Dispatch):
+    def __init__(self, entities: List[Entity], start_index: int, dispatch: Dispatch):
         super().__init__(timeout=None)
 
-        start_index = int(custom_id) if custom_id.isdigit() else 0
         self.__dropdown = EntityDropdown(entities, start_index, dispatch)
 
         num_entities = len(entities)
