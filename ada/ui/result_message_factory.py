@@ -7,10 +7,10 @@ from .dispatch import Dispatch
 from .result_message import ResultMessage
 from .views.crafter_view import CrafterView
 from .views.item_view import ItemView
-from .views.multi_entity import MultiEntityView
+from .views.multi_entity_view import MultiEntityView
 from .views.optimization_view import OptimizationSelectorView
 from .views.recipe_view import RecipeView
-from .views.with_previous import WithPreviousView
+from .views.with_previous_view import WithPreviousView
 from ..db.buildable_recipe import BuildableRecipe
 from ..db.crafter import Crafter
 from ..db.extractor import Extractor
