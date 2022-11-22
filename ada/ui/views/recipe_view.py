@@ -13,7 +13,7 @@ class RecipeView(discord.ui.View):
         self.__dispatch = dispatch
 
     @discord.ui.button(label="Building", style=discord.ButtonStyle.grey)
-    async def recipes_for(self, interaction: discord.Interaction):
+    async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         recipe = self.__dispatch.lookup(breadcrumbs.current_page().query())
         if not recipe:

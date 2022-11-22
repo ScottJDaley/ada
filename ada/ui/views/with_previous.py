@@ -13,7 +13,7 @@ class WithPreviousView(discord.ui.View):
                 self.add_item(item)
 
     @discord.ui.button(label="Back", style=discord.ButtonStyle.primary, row=4)
-    async def recipes_for(self, interaction: discord.Interaction):
+    async def recipes_for(self, interaction: discord.Interaction, button: discord.ui.Button):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         breadcrumbs.goto_prev_page()
         await self.__dispatch.query_and_replace(breadcrumbs, interaction)

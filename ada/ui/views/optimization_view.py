@@ -183,13 +183,14 @@ class InfoButton(discord.ui.Button):
         await self.__dispatch.query_and_replace(breadcrumbs, interaction)
 
 
-class ExcludeButton(discord.ui.Button):
-    def __init__(self, custom_id: str, dispatch: Dispatch):
+class EditQueryButton(discord.ui.Button):
+    def __init__(self, custom_id: str, edit_query: Callable[[OptimizationQuery, str], None], dispatch: Dispatch):
         super().__init__(label="Exclude", style=discord.ButtonStyle.danger, custom_id=custom_id)
         self.__dispatch = dispatch
+        self.__edit_query = edit_query
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        print("exclude button clicked")
+        print("edit query button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
@@ -199,7 +200,7 @@ class ExcludeButton(discord.ui.Button):
             return
         query = cast(OptimizationQuery, query)
         input_var = breadcrumbs.current_page().custom_ids()[-1]
-        query.add_input(input_var, 0, False)
+        self.__edit_query(query, input_var)
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), [breadcrumbs.current_page().custom_ids()[0]]))
         await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)
 
@@ -237,7 +238,13 @@ class InputCategoryView(OptimizationSelectorView):
         self.__minimize_button.callback = self.on_minimize
         self.add_item(self.__minimize_button)
 
-        self.add_item(ExcludeButton(custom_id="input_exclude", dispatch=self.__dispatch))
+        self.add_item(
+            EditQueryButton(
+                custom_id="input_exclude",
+                edit_query=(lambda q, var: q.add_input(var, 0, False)),
+                dispatch=self.__dispatch
+            )
+        )
 
     async def on_minimize(self, interaction: discord.Interaction):
         print("minimize button clicked")
@@ -287,7 +294,13 @@ class OutputsCategoryView(OptimizationSelectorView):
         self.__maximize_button.callback = self.on_maximize
         self.add_item(self.__maximize_button)
 
-        self.add_item(ExcludeButton(custom_id="output_exclude", dispatch=dispatch))
+        self.add_item(
+            EditQueryButton(
+                custom_id="output_exclude",
+                edit_query=(lambda q, var: q.add_output(var, 0, False)),
+                dispatch=self.__dispatch
+            )
+        )
 
     async def on_maximize(self, interaction: discord.Interaction):
         print("maximize button clicked")
@@ -329,7 +342,13 @@ class RecipesCategoryView(OptimizationSelectorView):
         )
         self.add_item(self.__amount_button)
 
-        self.add_item(ExcludeButton(custom_id="recipe_exclude", dispatch=dispatch))
+        self.add_item(
+            EditQueryButton(
+                custom_id="recipe_exclude",
+                edit_query=(lambda q, var: q.add_exclude(var)),
+                dispatch=self.__dispatch
+            )
+        )
 
 
 class BuildingsCategoryView(OptimizationSelectorView):
@@ -359,7 +378,13 @@ class BuildingsCategoryView(OptimizationSelectorView):
         )
         self.add_item(self.__amount_button)
 
-        self.add_item(ExcludeButton(custom_id="building_exclude", dispatch=dispatch))
+        self.add_item(
+            EditQueryButton(
+                custom_id="building_exclude",
+                edit_query=(lambda q, var: q.add_exclude(var)),
+                dispatch=self.__dispatch
+            )
+        )
 
 
 class SettingsCategoryView(OptimizationCategoryView):
