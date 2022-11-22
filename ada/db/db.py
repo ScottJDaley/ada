@@ -3,7 +3,6 @@
 
 import json
 
-from .buildable_recipe import BuildableRecipe
 from .crafter import Crafter
 from .entity import Entity
 from .extractor import Extractor
@@ -112,19 +111,12 @@ class DB:
         # Create a dictionary from ingredient => [recipe]
         self.__recipes_for_ingredient = {}
         self.__recipes = {}
-        self.__buildable_recipes = {}
         for recipe_class in RECIPE_CLASSES:
             for recipe_data in native_classes[recipe_class]:
                 recipe = Recipe(
                     recipe_data, self.__items.values(), self.__crafters.values()
                 )
-                if not recipe.is_craftable_in_building():
-                    buildable_recipe = BuildableRecipe(
-                        recipe_data, self.__items.values()
-                    )
-                    self.__buildable_recipes[buildable_recipe.var()] = buildable_recipe
-                else:
-                    self.__recipes[recipe.var()] = recipe
+                self.__recipes[recipe.var()] = recipe
                 for ingredient in recipe.ingredients().keys():
                     if ingredient not in self.__recipes_for_ingredient:
                         self.__recipes_for_ingredient[ingredient] = []
@@ -147,7 +139,7 @@ class DB:
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
 
         self.__all_entities = self.__items | self.__crafters | self.__extractors | self.__generators | self.__recipes \
-                              | self.__buildable_recipes | self.__power_recipes
+                              | self.__power_recipes
 
     def _add_item(self, item: Item):
         if item.var() in self.__items:
@@ -181,9 +173,6 @@ class DB:
         if ingredient not in self.__recipes_for_ingredient:
             return []
         return self.__recipes_for_ingredient[ingredient]
-
-    def buildable_recipes(self):
-        return self.__buildable_recipes
 
     def power_recipes(self):
         return self.__power_recipes

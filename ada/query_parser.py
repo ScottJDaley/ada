@@ -257,8 +257,6 @@ class QueryParser:
             )
         if "recipe" in allowed_types:
             allowed_vars.update(recipe for recipe in self._db.recipes().values())
-        if "buildable-recipe" in allowed_types:
-            allowed_vars.update(recipe for recipe in self._db.buildable_recipes().values())
         if "power-recipe" in allowed_types:
             allowed_vars.update(recipe for recipe in self._db.power_recipes().values())
         if "crafter" in allowed_types:
@@ -468,7 +466,7 @@ class QueryParser:
     def _parse_single_recipe_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
         matches = self._get_matches(
-            parse_results.get("entity"), ["recipe", "buildable-recipe"]
+            parse_results.get("entity"), ["recipe"]
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -529,7 +527,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["recipe", "buildable-recipe", "power-recipe"],
+            ["recipe", "power-recipe"],
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -548,18 +546,13 @@ class QueryParser:
                 if var in self._db.power_recipes():
                     power_recipe = self._db.power_recipes()[var]
                     query.vars.append(power_recipe.fuel_item())
-            elif var.startswith("buildable-recipe"):
-                if var in self._db.buildable_recipes():
-                    buildable_recipe = self._db.buildable_recipes()[var]
-                    for ingredient in buildable_recipe.ingredients().values():
-                        query.vars.append(ingredient.item())
         return query
 
     def _parse_products_for_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["recipe", "buildable-recipe"],
+            ["recipe"],
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -573,11 +566,6 @@ class QueryParser:
                 if var in self._db.recipes():
                     recipe = self._db.recipes()[var]
                     for product in recipe.products().values():
-                        query.vars.append(product.item())
-            elif var.startswith("buildable-recipe"):
-                if var in self._db.buildable_recipes():
-                    buildable_recipe = self._db.buildable_recipes()[var]
-                    for product in buildable_recipe.products().values():
                         query.vars.append(product.item())
         return query
 
@@ -594,7 +582,7 @@ class QueryParser:
             return query
         recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["recipe", "buildable-recipe", "power-recipe"],
+            ["recipe", "power-recipe"],
         )
         if len(recipe_matches) == 0:
             raise QueryParseException(

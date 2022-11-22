@@ -11,7 +11,6 @@ from .views.multi_entity_view import MultiEntityView
 from .views.optimization_view import OptimizationSelectorView
 from .views.recipe_view import RecipeView
 from .views.with_previous_view import WithPreviousView
-from ..db.buildable_recipe import BuildableRecipe
 from ..db.crafter import Crafter
 from ..db.extractor import Extractor
 from ..db.item import Item
@@ -135,24 +134,6 @@ class ResultMessageFactory:
             message.content = "Output was too long"
         return message
 
-    # @staticmethod
-    # @multimethod
-    # def _from_result(result: Result, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
-    #     message = ResultMessage(breadcrumbs)
-    #     message.embed = discord.Embed(title="Unknown Result Type")
-    #     message.embed.description = str(result)
-    #     return message
-
-    @multimethod
-    def _from_entity(entity: BuildableRecipe, breadcrumbs: Breadcrumbs, dispatch: Dispatch):
-        message = ResultMessage(breadcrumbs)
-        message.embed = discord.Embed(title=entity.human_readable_name())
-        message.embed.description = entity.description()
-        for name, value in entity.fields():
-            message.embed.add_field(name=name, value=value, inline=True)
-        # TODO: Add view
-        return message
-
     @multimethod
     def _from_entity(entity: Crafter, breadcrumbs: Breadcrumbs, dispatch: Dispatch):
         message = ResultMessage(breadcrumbs)
@@ -217,15 +198,10 @@ class ResultMessageFactory:
         message = ResultMessage(breadcrumbs)
         message.embed = discord.Embed(title=entity.human_readable_name())
         message.embed.description = entity.description()
+        if len(entity.products()) == 1:
+            product = next(iter(entity.products().values()))
+            message.embed.set_thumbnail(url=product.item().thumb())
         for name, value in entity.fields():
             message.embed.add_field(name=name, value=value, inline=True)
         message.view = RecipeView(dispatch)
         return message
-
-    # @staticmethod
-    # @multimethod
-    # def _from_entity(entity: Entity, breadcrumbs: Breadcrumbs, dispatch: Dispatch):
-    #     message = ResultMessage(breadcrumbs)
-    #     message.embed = discord.Embed(title="Unknown Entity Type")
-    #     message.embed.description = str(entity)
-    #     return message
