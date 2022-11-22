@@ -2,17 +2,16 @@ import re
 from typing import Awaitable, Callable, List, Optional, Union
 
 import discord
-from discord import ButtonStyle, Emoji, PartialEmoji
 
-from ada.breadcrumbs import Breadcrumbs
-from ada.db.entity import Entity
-from ada.processor import Processor
+from ..breadcrumbs import Breadcrumbs
+from ..dispatch import Dispatch
+from ...db.entity import Entity
 
 
 # See https://github.com/Rapptz/discord.py/blob/master/examples/views/dropdown.py
 class EntityDropdown(discord.ui.Select):
-    def __init__(self, entities: List[Entity], start_index: int, processor: Processor):
-        self.__processor = processor
+    def __init__(self, entities: List[Entity], start_index: int, dispatch: Dispatch):
+        self.__dispatch = dispatch
         print(f"Constructing EntityDropdown with start index {start_index}")
         options = self._get_options(entities, start_index)
         super().__init__(placeholder="Select one", min_values=1, max_values=1, options=options)
@@ -22,7 +21,7 @@ class EntityDropdown(discord.ui.Select):
         selection_option = self.values[0]
         query = selection_option
         breadcrumbs.add_page(Breadcrumbs.Page(query))
-        await self.__processor.do_and_edit(breadcrumbs, interaction)
+        await self.__dispatch.query_and_replace(breadcrumbs, interaction)
 
     @staticmethod
     def _get_options(entities: List[Entity], start: int) -> list[discord.SelectOption]:
@@ -38,19 +37,19 @@ class EntityDropdown(discord.ui.Select):
     async def update_options(self, interaction: discord.Interaction, start: int):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         breadcrumbs.current_page().set_single_custom_id(str(start))
-        await self.__processor.do_and_edit(breadcrumbs, interaction)
+        await self.__dispatch.query_and_replace(breadcrumbs, interaction)
 
 
 class ButtonWithCallback(discord.ui.Button):
     def __init__(
             self,
             *,
-            style: ButtonStyle = ButtonStyle.secondary,
+            style: discord.ButtonStyle = discord.ButtonStyle.secondary,
             label: Optional[str] = None,
             disabled: bool = False,
             custom_id: Optional[str] = None,
             url: Optional[str] = None,
-            emoji: Optional[Union[str, Emoji, PartialEmoji]] = None,
+            emoji: Optional[Union[str, discord.Emoji, discord.PartialEmoji]] = None,
             row: Optional[int] = None,
             callback: Callable[[discord.Interaction], Awaitable[None]],
     ):
@@ -70,12 +69,11 @@ class ButtonWithCallback(discord.ui.Button):
 
 
 class MultiEntityView(discord.ui.View):
-    def __init__(self, entities: List[Entity], custom_id: str, processor: Processor):
+    def __init__(self, entities: List[Entity], custom_id: str, dispatch: Dispatch):
         super().__init__()
 
-        self.__processor = processor
         start_index = int(custom_id) if custom_id.isdigit() else 0
-        self.__dropdown = EntityDropdown(entities, start_index, processor)
+        self.__dropdown = EntityDropdown(entities, start_index, dispatch)
 
         num_entities = len(entities)
 

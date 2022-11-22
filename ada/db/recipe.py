@@ -1,14 +1,9 @@
 import math
 from typing import Dict, List, Tuple
 
-import discord
-from discord import Embed
-
-from ada.db.crafter import Crafter
-from ada.db.entity import Entity
-from ada.db.item import Item
-from ada.processor import Processor
-from ada.views.recipe_view import RecipeView
+from .crafter import Crafter
+from .entity import Entity
+from .item import Item
 
 
 def parse_list(raw: str) -> List[str]:
@@ -149,6 +144,9 @@ class Recipe(Entity):
     def human_readable_name(self) -> str:
         return "Recipe: " + self.__data["mDisplayName"]
 
+    def description(self):
+        return self.__data["mDescription"]
+
     def details(self):
         out = [
             self.human_readable_name(),
@@ -164,31 +162,6 @@ class Recipe(Entity):
             out.append("    " + product.human_readable_name())
         out.append("")
         return "\n".join(out)
-
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        if self.is_alternate():
-            embed.description = "**Alternate**"
-        ingredients = "\n".join(
-            [ing.human_readable_name() for ing in self.ingredients().values()]
-        )
-        embed.add_field(name="Ingredients", value=ingredients, inline=True)
-        products = "\n".join(
-            [pro.human_readable_name() for pro in self.products().values()]
-        )
-        embed.add_field(name="Products", value=products, inline=True)
-        embed.add_field(
-            name="Crafting Time",
-            value=str(float(self.__data["mManufactoringDuration"])) + " seconds",
-            inline=True,
-        )
-        embed.add_field(
-            name="Building", value=self.crafter().human_readable_name(), inline=True
-        )
-        return embed
-
-    def view(self, processor: Processor) -> discord.ui.View:
-        return RecipeView(processor)
 
     def ingredients(self) -> Dict[str, RecipeItem]:
         return self.__ingredients
@@ -210,3 +183,17 @@ class Recipe(Entity):
 
     def is_craftable_in_building(self) -> bool:
         return self.__crafter is not None
+
+    def fields(self) -> list[tuple[str, str]]:
+        ingredients = "\n".join(
+            [ing.human_readable_name() for ing in self.ingredients().values()]
+        )
+        products = "\n".join(
+            [pro.human_readable_name() for pro in self.products().values()]
+        )
+        return [
+            ("Ingredients", ingredients),
+            ("Products", products),
+            ("Crafting Time", str(float(self.__data["mManufactoringDuration"])) + " seconds"),
+            ("Building", self.crafter().human_readable_name())
+        ]

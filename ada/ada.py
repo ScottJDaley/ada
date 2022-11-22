@@ -1,23 +1,23 @@
-from ada.db.db import DB
-from ada.help import HelpQuery, HelpResult
-from ada.info import InfoQuery, InfoResult
-from ada.optimization_query import OptimizationQuery
-from ada.optimizer import Optimizer
-from ada.processor import Processor
-from ada.query import Query
-from ada.query_parser import QueryParseException, QueryParser
-from ada.recipe_comparer import RecipeCompareQuery, RecipeCompareResult, RecipeComparer
-from ada.result import ErrorResult, Result
+from .db.db import DB
+from .help import HelpQuery, HelpResult
+from .info import InfoQuery, InfoResult
+from .optimization_query import OptimizationQuery
+from .optimizer import Optimizer
+from .query import Query
+from .query_parser import QueryParseException, QueryParser
+from .recipe_compare_query import RecipeCompareQuery
+from .recipe_comparer import RecipeCompareResult, RecipeComparer
+from .result import ErrorResult, Result
 
 
-class Ada(Processor):
+class Ada:
     def __init__(self) -> None:
         self.__db = DB()
         self.__parser = QueryParser(self.__db)
         self.__opt = Optimizer(self.__db)
         self.__recipe_comp = RecipeComparer(self.__db, self.__opt)
 
-    async def do(self, raw_query: str) -> Result:
+    async def query(self, raw_query: str) -> Result:
         try:
             query = self.parse(raw_query)
         except QueryParseException as parse_exception:
@@ -35,7 +35,7 @@ class Ada(Processor):
         if isinstance(query, HelpQuery):
             return HelpResult()
         if isinstance(query, OptimizationQuery):
-            return await self.__opt.optimize(query, self)
+            return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):
             return InfoResult(query.vars, query.raw_query, self)
         if isinstance(query, RecipeCompareQuery):

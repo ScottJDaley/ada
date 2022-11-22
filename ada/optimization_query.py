@@ -1,6 +1,6 @@
 from typing import Callable, Generic, TypeVar
 
-from ada.query import Query
+from .query import Query
 
 
 class Input:

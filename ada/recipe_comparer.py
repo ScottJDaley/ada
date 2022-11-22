@@ -2,14 +2,13 @@ from typing import Dict, List, Tuple
 
 import tabulate
 
-from ada.breadcrumbs import Breadcrumbs
-from ada.db.db import DB
-from ada.db.item import Item
-from ada.db.recipe import Recipe
-from ada.optimization_query import OptimizationQuery
-from ada.optimizer import Optimizer
-from ada.recipe_compare_query import RecipeCompareQuery
-from ada.result import Result, ResultMessage
+from .db.db import DB
+from .db.item import Item
+from .db.recipe import Recipe
+from .optimization_query import OptimizationQuery
+from .optimizer import Optimizer
+from .recipe_compare_query import RecipeCompareQuery
+from .result import Result
 
 
 class ProductionStats:
@@ -332,7 +331,8 @@ class RecipeComparer:
     ) -> ProductionStats:
         inputs = {}
 
-        query = OptimizationQuery("")
+        query = OptimizationQuery()
+        # TODO: Need to redo this for new OptimizationQuery
         query.maximize_objective = False
         if weighted:
             query.objective_coefficients = {"weighted-resources": -1}
@@ -558,23 +558,32 @@ class RecipeCompareResult(Result):
 
         # return str(self.__stats)
 
-    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
-        message = ResultMessage()
-        # message.embed = Embed(title="Error")
-        # message.embed.description = "hello"  # "```{}```".format(str(self))
+    def stats(self):
+        return self.__stats
 
-        product_name = self.__stats.query.product_item.human_readable_name()
+    def overall_stats(self):
+        return self.__overall_stats
 
-        out = [
-            "All recipes that produce " + product_name, "```\n{}```".format(
-                tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
-            ),
-            "Raw Inputs for 1/m " + product_name, "```\n{}```".format(
-                tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="simple")
-            )
-        ]
+    def input_stats(self):
+        return self.__input_stats
 
-        message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
-        if len(message.content) > 2000:
-            message.content = "Output was too long"
-        return message
+    # def message(self, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    #     message = ResultMessage()
+    #     # message.embed = Embed(title="Error")
+    #     # message.embed.description = "hello"  # "```{}```".format(str(self))
+    #
+    #     product_name = self.__stats.query.product_item.human_readable_name()
+    #
+    #     out = [
+    #         "All recipes that produce " + product_name, "```\n{}```".format(
+    #             tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
+    #         ),
+    #         "Raw Inputs for 1/m " + product_name, "```\n{}```".format(
+    #             tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="simple")
+    #         )
+    #     ]
+    #
+    #     message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
+    #     if len(message.content) > 2000:
+    #         message.content = "Output was too long"
+    #     return message

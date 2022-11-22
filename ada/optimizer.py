@@ -3,7 +3,6 @@ import sys
 from typing import Dict
 
 import pulp
-from discord import Embed, File
 from graphviz import Digraph
 from pulp.constants import (
     LpStatusInfeasible,
@@ -14,14 +13,10 @@ from pulp.constants import (
 )
 from pulp.pulp import LpProblem, LpVariable
 
-from ada.breadcrumbs import Breadcrumbs
-from ada.db.db import DB
-from ada.optimization_query import OptimizationQuery
-from ada.optimization_result_data import OptimizationResultData
-from ada.processor import Processor
-from ada.result import Result, ResultMessage
-from ada.views.optimization_view import OptimizationSelectorView
-from ada.views.with_previous import WithPreviousView
+from .db.db import DB
+from .optimization_query import OptimizationQuery
+from .optimization_result_data import OptimizationResultData
+from .result import Result
 
 
 class OptimizationResult(Result):
@@ -32,14 +27,12 @@ class OptimizationResult(Result):
             prob: LpProblem,
             status: int,
             query: OptimizationQuery,
-            processor: Processor,
     ) -> None:
         self.__db = db
         self.__prob = prob
         self.__vars = vars_
         self.__status = status
         self.__query = query
-        self.__processor = processor
         # Dictionaries from var -> (obj, value)
         # TODO: Use these in the functions below
         inputs = {
@@ -80,6 +73,12 @@ class OptimizationResult(Result):
 
     def result_data(self) -> OptimizationResultData:
         return self.__result_data
+
+    def success(self):
+        return self.__status is LpStatusOptimal
+
+    def query(self):
+        return self.__query
 
     def __has_value(self, var):
         return (
@@ -160,96 +159,94 @@ class OptimizationResult(Result):
             return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()
 
-    def __solution_message(self, breadcrumbs):
-        message = ResultMessage()
-        message.embed = Embed(title="Optimization Query")
-
-        sections = [str(self.__query)]
-
-        inputs = self.__get_vars(
-            self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"
-        )
-        if len(inputs) > 0:
-            sections.append("**Inputs**\n" + "\n".join(inputs))
-        outputs = self.__get_vars(
-            self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"
-        )
-        if len(outputs) > 0:
-            sections.append("**Outputs**\n" + "\n".join(outputs))
-        recipes = self.__get_vars(self.__db.recipes().values())
-        if len(recipes) > 0:
-            sections.append("**Recipes**\n" + "\n".join(recipes))
-        buildings = self.__get_vars(self.__db.crafters().values())
-        buildings.extend(self.__get_vars(self.__db.generators().values()))
-        if len(buildings) > 0:
-            sections.append("**Buildings**\n" + "\n".join(buildings))
-
-        # descriptions = []
-        description = ""
-        for section in sections:
-            # TODO: Handle this another way
-            # if len(curr_description) + len(section) >= 4096:
-            #     descriptions.append(curr_description)
-            #     curr_description = ""
-            description += section + "\n\n"
-        # descriptions.append(curr_description)
-
-        message.embed.description = description
-
-        filename = "output.gv"
-        filepath = "output/" + filename
-        self.generate_graph_viz(filepath)
-        file = File(filepath + ".png")
-        # The image already shows up from the attached file, so no need to place it in the embed as well.
-        message.embed.set_image(url="attachment://" + filename + ".png")
-        message.file = file
-        if len(breadcrumbs.current_page().custom_ids()) == 0:
-            breadcrumbs.current_page().add_custom_id("inputs")
-        breadcrumbs.current_page().replace_query(str(self.__query))
-        message.content = str(breadcrumbs)
-        message.view = OptimizationSelectorView.get_view(
-            breadcrumbs,
-            self.__processor,
-            self.__result_data,
-            self.__query
-        )
-        if breadcrumbs.has_prev_page():
-            message.view = WithPreviousView(message.view, self.__processor)
-
-        # messages = message
-        #
-        # if len(descriptions) > 1:
-        #     for i in range(1, len(descriptions)):
-        #         next_message = ResultMessage()
-        #         next_message.embed = Embed()
-        #         next_message.embed.description = descriptions[i]
-        #         messages.append(next_message)
-
-        return message
-
-    # def get_optimization_view(self, processor: Processor, custom_id: str) -> discord.ui.View:
-    #     # parts = custom_id.split(".")
-    #     # category = parts[0] if len(parts) > 0 else ""
-    #     # selected = "".join(parts)
-    #     if custom_id == "inputs":
-    #         return InputsCategoryView(processor, self.inputs())
-    #     if custom_id == "outputs":
-    #         return OutputsCategoryView(processor)
-    #     if custom_id == "recipes":
-    #         return RecipesCategoryView(processor)
-    #     if custom_id == "buildings":
-    #         return BuildingsCategoryView(processor)
-    #     if custom_id == "general":
-    #         return GeneralCategoryView(processor)
-    #     return InputsCategoryView(processor, self.inputs())
-
-    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
-        if self.__status is LpStatusOptimal:
-            return self.__solution_message(breadcrumbs)
-        message = ResultMessage()
-        message.embed = Embed(title=str(self))
-        message.content = str(breadcrumbs)
-        return message
+    # def __solution_message(self, breadcrumbs, dispatch: Dispatch):
+    #     message = ResultMessage()
+    #     message.embed = Embed(title="Optimization Query")
+    #
+    #     sections = [str(self.__query)]
+    #
+    #     inputs = self.__get_vars(
+    #         self.__db.items().values(), check_value=lambda val: val < 0, suffix="/m"
+    #     )
+    #     if len(inputs) > 0:
+    #         sections.append("**Inputs**\n" + "\n".join(inputs))
+    #     outputs = self.__get_vars(
+    #         self.__db.items().values(), check_value=lambda val: val > 0, suffix="/m"
+    #     )
+    #     if len(outputs) > 0:
+    #         sections.append("**Outputs**\n" + "\n".join(outputs))
+    #     recipes = self.__get_vars(self.__db.recipes().values())
+    #     if len(recipes) > 0:
+    #         sections.append("**Recipes**\n" + "\n".join(recipes))
+    #     buildings = self.__get_vars(self.__db.crafters().values())
+    #     buildings.extend(self.__get_vars(self.__db.generators().values()))
+    #     if len(buildings) > 0:
+    #         sections.append("**Buildings**\n" + "\n".join(buildings))
+    #
+    #     # descriptions = []
+    #     description = ""
+    #     for section in sections:
+    #         # TODO: Handle this another way
+    #         # if len(curr_description) + len(section) >= 4096:
+    #         #     descriptions.append(curr_description)
+    #         #     curr_description = ""
+    #         description += section + "\n\n"
+    #     # descriptions.append(curr_description)
+    #
+    #     message.embed.description = description
+    #
+    #     filename = "output.gv"
+    #     filepath = "output/" + filename
+    #     self.generate_graph_viz(filepath)
+    #     file = File(filepath + ".png")
+    #     # The image already shows up from the attached file, so no need to place it in the embed as well.
+    #     message.embed.set_image(url="attachment://" + filename + ".png")
+    #     message.file = file
+    #     if len(breadcrumbs.current_page().custom_ids()) == 0:
+    #         breadcrumbs.current_page().add_custom_id("inputs")
+    #     breadcrumbs.current_page().replace_query(str(self.__query))
+    #     message.content = str(breadcrumbs)
+    #     message.view = views.OptimizationSelectorView.get_view(
+    #         breadcrumbs,
+    #         dispatch,
+    #         self.__result_data,
+    #         self.__query
+    #     )
+    #
+    #     # messages = message
+    #     #
+    #     # if len(descriptions) > 1:
+    #     #     for i in range(1, len(descriptions)):
+    #     #         next_message = ResultMessage()
+    #     #         next_message.embed = Embed()
+    #     #         next_message.embed.description = descriptions[i]
+    #     #         messages.append(next_message)
+    #
+    #     return message
+    #
+    # # def get_optimization_view(self, processor: Processor, custom_id: str) -> discord.ui.View:
+    # #     # parts = custom_id.split(".")
+    # #     # category = parts[0] if len(parts) > 0 else ""
+    # #     # selected = "".join(parts)
+    # #     if custom_id == "inputs":
+    # #         return InputsCategoryView(processor, self.inputs())
+    # #     if custom_id == "outputs":
+    # #         return OutputsCategoryView(processor)
+    # #     if custom_id == "recipes":
+    # #         return RecipesCategoryView(processor)
+    # #     if custom_id == "buildings":
+    # #         return BuildingsCategoryView(processor)
+    # #     if custom_id == "general":
+    # #         return GeneralCategoryView(processor)
+    # #     return InputsCategoryView(processor, self.inputs())
+    #
+    # def message(self, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    #     if self.__status is LpStatusOptimal:
+    #         return self.__solution_message(breadcrumbs, dispatch)
+    #     message = ResultMessage()
+    #     message.embed = Embed(title=str(self))
+    #     message.content = str(breadcrumbs)
+    #     return message
 
     def __add_nodes(self, s, objs):
         for obj in objs:
@@ -657,7 +654,7 @@ class Optimizer:
             if power_recipe_var not in enabled_power_recipes:
                 prob += self.__variables[power_recipe_var] == 0
 
-    async def optimize(self, query: OptimizationQuery, processor: Processor) -> OptimizationResult:
+    async def optimize(self, query: OptimizationQuery) -> OptimizationResult:
         print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
@@ -758,6 +755,6 @@ class Optimizer:
 
         # Solve
         status = prob.solve()
-        result = OptimizationResult(self.__db, self.__variables, prob, status, query, processor)
+        result = OptimizationResult(self.__db, self.__variables, prob, status, query)
 
         return result

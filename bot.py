@@ -1,11 +1,10 @@
 import os
-from typing import Optional, Literal
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import Context, Greedy
 from dotenv import load_dotenv
 
+from ada.ada import Ada
 from ada.cog import AdaCog
 
 
@@ -42,7 +41,7 @@ class Bot(commands.Bot):
         guilds = None
         if self.guild:
             guilds = [self.guild]
-        await self.add_cog(AdaCog(self), guilds=guilds)
+        await self.add_cog(AdaCog(self, Ada()), guilds=guilds)
         if self.sync:
             if self.guild:
                 print(f"Syncing commands to guild {self.guild}")

@@ -21,12 +21,12 @@ from pyparsing import (
 )
 from pyparsing.results import ParseResults
 
-from ada.db.db import DB
-from ada.db.entity import Entity
-from ada.help import HelpQuery
-from ada.info import InfoQuery
-from ada.optimization_query import Objective, OptimizationQuery
-from ada.recipe_compare_query import RecipeCompareQuery
+from .db.db import DB
+from .db.entity import Entity
+from .help import HelpQuery
+from .info import InfoQuery
+from .optimization_query import Objective, OptimizationQuery
+from .recipe_compare_query import RecipeCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
 MAKE = CaselessKeyword("make")

@@ -1,15 +1,9 @@
 import math
 from typing import List
 
-import discord
-
-from ada.breadcrumbs import Breadcrumbs
-from ada.db.entity import Entity
-from ada.processor import Processor
-from ada.query import Query
-from ada.result import Result, ResultMessage
-from ada.views.multi_entity import MultiEntityView
-from ada.views.with_previous import WithPreviousView
+from .db.entity import Entity
+from .query import Query
+from .result import Result
 
 
 class InfoQuery(Query):
@@ -26,10 +20,9 @@ class InfoQuery(Query):
 class InfoResult(Result):
     num_on_page = 9
 
-    def __init__(self, vars_: List[Entity], raw_query: str, processor: Processor) -> None:
+    def __init__(self, vars_: List[Entity], raw_query: str) -> None:
         self.__entities = sorted(vars_, key=lambda var_: var_.human_readable_name())
         self.__raw_query = raw_query
-        self.__processor = processor
 
     def __str__(self):
         if len(self.__entities) == 1:
@@ -37,6 +30,9 @@ class InfoResult(Result):
         var_names = [var.human_readable_name() for var in self.__entities]
         var_names.sort()
         return "\n".join(var_names)
+
+    def entities(self) -> list[Entity]:
+        return self.__entities
 
     def _num_pages(self):
         return math.ceil(len(self.__entities) / InfoResult.num_on_page)
@@ -48,31 +44,35 @@ class InfoResult(Result):
         var_index = (page - 1) * InfoResult.num_on_page + index
         return self.__entities[var_index]
 
-    def _get_info_page(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
-        message = ResultMessage()
-        message.embed = None
-        message.file = None
-        message.content = str(breadcrumbs)
-        message.view = MultiEntityView(self.__entities, breadcrumbs.current_page().custom_ids()[0], self.__processor)
-        if breadcrumbs.has_prev_page():
-            message.view = WithPreviousView(message.view, self.__processor)
-        return message
-
-    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
-        if len(self.__entities) == 0:
-            message = ResultMessage()
-            message.embed = discord.Embed(title="No matches found")
-            message.content = str(breadcrumbs)
-            return message
-        if len(self.__entities) > 1:
-            return self._get_info_page(breadcrumbs)
-
-        breadcrumbs.current_page().replace_query(self.__entities[0].var())
-        message = ResultMessage()
-        message.embed = self.__entities[0].embed()
-        message.file = None
-        message.view = self.__entities[0].view(self.__processor)
-        if breadcrumbs.has_prev_page():
-            message.view = WithPreviousView(message.view, self.__processor)
-        message.content = str(breadcrumbs)
-        return message
+    # def _get_info_page(
+    #         self,
+    #         breadcrumbs: utils.breadcrumbs.Breadcrumbs,
+    #         dispatch: Dispatch
+    # ) -> ResultMessage:
+    #     message = ResultMessage()
+    #     message.embed = None
+    #     message.file = None
+    #     message.content = str(breadcrumbs)
+    #     message.view = views.MultiEntityView(self.__entities, breadcrumbs.current_page().custom_ids()[0], dispatch)
+    #     return message
+    #
+    # def message(
+    #         self,
+    #         breadcrumbs: utils.breadcrumbs.Breadcrumbs,
+    #         dispatch: Dispatch
+    # ) -> ResultMessage:
+    #     if len(self.__entities) == 0:
+    #         message = ResultMessage()
+    #         message.embed = discord.Embed(title="No matches found")
+    #         message.content = str(breadcrumbs)
+    #         return message
+    #     if len(self.__entities) > 1:
+    #         return self._get_info_page(breadcrumbs, dispatch)
+    #
+    #     breadcrumbs.current_page().replace_query(self.__entities[0].var())
+    #     message = ResultMessage()
+    #     message.embed = self.__entities[0].embed()
+    #     message.file = None
+    #     message.view = self.__entities[0].view(dispatch)
+    #     message.content = str(breadcrumbs)
+    #     return message

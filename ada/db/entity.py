@@ -1,9 +1,5 @@
 from abc import ABC, abstractmethod
 
-import discord
-
-from ada.processor import Processor
-
 
 class Entity(ABC):
     @abstractmethod
@@ -15,9 +11,9 @@ class Entity(ABC):
         pass
 
     @abstractmethod
-    def embed(self) -> discord.Embed:
+    def description(self):
         pass
 
     @abstractmethod
-    def view(self, processor: Processor) -> discord.ui.View:
+    def fields(self) -> list[tuple[str, str]]:
         pass

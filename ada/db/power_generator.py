@@ -1,12 +1,8 @@
 from typing import Any, List, Union
 
-import discord
-from discord import Embed
-
-from ada import image_fetcher
-from ada.db.entity import Entity
-from ada.db.item import Item
-from ada.processor import Processor
+from .entity import Entity
+from .item import Item
+from ..utils import image_fetcher
 
 
 class PowerGenerator(Entity):
@@ -42,6 +38,9 @@ class PowerGenerator(Entity):
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
 
+    def description(self):
+        return self.__data["mDescription"]
+
     def power_production(self) -> float:
         return float(self.__data["mPowerProduction"])
 
@@ -70,16 +69,7 @@ class PowerGenerator(Entity):
         print(image_fetcher.fetch_first_on_page(self.wiki()))
         return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(
-            name="Power Production", value=(str(self.power_production()) + " MW")
-        )
-        # TODO
-        return embed
-
-    def view(self, processor: Processor) -> discord.ui.View:
-        pass
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Power Production", f"{self.power_production()} MW"),
+        ]

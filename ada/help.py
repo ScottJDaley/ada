@@ -1,8 +1,5 @@
-from discord import Embed
-
-from ada.breadcrumbs import Breadcrumbs
-from ada.query import Query
-from ada.result import Result, ResultMessage
+from .query import Query
+from .result import Result
 
 
 class HelpQuery(Query):
@@ -50,10 +47,3 @@ For more information and examples, see [the GitHub page](https://github.com/Scot
 
 If you have any questions or concerns, please join the [ADA Bot Support Server](https://discord.gg/UnFkv4wDYJ).
 """
-
-    def message(self, breadcrumbs: Breadcrumbs) -> ResultMessage:
-        message = ResultMessage()
-        message.embed = Embed(title="Help")
-        message.embed.description = str(self)
-        message.content = str(breadcrumbs)
-        return message

@@ -10,6 +10,7 @@ graphviz==0.20.1
 idna==3.4
 inflect==6.0.2
 multidict==6.0.2
+multimethod==1.9
 PuLP==2.7.0
 pyparsing==3.0.9
 python-dotenv==0.21.0

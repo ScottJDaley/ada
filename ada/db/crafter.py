@@ -1,12 +1,7 @@
 from typing import Dict
 
-import discord
-from discord import Embed
-
-import ada.image_fetcher
-from ada.db.entity import Entity
-from ada.processor import Processor
-from ada.views.crafter_view import CrafterView
+from .entity import Entity
+from ..utils import image_fetcher
 
 
 class Crafter(Entity):
@@ -24,6 +19,9 @@ class Crafter(Entity):
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
+
+    def description(self):
+        return self.__data["mDescription"]
 
     def power_consumption(self) -> float:
         return float(self.__data["mPowerConsumption"])
@@ -44,19 +42,10 @@ class Crafter(Entity):
         )
 
     def thumb(self):
-        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
-        return ada.image_fetcher.fetch_first_on_page(self.wiki())
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(
-            name="Power Consumption", value=(str(self.power_consumption()) + " MW")
-        )
-        # TODO
-        return embed
-
-    def view(self, processor: Processor) -> discord.ui.View:
-        return CrafterView(processor)
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Power Consumption", f"{self.power_consumption()} MW"),
+        ]

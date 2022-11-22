@@ -1,12 +1,8 @@
 import re
 from typing import Dict
 
-import discord
-
-import ada.image_fetcher
-from ada.db.entity import Entity
-from ada.processor import Processor
-from ada.views.item_view import ItemView
+from .entity import Entity
+from ..utils import image_fetcher
 
 STACK_SIZES = {
     "SS_HUGE": 500,
@@ -120,17 +116,23 @@ class Item(Entity):
         )
 
     def thumb(self) -> str:
-        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
-        return ada.image_fetcher.fetch_first_on_page(self.wiki())
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self) -> discord.Embed:
-        embed = discord.Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
-        embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
-        return embed
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Stack Size", str(self.stack_size())),
+            ("Sink Value", str(self.sink_value())),
+        ]
 
-    def view(self, processor: Processor) -> discord.ui.View:
-        return ItemView(processor)
+    # def embed(self) -> discord.Embed:
+    #     embed = discord.Embed(title=self.human_readable_name())
+    #     embed.description = self.__data["mDescription"]
+    #     embed.url = self.wiki()
+    #     embed.set_thumbnail(url=self.thumb())
+    #     embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
+    #     embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
+    #     return embed
+    #
+    # def view(self, dispatch: ada.Dispatch) -> discord.ui.View:
+    #     return ada.views.ItemView(dispatch)

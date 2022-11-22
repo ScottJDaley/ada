@@ -1,4 +1,4 @@
-from ada.query import Query
+from .query import Query
 
 
 class RecipeCompareQuery(Query):

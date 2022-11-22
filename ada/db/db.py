@@ -3,14 +3,14 @@
 
 import json
 
-from ada.db.buildable_recipe import BuildableRecipe
-from ada.db.crafter import Crafter
-from ada.db.entity import Entity
-from ada.db.extractor import Extractor
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
-from ada.db.power_recipe import PowerRecipe
-from ada.db.recipe import Recipe
+from .buildable_recipe import BuildableRecipe
+from .crafter import Crafter
+from .entity import Entity
+from .extractor import Extractor
+from .item import Item
+from .power_generator import PowerGenerator
+from .power_recipe import PowerRecipe
+from .recipe import Recipe
 
 RESOURCE_CLASSES = [
     "Class'/Script/FactoryGame.FGResourceDescriptor'",

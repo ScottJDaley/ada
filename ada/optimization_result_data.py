@@ -1,7 +1,7 @@
-from ada.db.crafter import Crafter
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
-from ada.db.recipe import Recipe
+from .db.crafter import Crafter
+from .db.item import Item
+from .db.power_generator import PowerGenerator
+from .db.recipe import Recipe
 
 
 class OptimizationResultData:
