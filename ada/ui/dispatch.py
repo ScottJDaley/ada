@@ -71,14 +71,15 @@ class Dispatch(ABC):
     # Edits the fields of the interaction message
     @staticmethod
     async def edit(
-            breadcrumbs: Breadcrumbs,
             interaction: discord.Interaction,
+            breadcrumbs: Breadcrumbs,
+            content: Optional[str] = discord.utils.MISSING,
             embed: Optional[discord.Embed] = discord.utils.MISSING,
             file: Optional[discord.File] = discord.utils.MISSING,
             view: Optional[discord.ui.View] = discord.utils.MISSING
     ):
         await interaction.response.edit_message(
-            content=str(breadcrumbs),
+            content=breadcrumbs.format_content(content),
             embed=embed,
             attachments=[file] if file else discord.utils.MISSING,
             view=view,

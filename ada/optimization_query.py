@@ -92,42 +92,48 @@ def _remove_element(dictionary: dict[str, Category], var: str):
 
 class OptimizationQuery(Query):
     def __init__(self) -> None:
-        self.inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
-        self.outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
-        self.includes: dict[str, Category[Include]] = {
+        self.__inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
+        self.__outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
+        self.__includes: dict[str, Category[Include]] = {
             "crafter": Category("crafter", True),
             "generator": Category("generator", True),
             "recipe": Category("recipe", True),
             "power-recipe": Category("power-recipe", True),
         }
-        self.excludes: dict[str, Category[Exclude]] = {}
-        self.objective: Objective | None = None
+        self.__excludes: dict[str, Category[Exclude]] = {}
+        self.__objective: Objective | None = None
+
+    def has_objective(self) -> bool:
+        return self.__objective is not None
+
+    def add_objective(self, objective: Objective) -> None:
+        self.__objective = objective
 
     def add_output(self, var: str, amount: int | None, strict: bool):
         print(f"Adding output, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.outputs, var, Output(var, amount), strict)
+        _add_element(self.__outputs, var, Output(var, amount), strict)
 
     def add_input(self, var: str, amount: int | None, strict: bool):
         print(f"Adding input, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.inputs, var, Input(var, amount), strict)
+        _add_element(self.__inputs, var, Input(var, amount), strict)
 
     def add_include(self, var: str):
         print(f"Adding include, var={var}")
-        _add_element(self.includes, var, Include(var), False)
+        _add_element(self.__includes, var, Include(var), False)
 
     def remove_include(self, var: str):
         print(f"Remove include, var={var}")
-        _remove_element(self.includes, var)
+        _remove_element(self.__includes, var)
 
     def add_exclude(self, var: str):
         print(f"Adding exclude, var={var}")
-        _add_element(self.excludes, var, Exclude(var), False)
+        _add_element(self.__excludes, var, Exclude(var), False)
 
     def maximize_objective(self) -> bool:
-        return self.objective.maximize
+        return self.__objective.maximize
 
     def objective_coefficients(self) -> dict[str, int]:
-        return {self.objective.var: self.objective.coefficient}
+        return {self.__objective.var: self.__objective.coefficient}
 
     def eq_constraints(self) -> dict[str, float]:
         result = {}
@@ -139,8 +145,8 @@ class OptimizationQuery(Query):
         def process_exclude(var: str, exclude: Exclude):
             result[var] = 0
 
-        for_all_elements(self.outputs, process_output)
-        for_all_elements(self.excludes, process_exclude)
+        for_all_elements(self.__outputs, process_output)
+        for_all_elements(self.__excludes, process_exclude)
 
         return result
 
@@ -158,9 +164,9 @@ class OptimizationQuery(Query):
         def process_include(var: str, include: Include):
             result[var] = 0
 
-        for_all_elements(self.outputs, process_output)
-        for_all_elements(self.inputs, process_input)
-        for_all_elements(self.includes, process_include)
+        for_all_elements(self.__outputs, process_output)
+        for_all_elements(self.__inputs, process_input)
+        for_all_elements(self.__includes, process_include)
 
         return result
 
@@ -171,33 +177,33 @@ class OptimizationQuery(Query):
             if not input.has_amount():
                 result[var] = 0
 
-        for_all_elements(self.inputs, process_input)
+        for_all_elements(self.__inputs, process_input)
 
         return result
 
     def strict_inputs(self):
-        return self.inputs["item"].strict and len(self.inputs["item"].elements) > 0
+        return self.__inputs["item"].strict and len(self.__inputs["item"].elements) > 0
 
     def strict_outputs(self):
-        return self.outputs["item"].strict
+        return self.__outputs["item"].strict
 
     def set_strict_outputs(self, value: bool):
-        self.outputs["item"].strict = value
+        self.__outputs["item"].strict = value
 
     def strict_crafters(self):
-        return self.includes["crafter"].strict and len(self.includes["crafter"].elements) > 0
+        return self.__includes["crafter"].strict and len(self.__includes["crafter"].elements) > 0
 
     def strict_generators(self):
-        return self.includes["generator"].strict and len(self.includes["generator"].elements) > 0
+        return self.__includes["generator"].strict and len(self.__includes["generator"].elements) > 0
 
     def strict_recipes(self):
-        return self.includes["recipe"].strict and len(self.includes["recipe"].elements) > 0
+        return self.__includes["recipe"].strict and len(self.__includes["recipe"].elements) > 0
 
     def strict_power_recipes(self):
-        return self.includes["power-recipe"].strict and len(self.includes["power-recipe"].elements) > 0
+        return self.__includes["power-recipe"].strict and len(self.__includes["power-recipe"].elements) > 0
 
     def has_power_output(self):
-        return "power" in self.outputs
+        return "power" in self.__outputs
 
     def __str__(self) -> str:
 
@@ -206,24 +212,24 @@ class OptimizationQuery(Query):
         includes = []
         excludes = []
 
-        if self.objective.maximize:
-            outputs.append(f"? {self.objective.var}")
+        if self.__objective.maximize:
+            outputs.append(f"? {self.__objective.var}")
         else:
-            inputs.append(f"? {self.objective.var}")
+            inputs.append(f"? {self.__objective.var}")
 
-        for category in self.outputs.values():
+        for category in self.__outputs.values():
             for output in category.elements.values():
                 outputs.append(f"{'only ' if category.strict else ''}{output.amount} {output.var}")
 
-        for category in self.inputs.values():
+        for category in self.__inputs.values():
             for input in category.elements.values():
                 inputs.append(f"{'only ' if category.strict else ''}{input.amount} {input.var}")
 
-        for category in self.includes.values():
+        for category in self.__includes.values():
             for include in category.elements.values():
                 includes.append(f"{'only ' if category.strict else ''}{include.var}")
 
-        for category in self.excludes.values():
+        for category in self.__excludes.values():
             for exclude in category.elements.values():
                 excludes.append(f"{'only ' if category.strict else ''}{exclude.var}")
 
@@ -241,13 +247,13 @@ class OptimizationQuery(Query):
         print(self)
 
     def query_vars(self) -> list[str]:
-        query_vars = [self.objective.var]
-        for category in self.outputs.values():
+        query_vars = [self.__objective.var]
+        for category in self.__outputs.values():
             query_vars.extend(category.elements.keys())
-        for category in self.inputs.values():
+        for category in self.__inputs.values():
             query_vars.extend(category.elements.keys())
-        for category in self.includes.values():
+        for category in self.__includes.values():
             query_vars.extend(category.elements.keys())
-        for category in self.excludes.values():
+        for category in self.__excludes.values():
             query_vars.extend(category.elements.keys())
         return query_vars

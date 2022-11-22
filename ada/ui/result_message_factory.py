@@ -107,7 +107,6 @@ class ResultMessageFactory:
         if len(breadcrumbs.current_page().custom_ids()) == 0:
             breadcrumbs.current_page().add_custom_id("inputs")
         breadcrumbs.current_page().replace_query(str(result.query()))
-        message.content = str(breadcrumbs)
         message.view = OptimizationSelectorView.get_view(
             breadcrumbs,
             dispatch,
@@ -120,8 +119,7 @@ class ResultMessageFactory:
     @multimethod
     def _from_result(result: RecipeCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         message = ResultMessage(breadcrumbs)
-        # message.embed = Embed(title="Error")
-        # message.embed.description = "hello"  # "```{}```".format(str(self))
+        message.embed = None
 
         product_name = result.stats().query.product_item.human_readable_name()
 
@@ -134,7 +132,7 @@ class ResultMessageFactory:
             )
         ]
 
-        message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
+        message.content = "\n".join(out)
         if len(message.content) > 2000:
             message.content = "Output was too long"
         return message

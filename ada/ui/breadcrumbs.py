@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 
 class BreadcrumbsException(Exception):
@@ -13,6 +13,9 @@ class Breadcrumbs:
 
     def __str__(self) -> str:
         return "```\n" + "\n> ".join(str(page) for page in self.__pages) + "\n```"
+
+    def format_content(self, content: Optional[str]) -> str:
+        return str(self) + (f"\n{content}" if content else "")
 
     def current_page(self) -> Page:
         return self.__pages[-1]
@@ -31,10 +34,20 @@ class Breadcrumbs:
         content_lines = content.splitlines()
         if len(content_lines) <= 2:
             raise BreadcrumbsException("Content only had " + str(len(content_lines)) + " lines")
-        if not content_lines[0].startswith("```") or not content_lines[-1].startswith("```"):
-            raise BreadcrumbsException("Content missing code section:\n" + str(content_lines))
+        if not content_lines[0].startswith("```"):
+            raise BreadcrumbsException("Content missing breadcrumbs start:\n" + str(content_lines))
+        num_pages = 0
+        found_end = False
+        for line in content_lines[1:]:
+            if line.startswith("```"):
+                found_end = True
+                break
+            num_pages += 1
+        if not found_end:
+            raise BreadcrumbsException("Content missing breadcrumbs end:\n" + str(content_lines))
 
-        pages = [Breadcrumbs.Page.extract(x.removeprefix("> ").strip()) for x in content_lines[1:-1]]
+        print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
+        pages = [Breadcrumbs.Page.extract(x.removeprefix("> ").strip()) for x in content_lines[1:1 + num_pages]]
         return cls(pages)
 
     @classmethod

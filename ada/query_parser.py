@@ -276,9 +276,9 @@ class QueryParser:
             value = output["value"]
             for output_var in output_vars:
                 if value == "?":
-                    if query.objective:
+                    if query.has_objective():
                         raise QueryParseException("Only one objective may be specified.")
-                    query.objective = Objective(output_var, True, 1)
+                    query.add_objective(Objective(output_var, True, 1))
                 else:
                     amount = None if value == "_" else int(value)
                     query.add_output(output_var, amount, strict)
@@ -302,9 +302,9 @@ class QueryParser:
             value = input_["value"]
             for input_var in input_vars:
                 if value == "?":
-                    if query.objective:
+                    if query.has_objective():
                         raise QueryParseException("Only one objective may be specified.")
-                    query.objective = Objective(input_var, False, -1)
+                    query.add_objective(Objective(input_var, False, -1))
                 else:
                     amount = None if value == "_" else int(value)
                     query.add_input(input_var, -amount, strict)
@@ -384,8 +384,8 @@ class QueryParser:
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if not query.objective:
-            query.objective = Objective("unweighted-resources", False, -1)
+        if not query.has_objective():
+            query.add_objective(Objective("unweighted-resources", False, -1))
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):
