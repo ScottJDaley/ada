@@ -61,6 +61,8 @@ class ResultMessageFactory:
             message = ResultMessage(breadcrumbs)
             message.embed = None
             message.file = None
+            if len(breadcrumbs.current_page().custom_ids()) == 0:
+                breadcrumbs.current_page().add_custom_id("0")
             message.view = MultiEntityView(entities, breadcrumbs.current_page().custom_ids()[0], dispatch)
             return message
 

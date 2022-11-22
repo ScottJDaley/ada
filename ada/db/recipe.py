@@ -145,7 +145,7 @@ class Recipe(Entity):
         return "Recipe: " + self.__data["mDisplayName"]
 
     def description(self):
-        return self.__data["mDescription"]
+        return ""
 
     def details(self):
         out = [

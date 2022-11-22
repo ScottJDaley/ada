@@ -129,6 +129,8 @@ class MultiEntityView(discord.ui.View):
     def _get_num_label(start_index: int, num_entities: int):
         start = start_index + 1
         end = start_index + 25
+        if end > num_entities:
+            end = num_entities
         return f"Showing {start} - {end} out of {num_entities} matches"
 
     def _get_num_entities(self):
