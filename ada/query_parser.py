@@ -55,6 +55,8 @@ ALTERNATE_RECIPES = CaselessKeyword("alternate recipes") | CaselessKeyword("alte
 RECIPES = CaselessKeyword("recipes")
 RECIPE = CaselessKeyword("recipe")
 BYPRODUCTS = CaselessKeyword("byproducts")
+INGREDIENTS = CaselessKeyword("ingredients")
+PRODUCTS = CaselessKeyword("products")
 FOR = CaselessKeyword("for")
 HELP = CaselessKeyword("help")
 COMPARE = CaselessKeyword("compare")
@@ -166,6 +168,14 @@ class QueryParser:
             recipes_for_query | recipe_for_query | recipes_from_query | single_recipe_query
     )
 
+    ingredients_for_query = (
+            (Suppress(INGREDIENTS + FOR) + entity_expr) | (entity_expr + Suppress(INGREDIENTS))
+    )("ingredients-for")
+
+    products_for_query = (
+            (Suppress(PRODUCTS + FOR) + entity_expr) | (entity_expr + Suppress(PRODUCTS))
+    )("products-for")
+
     help_query = HELP("help")
 
     compare_recipe_query = (
@@ -179,6 +189,8 @@ class QueryParser:
             ^ optimization_query
             ^ recipe_query
             ^ compare_recipe_query
+            ^ ingredients_for_query
+            ^ products_for_query
             ^ entity_query
     )
 
@@ -513,6 +525,62 @@ class QueryParser:
         query.include_alternates = "include-alternates" in parse_results
         return query
 
+    def _parse_ingredients_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
+        matches = self._get_matches(
+            parse_results.get("entity"),
+            ["recipe", "buildable-recipe", "power-recipe"],
+        )
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse resource or item expression '"
+                + parse_results.get("entity")
+                + "'."
+            )
+        for match in matches:
+            var = match.var()
+            if var.startswith("recipe"):
+                if var in self._db.recipes():
+                    recipe = self._db.recipes()[var]
+                    for ingredient in recipe.ingredients().values():
+                        query.vars.append(ingredient.item())
+            elif var.startswith("power-recipe"):
+                if var in self._db.power_recipes():
+                    power_recipe = self._db.power_recipes()[var]
+                    query.vars.append(power_recipe.fuel_item())
+            elif var.startswith("buildable-recipe"):
+                if var in self._db.buildable_recipes():
+                    buildable_recipe = self._db.buildable_recipes()[var]
+                    for ingredient in buildable_recipe.ingredients().values():
+                        query.vars.append(ingredient.item())
+        return query
+
+    def _parse_products_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
+        matches = self._get_matches(
+            parse_results.get("entity"),
+            ["recipe", "buildable-recipe"],
+        )
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse resource or item expression '"
+                + parse_results.get("entity")
+                + "'."
+            )
+        for match in matches:
+            var = match.var()
+            if var.startswith("recipe"):
+                if var in self._db.recipes():
+                    recipe = self._db.recipes()[var]
+                    for product in recipe.products().values():
+                        query.vars.append(product.item())
+            elif var.startswith("buildable-recipe"):
+                if var in self._db.buildable_recipes():
+                    buildable_recipe = self._db.buildable_recipes()[var]
+                    for product in buildable_recipe.products().values():
+                        query.vars.append(product.item())
+        return query
+
     def _parse_entity_details(
             self, raw_query: str, parse_results: ParseResults
     ) -> InfoQuery:
@@ -569,6 +637,10 @@ class QueryParser:
             return self._parse_recipes_from_query(raw_query, results)
         elif "recipe-compare" in results:
             return self._parse_recipe_compare_query(raw_query, results)
+        elif "ingredients-for" in results:
+            return self._parse_ingredients_for_query(raw_query, results)
+        elif "products-for" in results:
+            return self._parse_products_for_query(raw_query, results)
         elif "entity-details" in results:
             return self._parse_entity_details(raw_query, results)
         else:
