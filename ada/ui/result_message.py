@@ -40,7 +40,7 @@ class ResultMessage:
         breadcrumbs, remaining_content = Breadcrumbs.parse(interaction.message.content)
         message = ResultMessage(breadcrumbs)
         message.content = remaining_content
-        message.embed = interaction.message.embeds[0]
+        message.embed = interaction.message.embeds[0] if len(interaction.message.embeds) > 0 else None
         message.file = interaction.message.attachments[0] if len(
             interaction.message.attachments
         ) > 0 else discord.utils.MISSING

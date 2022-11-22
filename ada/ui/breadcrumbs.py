@@ -53,7 +53,10 @@ class Breadcrumbs:
 
         print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
         pages = [Breadcrumbs.Page.extract(x.removeprefix("> ").strip()) for x in content_lines[1:1 + num_pages]]
-        remaining_content = "\n".join(content_lines[2 + num_pages:])
+        if 2 + num_pages >= len(content_lines):
+            remaining_content = ""
+        else:
+            remaining_content = "\n".join(content_lines[2 + num_pages:])
         return cls(pages), remaining_content
 
     @classmethod
