@@ -124,12 +124,10 @@ class ResultMessageFactory:
         product_name = result.stats().query.product_item.human_readable_name()
 
         out = [
-            "All recipes that produce " + product_name, "```\n{}```".format(
-                tabulate.tabulate(result.overall_stats(), headers="keys", tablefmt="simple")
-            ),
-            "Raw Inputs for 1/m " + product_name, "```\n{}```".format(
-                tabulate.tabulate(result.input_stats(), headers="keys", tablefmt="simple")
-            )
+            f"**Recipe Stats:**",
+            f"```\n{tabulate.tabulate(result.overall_stats(), headers='keys', tablefmt='simple')}```",
+            f"**Recipe Requirements:**",
+            f"```\n{tabulate.tabulate(result.input_stats(), headers='keys', tablefmt='simple')}```",
         ]
 
         message.content = "\n".join(out)
