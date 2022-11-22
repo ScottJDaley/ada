@@ -21,7 +21,7 @@ class Bot(commands.Bot):
             command_prefix=commands.when_mentioned_or(cmd_prefix),
             intents=intents,
         )
-        self.sync = not os.getenv("DONT_SYNC")
+        self.sync = os.getenv('SYNC_COMMANDS', 'false').lower() == 'true'
         self.guild = None
         restrict_slash_commands_to_guild = os.getenv("RESTRICT_SLASH_COMMANDS_TO_GUILD")
         print(restrict_slash_commands_to_guild)
