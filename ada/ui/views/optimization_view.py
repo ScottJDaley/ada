@@ -95,7 +95,13 @@ class EntityDropdown(discord.ui.Select):
         options = []
         for entity in entities:
             options.append(discord.SelectOption(label=entity.human_readable_name(), description=entity.var()))
-        super().__init__(placeholder="Select one", min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Select one",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="optimization_dropdown"
+        )
 
     async def callback(self, interaction: discord.Interaction):
         selection_option = self.values[0]

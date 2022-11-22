@@ -9,7 +9,7 @@ from ...db.recipe import Recipe
 
 class RecipeView(discord.ui.View):
     def __init__(self, dispatch: Dispatch):
-        super().__init__()
+        super().__init__(timeout=None)
         self.__dispatch = dispatch
 
     @discord.ui.button(label="Ingredients", style=discord.ButtonStyle.grey, custom_id="recipe_ingredients")

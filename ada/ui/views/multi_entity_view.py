@@ -14,7 +14,13 @@ class EntityDropdown(discord.ui.Select):
         self.__dispatch = dispatch
         print(f"Constructing EntityDropdown with start index {start_index}")
         options = self._get_options(entities, start_index)
-        super().__init__(placeholder="Select one", min_values=1, max_values=1, options=options)
+        super().__init__(
+            placeholder="Select one",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id="multi_dropdown"
+        )
 
     async def callback(self, interaction: discord.Interaction):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
@@ -70,7 +76,7 @@ class ButtonWithCallback(discord.ui.Button):
 
 class MultiEntityView(discord.ui.View):
     def __init__(self, entities: List[Entity], custom_id: str, dispatch: Dispatch):
-        super().__init__()
+        super().__init__(timeout=None)
 
         start_index = int(custom_id) if custom_id.isdigit() else 0
         self.__dropdown = EntityDropdown(entities, start_index, dispatch)
@@ -83,11 +89,13 @@ class MultiEntityView(discord.ui.View):
             emoji="⬅",
             disabled=start_index <= 0,
             callback=self._previous,
+            custom_id="multi_previous",
         )
         self.__num_button = discord.ui.Button(
             label=self._get_num_label(start_index, num_entities),
             style=discord.ButtonStyle.grey,
-            disabled=True
+            disabled=True,
+            custom_id="multi_num",
         )
         self.__next_button = ButtonWithCallback(
             label="Next",
@@ -95,6 +103,7 @@ class MultiEntityView(discord.ui.View):
             emoji="➡",
             disabled=start_index > num_entities - 25,
             callback=self._next,
+            custom_id="multi_next",
         )
         self.add_item(self.__previous_button)
         self.add_item(self.__num_button)

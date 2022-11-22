@@ -6,7 +6,7 @@ from ..dispatch import Dispatch
 
 class ItemView(discord.ui.View):
     def __init__(self, dispatch: Dispatch):
-        super().__init__()
+        super().__init__(timeout=None)
         self.__dispatch = dispatch
 
     @discord.ui.button(label="Browse Recipes", style=discord.ButtonStyle.secondary, custom_id="item_browse_recipes")
