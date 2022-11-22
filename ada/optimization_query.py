@@ -247,7 +247,9 @@ class OptimizationQuery(Query):
         print(self)
 
     def query_vars(self) -> list[str]:
-        query_vars = [self.__objective.var]
+        query_vars = []
+        if self.has_objective():
+            query_vars.append(self.__objective.var)
         for category in self.__outputs.values():
             query_vars.extend(category.elements.keys())
         for category in self.__inputs.values():

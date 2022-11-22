@@ -33,4 +33,4 @@ class AdaDispatch(Dispatch):
     # Replaces the interaction message with the result
     async def replace(self, result: Result, breadcrumbs: Breadcrumbs, interaction: discord.Interaction):
         message = ResultMessageFactory.from_result(result, breadcrumbs, self)
-        await message.replace(interaction)
+        await message.replace(interaction, self)

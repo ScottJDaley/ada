@@ -10,7 +10,6 @@ from .views.item_view import ItemView
 from .views.multi_entity_view import MultiEntityView
 from .views.optimization_view import OptimizationSelectorView
 from .views.recipe_view import RecipeView
-from .views.with_previous_view import WithPreviousView
 from ..db.crafter import Crafter
 from ..db.extractor import Extractor
 from ..db.item import Item
@@ -29,8 +28,6 @@ class ResultMessageFactory:
     @staticmethod
     def from_result(result: Result, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         message = ResultMessageFactory._from_result(result, breadcrumbs, dispatch)
-        if message.breadcrumbs.has_prev_page():
-            message.view = WithPreviousView(message.view, dispatch)
         return message
 
     @multimethod

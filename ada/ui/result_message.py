@@ -5,6 +5,8 @@ from typing import Optional
 import discord
 
 from .breadcrumbs import Breadcrumbs
+from .dispatch import Dispatch
+from .views.with_previous_view import WithPreviousView
 
 
 class ResultMessage:
@@ -23,10 +25,23 @@ class ResultMessage:
             view=self.view if self.view else discord.utils.MISSING,
         )
 
-    async def replace(self, interaction: discord.Interaction):
+    async def replace(self, interaction: discord.Interaction, dispatch: Dispatch):
+        if self.breadcrumbs.has_prev_page():
+            self.view = WithPreviousView(self.view, dispatch)
         await interaction.response.edit_message(
             content=self.breadcrumbs.format_content(self.content),
             embed=self.embed,
             attachments=[self.file] if self.file else [],
             view=self.view,
         )
+
+    @staticmethod
+    def copy_from(interaction: discord.Interaction):
+        breadcrumbs, remaining_content = Breadcrumbs.parse(interaction.message.content)
+        message = ResultMessage(breadcrumbs)
+        message.content = remaining_content
+        message.embed = interaction.message.embeds[0]
+        message.file = interaction.message.attachments[0] if len(
+            interaction.message.attachments
+        ) > 0 else discord.utils.MISSING
+        return message

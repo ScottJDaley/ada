@@ -7,6 +7,12 @@ from .ui.ada_dispatch import AdaDispatch
 from .ui.views.crafter_view import CrafterView
 from .ui.views.item_view import ItemView
 from .ui.views.multi_entity_view import MultiEntityView
+from .ui.views.optimization_view import (
+    BuildingsCategoryView, InputCategoryView,
+    OptimizationContainer,
+    OptimizationSelectorView,
+    OutputsCategoryView, RecipesCategoryView, SettingsCategoryView,
+)
 from .ui.views.recipe_view import RecipeView
 from .ui.views.with_previous_view import WithPreviousView
 
@@ -24,11 +30,18 @@ class AdaCog(commands.Cog):
         await self.__dispatch.query_and_send(query, interaction)
 
     def _setup_views(self):
+        container = OptimizationContainer(self.__dispatch)
         views = [
             ItemView(self.__dispatch),
             CrafterView(self.__dispatch),
             RecipeView(self.__dispatch),
-            MultiEntityView([], 0, self.__dispatch)
+            MultiEntityView([], 0, self.__dispatch),
+            OptimizationSelectorView(container, ""),
+            InputCategoryView(container, ""),
+            OutputsCategoryView(container, ""),
+            RecipesCategoryView(container, ""),
+            BuildingsCategoryView(container, ""),
+            SettingsCategoryView(container),
         ]
         for view in views:
             self.__bot.add_view(view)

@@ -1,59 +1,92 @@
 from functools import partial
-from typing import Awaitable, Callable, cast
+from typing import Awaitable, Callable, Optional, cast
 
 import discord
 
 from ..breadcrumbs import Breadcrumbs
 from ..dispatch import Dispatch
+from ..result_message import ResultMessage
 from ...db.entity import Entity
+from ...info import InfoResult
 from ...optimization_query import Objective, OptimizationQuery
 from ...optimization_result_data import OptimizationResultData
+from ...optimizer import OptimizationResult
 from ...query_parser import QueryParseException
 
 
 # TODO: Finish up persistence work here:
-# class OptimizationContainer:
-#     def __init__(
-#             self,
-#             processor: Processor,
-#             data: Optional[OptimizationResultData] = None,
-#             query: Optional[OptimizationQuery] = None):
-#         self.__processor = processor
-#         self.__data = data
-#         self.__query = query
-#
-#     def _restore_query(self, breadcrumbs: Breadcrumbs):
-#         raw_query = breadcrumbs.current_page().query()
-#         query = self.__processor.parse(raw_query)
-#         self.__query = cast(OptimizationQuery, query)
-#
-#     def query(self, breadcrumbs: Breadcrumbs) -> OptimizationQuery:
-#         if not self.__query:
-#             self._restore_query(breadcrumbs)
-#         return self.__query
-#
-#     def _restore_data(self, breadcrumbs: Breadcrumbs):
-#         if not self.__query:
-#             self._restore_query(breadcrumbs)
-#         result = await self.__processor.execute(self.__query)
-#         # TODO: need to get OptimizationResultData here, but only if we cast to an OptimizationResult which
-#         # results in a circular dependency
+class OptimizationContainer:
+    def __init__(
+            self,
+            dispatch: Dispatch,
+            data: Optional[OptimizationResultData] = None,
+            query: Optional[OptimizationQuery] = None
+    ):
+        self.__dispatch = dispatch
+        self.__data = data
+        self.__query = query
+
+    def dispatch(self) -> Dispatch:
+        return self.__dispatch
+
+    def query(self, breadcrumbs: Breadcrumbs) -> OptimizationQuery:
+        if not self.__query:
+            self._restore_query(breadcrumbs)
+        return self.__query
+
+    async def data(self, breadcrumbs: Breadcrumbs) -> OptimizationResultData:
+        if not self.__data:
+            await self._restore_data(breadcrumbs)
+        return self.__data
+
+    def try_get_query(self) -> Optional[OptimizationQuery]:
+        return self.__query
+
+    def try_get_data(self) -> Optional[OptimizationResultData]:
+        return self.__data
+
+    def _restore_query(self, breadcrumbs: Breadcrumbs) -> None:
+        raw_query = breadcrumbs.current_page().query()
+        query = self.__dispatch.parse(raw_query)
+        self.__query = cast(OptimizationQuery, query)
+
+    async def _restore_data(self, breadcrumbs: Breadcrumbs) -> None:
+        result = await self.__dispatch.execute(self.query(breadcrumbs))
+        result = cast(OptimizationResult, result)
+        self.__data = result.result_data()
 
 
 # Note:         # discord.utils.get(self.children, custom_id="input_info")
 
-class OptimizationCategoryView(discord.ui.View):
+
+class OptimizationView(discord.ui.View):
+    def __init__(self, container: OptimizationContainer):
+        super().__init__(timeout=None)
+        self.__container = container
+
+    def dispatch(self) -> Dispatch:
+        return self.__container.dispatch()
+
+    def query(self, breadcrumbs: Breadcrumbs) -> OptimizationQuery:
+        return self.__container.query(breadcrumbs)
+
+    async def data(self, breadcrumbs: Breadcrumbs) -> OptimizationResultData:
+        return await self.__container.data(breadcrumbs)
+
+    def try_get_query(self) -> Optional[OptimizationQuery]:
+        return self.__container.try_get_query()
+
+    def try_get_data(self) -> Optional[OptimizationResultData]:
+        return self.__container.try_get_data()
+
+
+class OptimizationCategoryView(OptimizationView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
-            active_category: str
+            container: OptimizationContainer,
+            active_category: str,
     ):
-        super().__init__(timeout=None)
-        self.__dispatch = dispatch
-        self.__data = data
-        self.__query = query
+        super().__init__(container)
         self._add_categories(active_category)
 
     def _add_categories(self, active_category: str):
@@ -73,14 +106,16 @@ class OptimizationCategoryView(discord.ui.View):
 
     async def on_category(self, custom_id: str, interaction: discord.Interaction):
         print("Category button clicked")
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        breadcrumbs.current_page().clear_custom_ids()
-        breadcrumbs.current_page().add_custom_id(custom_id)
-        # We don't need to rerun the query here if we have the data.
-        # Instead, just construct the correct view and update the breadcrumbs
-        # TODO: check if self.__data is None and, if so, do a query instead
-        view = OptimizationSelectorView.get_view(breadcrumbs, self.__dispatch, self.__data, self.__query)
-        await self.__dispatch.edit(breadcrumbs=breadcrumbs, interaction=interaction, view=view)
+        message = ResultMessage.copy_from(interaction)
+        message.breadcrumbs.current_page().clear_custom_ids()
+        message.breadcrumbs.current_page().add_custom_id(custom_id)
+        message.view = OptimizationSelectorView.get_view(
+            message.breadcrumbs,
+            self.dispatch(),
+            await self.data(message.breadcrumbs),
+            self.query(message.breadcrumbs)
+        )
+        await message.replace(interaction, self.dispatch())
 
 
 class EntityDropdown(discord.ui.Select):
@@ -104,76 +139,84 @@ class EntityDropdown(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
+        print("EntityDropdown callback")
         selection_option = self.values[0]
-        selection_var = next(option.description for option in self.options if selection_option == option.label)
+        print("Selected option", self.values[0])
+        if len(self.options) == 0:
+            # Need to restore the options so that we know what option
+            result = await self.__dispatch.query(selection_option)
+            result = cast(InfoResult, result)
+            selection_var = result.entities()[0].var()
+        else:
+            print("All options", [option.label for option in self.options])
+            selection_var = next(option.description for option in self.options if selection_option == option.label)
         await self.__callback(selection_var, interaction)
 
 
 class OptimizationSelectorView(OptimizationCategoryView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
+            container: OptimizationContainer,
             category: str
     ):
-        super().__init__(dispatch, data, query, category)
-        self.__dispatch = dispatch
-        self.__data = data
-        self.__query = query
+        super().__init__(container, category)
         entities: list[Entity] = []
-        if category == "inputs":
-            for item, _ in data.inputs().values():
-                entities.append(item)
-        elif category == "outputs":
-            for item, _ in data.outputs().values():
-                entities.append(item)
-        elif category == "recipes":
-            for recipe, _ in data.recipes().values():
-                entities.append(recipe)
-        elif category == "buildings":
-            for crafter, _ in data.crafters().values():
-                entities.append(crafter)
-            for generator, _ in data.generators().values():
-                entities.append(generator)
+        data = self.try_get_data()
+        if data:
+            if category == "inputs":
+                for item, _ in data.inputs().values():
+                    entities.append(item)
+            elif category == "outputs":
+                for item, _ in data.outputs().values():
+                    entities.append(item)
+            elif category == "recipes":
+                for recipe, _ in data.recipes().values():
+                    entities.append(recipe)
+            elif category == "buildings":
+                for crafter, _ in data.crafters().values():
+                    entities.append(crafter)
+                for generator, _ in data.generators().values():
+                    entities.append(generator)
         # TODO: add cases for other categories
-        self.add_item(EntityDropdown(entities, dispatch, self.on_select))
+        self.add_item(EntityDropdown(entities, self.dispatch(), self.on_select))
 
     @staticmethod
     def get_view(
             breadcrumbs: Breadcrumbs, dispatch: Dispatch, data: OptimizationResultData,
             query: OptimizationQuery
     ) -> discord.ui.View:
-        dispatch = dispatch
         custom_ids = breadcrumbs.current_page().custom_ids()
         category = custom_ids[0]
+        container = OptimizationContainer(dispatch, data, query)
         if category == "settings":
-            return SettingsCategoryView(dispatch, data, query)
+            return SettingsCategoryView(container)
         if len(breadcrumbs.current_page().custom_ids()) != 2:
-            return OptimizationSelectorView(dispatch, data, query, category)
+            return OptimizationSelectorView(container, category)
         selected = custom_ids[1]
         if category == "inputs":
-            return InputCategoryView(dispatch, data, query, selected)
+            return InputCategoryView(container, selected)
         if category == "outputs":
-            return OutputsCategoryView(dispatch, data, query, selected)
+            return OutputsCategoryView(container, selected)
         if category == "recipes":
-            return RecipesCategoryView(dispatch, data, query, selected)
+            return RecipesCategoryView(container, selected)
         if category == "buildings":
-            return BuildingsCategoryView(dispatch, data, query, selected)
-        return OptimizationSelectorView(dispatch, data, query, category)
+            return BuildingsCategoryView(container, selected)
+        return OptimizationSelectorView(container, category)
 
     async def on_select(self, selected: str, interaction: discord.Interaction):
-        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
-        custom_ids = breadcrumbs.current_page().custom_ids()
+        message = ResultMessage.copy_from(interaction)
+        custom_ids = message.breadcrumbs.current_page().custom_ids()
         if len(custom_ids) < 2:
-            breadcrumbs.current_page().add_custom_id(selected)
+            message.breadcrumbs.current_page().add_custom_id(selected)
         else:
             custom_ids[1] = selected
-        # We don't need to rerun the query here if we have the data.
-        # Instead, just construct the correct view and update the breadcrumbs
-        # TODO: check if self.__data is None and, if so, do a query instead
-        view = OptimizationSelectorView.get_view(breadcrumbs, self.__dispatch, self.__data, self.__query)
-        await self.__dispatch.edit(breadcrumbs=breadcrumbs, interaction=interaction, view=view)
+        message.view = OptimizationSelectorView.get_view(
+            message.breadcrumbs,
+            self.dispatch(),
+            await self.data(message.breadcrumbs),
+            self.query(message.breadcrumbs)
+        )
+        await message.replace(interaction, self.dispatch())
 
 
 class InfoButton(discord.ui.Button):
@@ -214,18 +257,20 @@ class EditQueryButton(discord.ui.Button):
 class InputCategoryView(OptimizationSelectorView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
+            container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(dispatch, data, query, "inputs")
+        super().__init__(container, "inputs")
 
-        self.__dispatch = dispatch
+        input_name = ""
+        amount = 0
 
-        input, amount = data.inputs()[selected]
+        data = self.try_get_data()
+        if data:
+            input, amount = data.inputs()[selected]
+            input_name = input.human_readable_name()
 
-        self.add_item(InfoButton(label=input.human_readable_name(), custom_id="input_info", dispatch=dispatch))
+        self.add_item(InfoButton(label=input_name, custom_id="input_info", dispatch=self.dispatch()))
 
         self.add_item(
             discord.ui.Button(
@@ -248,7 +293,7 @@ class InputCategoryView(OptimizationSelectorView):
             EditQueryButton(
                 custom_id="input_exclude",
                 edit_query=(lambda q, var: q.add_input(var, 0, False)),
-                dispatch=self.__dispatch
+                dispatch=self.dispatch()
             )
         )
 
@@ -257,7 +302,7 @@ class InputCategoryView(OptimizationSelectorView):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
-            query = self.__dispatch.parse(raw_query)
+            query = self.dispatch().parse(raw_query)
         except QueryParseException as parse_exception:
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
@@ -265,24 +310,26 @@ class InputCategoryView(OptimizationSelectorView):
         input_var = breadcrumbs.current_page().custom_ids()[-1]
         query.objective = Objective(input_var, False, -1)
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
-        await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)
+        await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
 
 class OutputsCategoryView(OptimizationSelectorView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
+            container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(dispatch, data, query, "outputs")
+        super().__init__(container, "outputs")
 
-        self.__dispatch = dispatch
+        output_name = ""
+        amount = 0
 
-        output, amount = data.outputs()[selected]
+        data = self.try_get_data()
+        if data:
+            output, amount = data.outputs()[selected]
+            output_name = output.human_readable_name()
 
-        self.add_item(InfoButton(label=output.human_readable_name(), custom_id="output_info", dispatch=dispatch))
+        self.add_item(InfoButton(label=output_name, custom_id="output_info", dispatch=self.dispatch()))
 
         self.__amount_button = discord.ui.Button(
             label=str(amount),
@@ -304,7 +351,7 @@ class OutputsCategoryView(OptimizationSelectorView):
             EditQueryButton(
                 custom_id="output_exclude",
                 edit_query=(lambda q, var: q.add_output(var, 0, False)),
-                dispatch=self.__dispatch
+                dispatch=self.dispatch()
             )
         )
 
@@ -313,7 +360,7 @@ class OutputsCategoryView(OptimizationSelectorView):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
-            query = self.__dispatch.parse(raw_query)
+            query = self.dispatch().parse(raw_query)
         except QueryParseException as parse_exception:
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
@@ -321,24 +368,26 @@ class OutputsCategoryView(OptimizationSelectorView):
         output_var = breadcrumbs.current_page().custom_ids()[-1]
         query.objective = Objective(output_var, True, 1)
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
-        await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)
+        await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
 
 class RecipesCategoryView(OptimizationSelectorView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
+            container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(dispatch, data, query, "recipes")
+        super().__init__(container, "recipes")
 
-        self.__dispatch = dispatch
+        recipe_name = ""
+        amount = 0
 
-        recipe, amount = data.recipes()[selected]
+        data = self.try_get_data()
+        if data:
+            recipe, amount = data.recipes()[selected]
+            recipe_name = recipe.human_readable_name()
 
-        self.add_item(InfoButton(label=recipe.human_readable_name(), custom_id="recipe_info", dispatch=dispatch))
+        self.add_item(InfoButton(label=recipe_name, custom_id="recipe_info", dispatch=self.dispatch()))
 
         self.__amount_button = discord.ui.Button(
             label=str(amount),
@@ -352,7 +401,7 @@ class RecipesCategoryView(OptimizationSelectorView):
             EditQueryButton(
                 custom_id="recipe_exclude",
                 edit_query=(lambda q, var: q.add_exclude(var)),
-                dispatch=self.__dispatch
+                dispatch=self.dispatch()
             )
         )
 
@@ -360,21 +409,23 @@ class RecipesCategoryView(OptimizationSelectorView):
 class BuildingsCategoryView(OptimizationSelectorView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery,
+            container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(dispatch, data, query, "buildings")
+        super().__init__(container, "buildings")
 
-        self.__dispatch = dispatch
+        building_name = ""
+        amount = 0
 
-        if selected in data.crafters():
-            building, amount = data.crafters()[selected]
-        else:
-            building, amount = data.generators()[selected]
+        data = self.try_get_data()
+        if data:
+            if selected in data.crafters():
+                building, amount = data.crafters()[selected]
+            else:
+                building, amount = data.generators()[selected]
+            building_name = building.human_readable_name()
 
-        self.add_item(InfoButton(label=building.human_readable_name(), custom_id="building_info", dispatch=dispatch))
+        self.add_item(InfoButton(label=building_name, custom_id="building_info", dispatch=self.dispatch()))
 
         self.__amount_button = discord.ui.Button(
             label=str(amount),
@@ -388,7 +439,7 @@ class BuildingsCategoryView(OptimizationSelectorView):
             EditQueryButton(
                 custom_id="building_exclude",
                 edit_query=(lambda q, var: q.add_exclude(var)),
-                dispatch=self.__dispatch
+                dispatch=self.dispatch()
             )
         )
 
@@ -396,13 +447,14 @@ class BuildingsCategoryView(OptimizationSelectorView):
 class SettingsCategoryView(OptimizationCategoryView):
     def __init__(
             self,
-            dispatch: Dispatch,
-            data: OptimizationResultData,
-            query: OptimizationQuery
+            container: OptimizationContainer,
     ):
-        super().__init__(dispatch, data, query, "settings")
+        super().__init__(container, "settings")
 
-        self.__dispatch = dispatch
+        query = self.try_get_query()
+        if not query:
+            # Create a dummy query here just so that we create all the buttons correctly.
+            query = OptimizationQuery()
 
         allows_alternate_recipes = "alternate-recipes" in query.query_vars()
         self.__alternate_recipes_button = discord.ui.Button(
@@ -429,7 +481,7 @@ class SettingsCategoryView(OptimizationCategoryView):
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
-            query = self.__dispatch.parse(raw_query)
+            query = self.dispatch().parse(raw_query)
         except QueryParseException as parse_exception:
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
@@ -439,18 +491,18 @@ class SettingsCategoryView(OptimizationCategoryView):
         else:
             query.add_include("alternate-recipes")
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
-        await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)
+        await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
     async def on_byproducts(self, interaction: discord.Interaction):
         print("byproducts clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
-            query = self.__dispatch.parse(raw_query)
+            query = self.dispatch().parse(raw_query)
         except QueryParseException as parse_exception:
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
         query = cast(OptimizationQuery, query)
         query.set_strict_outputs(not query.strict_outputs())
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
-        await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)
+        await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)

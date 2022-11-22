@@ -30,7 +30,12 @@ class Breadcrumbs:
         self.__pages.pop()
 
     @classmethod
-    def extract(cls, content) -> Breadcrumbs:
+    def extract(cls, content: str) -> Breadcrumbs:
+        breadcrumbs, remaining_content = Breadcrumbs.parse(content)
+        return breadcrumbs
+
+    @classmethod
+    def parse(cls, content: str) -> tuple[Breadcrumbs, str]:
         content_lines = content.splitlines()
         if len(content_lines) <= 2:
             raise BreadcrumbsException("Content only had " + str(len(content_lines)) + " lines")
@@ -48,7 +53,8 @@ class Breadcrumbs:
 
         print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
         pages = [Breadcrumbs.Page.extract(x.removeprefix("> ").strip()) for x in content_lines[1:1 + num_pages]]
-        return cls(pages)
+        remaining_content = "\n".join(content_lines[2 + num_pages:])
+        return cls(pages), remaining_content
 
     @classmethod
     def create(cls, query: str, custom_ids: list[str] = None) -> Breadcrumbs:
