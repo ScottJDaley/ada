@@ -162,7 +162,7 @@ outputs, and adhere to any given constraints.
 
 1. Create python virtual environment and activate it
    ```zsh
-   python3 -m venv venv && source ./venv/bin/activate
+   python3 -m venv venv && source venv/bin/activate
    ```
 
    :bulb: You may deactivate the virtual environment with `deactivate`
