@@ -78,9 +78,29 @@ class ResultMessageFactory:
         message = ResultMessage(breadcrumbs)
         message.embed = discord.Embed(title="Optimization Query")
 
-        sections = [str(result.query())]
-
         result_data = result.result_data()
+        inputs = [f"{input.human_readable_name()}: {round(abs(amount), 2)}"
+                  for input, amount in result_data.inputs().values()]
+        outputs = [f"{output.human_readable_name()}: {round(abs(amount), 2)}"
+                   for output, amount in result_data.outputs().values()]
+        recipes = [f"{recipe.human_readable_name()}: {round(abs(amount), 2)}"
+                   for recipe, amount in result_data.recipes().values()]
+        buildings = [f"{crafter.human_readable_name()}: {round(abs(amount), 2)}"
+                     for crafter, amount in result_data.crafters().values()]
+        buildings.extend(
+            [f"{generator.human_readable_name()}: {round(abs(amount), 2)}"
+             for generator, amount in result_data.generators().values()]
+        )
+
+        sections = [str(result.query())]
+        if len(inputs) > 0:
+            sections.append("**Inputs**\n" + "\n".join(inputs))
+        if len(outputs) > 0:
+            sections.append("**Outputs**\n" + "\n".join(outputs))
+        if len(recipes) > 0:
+            sections.append("**Recipes**\n" + "\n".join(recipes))
+        if len(buildings) > 0:
+            sections.append("**Buildings**\n" + "\n".join(buildings))
 
         # descriptions = []
         description = ""
