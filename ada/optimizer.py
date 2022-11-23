@@ -154,7 +154,7 @@ class OptimizationResult(Result):
         if self.__status is LpStatusUndefined:
             return "No solution has been found."
         if self.__status is LpStatusInfeasible:
-            return "Solution is infeasible, try removing a constraint or allowing a byproduct (e.g. rubber >= 0)"
+            return "Solution is infeasible, try allowing alternate recipes or byproducts in the settings."
         if self.__status is LpStatusUnbounded:
             return "Solution is unbounded, try adding a constraint or replacing '?' with a concrete value (e.g. 1000)"
         return self.__string_solution()

@@ -18,6 +18,7 @@ from ..db.power_recipe import PowerRecipe
 from ..db.recipe import Recipe
 from ..help import HelpResult
 from ..info import InfoResult
+from ..optimization_result_data import OptimizationResultData
 from ..optimizer import OptimizationResult
 from ..recipe_comparer import RecipeCompareResult
 from ..result import ErrorResult, Result
@@ -73,6 +74,12 @@ class ResultMessageFactory:
         if not result.success():
             message = ResultMessage(breadcrumbs)
             message.embed = discord.Embed(title=str(result))
+            message.view = OptimizationSelectorView.get_view(
+                breadcrumbs,
+                dispatch,
+                OptimizationResultData(inputs={}, outputs={}, recipes={}, crafters={}, generators={}, net_power=0),
+                result.query()
+            )
             return message
 
         message = ResultMessage(breadcrumbs)

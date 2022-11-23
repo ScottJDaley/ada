@@ -130,7 +130,7 @@ class EntityDropdown(discord.ui.Select):
         for entity in entities:
             options.append(discord.SelectOption(label=entity.var(), description=entity.human_readable_name()))
         if len(options) == 0:
-            options.append(discord.SelectOption(label="Nothing"))
+            options.append(discord.SelectOption(label="None"))
         super().__init__(
             placeholder="Select one",
             min_values=1,
