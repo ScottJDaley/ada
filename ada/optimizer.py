@@ -563,10 +563,14 @@ class Optimizer:
             for input_var, input in category.elements.items():
                 if input_var not in self.__db.items() and input_var != POWER:
                     continue
+                if isinstance(input.value, AmountValue) and input.value.value == 0:
+                    continue
                 inputs.append(input_var)
         for category in query.outputs().values():
             for output_var, output in category.elements.items():
                 if output_var not in self.__db.items() and output_var != POWER:
+                    continue
+                if isinstance(output.value, AmountValue) and output.value.value == 0:
                     continue
                 outputs.append(output_var)
 
@@ -754,8 +758,8 @@ class Optimizer:
             prob += self.__variables["generator:geothermal-generator"] == 0
 
         # Disable biomasss burners since they cannot be automated.
-        if "generator:biomass-burner" not in query_vars:
-            prob += self.__variables["generator:biomass-burner"] == 0
+        # if "generator:biomass-burner" not in query_vars:
+        #     prob += self.__variables["generator:biomass-burner"] == 0
 
         # Disable alternate recipes unless the query specifically allows it
         if ALTERNATE_RECIPES not in query_vars:
