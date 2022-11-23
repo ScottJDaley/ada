@@ -3,32 +3,40 @@ from typing import Callable, Generic, TypeVar
 from .query import Query
 
 
+class MaximizeValue:
+    def __str__(self):
+        return "?"
+
+
+class AnyValue:
+    def __str__(self):
+        return "_"
+
+
+class AmountValue:
+    def __init__(self, value: float):
+        self.value = value
+
+    def __str__(self, ):
+        return str(self.value)
+
+
 class Input:
-    def __init__(self, var: str, amount: int | None):
+    def __init__(self, var: str, value: AmountValue | MaximizeValue | AnyValue):
         self.var = var
-        self.amount = amount
+        self.value = value
 
     def __str__(self):
-        if self.has_amount():
-            return f"{self.amount} {self.var}"
-        return self.var
-
-    def has_amount(self):
-        return self.amount is not None
+        return f"{self.value} {self.var}"
 
 
 class Output:
-    def __init__(self, var: str, amount: int | None):
+    def __init__(self, var: str, value: AmountValue | MaximizeValue | AnyValue):
         self.var = var
-        self.amount = amount
+        self.value = value
 
     def __str__(self):
-        if self.has_amount():
-            return f"{self.amount} {self.var}"
-        return self.var
-
-    def has_amount(self):
-        return self.amount is not None
+        return f"{self.value} {self.var}"
 
 
 class Include:
@@ -45,14 +53,6 @@ class Exclude:
 
     def __str__(self):
         return self.var
-
-
-# TODO: Remove maximize and coefficient after testing that non-negated inputs work as expected with max.
-class Objective:
-    def __init__(self, var: str, maximize: bool, coefficient: int):
-        self.var = var
-        self.maximize = maximize
-        self.coefficient = coefficient
 
 
 T = TypeVar("T")
@@ -92,7 +92,7 @@ def _remove_element(dictionary: dict[str, Category], var: str):
 
 class OptimizationQuery(Query):
     def __init__(self) -> None:
-        self.__inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
+        self.__inputs: dict[str, Category[Input]] = {"resource": Category("item", False)}
         self.__outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
         self.__includes: dict[str, Category[Include]] = {
             "crafter": Category("crafter", True),
@@ -101,21 +101,35 @@ class OptimizationQuery(Query):
             "power-recipe": Category("power-recipe", True),
         }
         self.__excludes: dict[str, Category[Exclude]] = {}
-        self.__objective: Objective | None = None
+        self.__objective: Input | Output | None = None
+
+    def objective(self) -> Input | Output | None:
+        return self.__objective
 
     def has_objective(self) -> bool:
         return self.__objective is not None
 
-    def add_objective(self, objective: Objective) -> None:
-        self.__objective = objective
+    def add_output(self, var: str, value: AmountValue | MaximizeValue | AnyValue, strict: bool):
+        print(f"Adding output, var={var}, amount={value}, strict={strict}")
+        output = Output(var, value)
+        if isinstance(value, MaximizeValue):
+            self.__objective = output
+        _add_element(self.__outputs, var, output, strict)
 
-    def add_output(self, var: str, amount: int | None, strict: bool):
-        print(f"Adding output, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.__outputs, var, Output(var, amount), strict)
+    def remove_output(self, var: str):
+        print(f"Remove output, var={var}")
+        _remove_element(self.__outputs, var)
 
-    def add_input(self, var: str, amount: int | None, strict: bool):
-        print(f"Adding input, var={var}, amount={amount}, strict={strict}")
-        _add_element(self.__inputs, var, Input(var, amount), strict)
+    def add_input(self, var: str, value: AmountValue | MaximizeValue | AnyValue, strict: bool):
+        print(f"Adding input, var={var}, amount={value}, strict={strict}")
+        input = Input(var, value)
+        if isinstance(value, MaximizeValue):
+            self.__objective = input
+        _add_element(self.__inputs, var, input, strict)
+
+    def remove_input(self, var: str):
+        print(f"Remove input, var={var}")
+        _remove_element(self.__inputs, var)
 
     def add_include(self, var: str):
         print(f"Adding include, var={var}")
@@ -129,63 +143,26 @@ class OptimizationQuery(Query):
         print(f"Adding exclude, var={var}")
         _add_element(self.__excludes, var, Exclude(var), False)
 
-    def maximize_objective(self) -> bool:
-        return self.__objective.maximize
+    def inputs(self):
+        return self.__inputs
 
-    def objective_coefficients(self) -> dict[str, int]:
-        return {self.__objective.var: self.__objective.coefficient}
+    def outputs(self):
+        return self.__outputs
 
-    def eq_constraints(self) -> dict[str, float]:
-        result = {}
+    def includes(self):
+        return self.__includes
 
-        def process_output(var: str, output: Output):
-            if output.has_amount():
-                result[var] = output.amount
-
-        def process_exclude(var: str, exclude: Exclude):
-            result[var] = 0
-
-        for_all_elements(self.__outputs, process_output)
-        for_all_elements(self.__excludes, process_exclude)
-
-        return result
-
-    def ge_constraints(self) -> dict[str, float]:
-        result = {}
-
-        def process_output(var: str, output: Output):
-            if not output.has_amount():
-                result[var] = 0
-
-        def process_input(var: str, input: Input):
-            if input.has_amount():
-                result[var] = -input.amount
-
-        def process_include(var: str, include: Include):
-            result[var] = 0
-
-        for_all_elements(self.__outputs, process_output)
-        for_all_elements(self.__inputs, process_input)
-        for_all_elements(self.__includes, process_include)
-
-        return result
-
-    def le_constraints(self) -> dict[str, float]:
-        result = {}
-
-        def process_input(var: str, input: Input):
-            if not input.has_amount():
-                result[var] = 0
-
-        for_all_elements(self.__inputs, process_input)
-
-        return result
+    def excludes(self):
+        return self.__excludes
 
     def strict_inputs(self):
-        return self.__inputs["item"].strict and len(self.__inputs["item"].elements) > 0
+        return self.__inputs["resource"].strict
 
     def strict_outputs(self):
         return self.__outputs["item"].strict
+
+    def set_strict_inputs(self, value: bool):
+        self.__inputs["resource"].strict = value
 
     def set_strict_outputs(self, value: bool):
         self.__outputs["item"].strict = value
@@ -212,26 +189,34 @@ class OptimizationQuery(Query):
         includes = []
         excludes = []
 
-        if self.__objective.maximize:
-            outputs.append(f"? {self.__objective.var}")
-        else:
-            inputs.append(f"? {self.__objective.var}")
+        # if isinstance(self.__objective, Output):
+        #     outputs.append(f"? {self.__objective.var}")
+        # elif isinstance(self.__objective, Input):
+        #     inputs.append(f"? {self.__objective.var}")
 
         for category in self.__outputs.values():
-            for output in category.elements.values():
-                outputs.append(f"{'only ' if category.strict else ''}{output.amount} {output.var}")
+            values = category.elements.values()
+            if len(values) == 0:
+                continue
+            outputs.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
 
         for category in self.__inputs.values():
-            for input in category.elements.values():
-                inputs.append(f"{'only ' if category.strict else ''}{input.amount} {input.var}")
+            values = category.elements.values()
+            if len(values) == 0:
+                continue
+            inputs.append(f"{'only ' if category.strict else ''}{' and '.join([str(value) for value in values])}")
 
         for category in self.__includes.values():
-            for include in category.elements.values():
-                includes.append(f"{'only ' if category.strict else ''}{include.var}")
+            values = category.elements.values()
+            if len(values) == 0:
+                continue
+            includes.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
 
         for category in self.__excludes.values():
-            for exclude in category.elements.values():
-                excludes.append(f"{'only ' if category.strict else ''}{exclude.var}")
+            values = category.elements.values()
+            if len(values) == 0:
+                continue
+            excludes.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
 
         parts = [f"produce {' and '.join(outputs)}"]
         if len(inputs) > 0:

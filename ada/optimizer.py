@@ -14,7 +14,7 @@ from pulp.constants import (
 from pulp.pulp import LpProblem, LpVariable
 
 from .db.db import DB
-from .optimization_query import OptimizationQuery
+from .optimization_query import AmountValue, AnyValue, MaximizeValue, OptimizationQuery, Output
 from .optimization_result_data import OptimizationResultData
 from .result import Result
 
@@ -555,34 +555,18 @@ class Optimizer:
         inputs = []
         outputs = []
 
-        for var, coeff in query.objective_coefficients().items():
-            if var not in self.__db.items() and var != POWER:
-                continue
-            if coeff < 0:
-                inputs.append(var)
-            elif coeff >= 0:
-                outputs.append(var)
-        for var, value in query.eq_constraints().items():
-            if var not in self.__db.items() and var != POWER:
-                continue
-            if value < 0:
-                inputs.append(var)
-            elif value > 0:
-                outputs.append(var)
-        for var, value in query.le_constraints().items():
-            if var not in self.__db.items() and var != POWER:
-                continue
-            if value <= 0:
-                inputs.append(var)
-            elif value > 0:
-                outputs.append(var)
-        for var, value in query.ge_constraints().items():
-            if var not in self.__db.items() and var != POWER:
-                continue
-            if value < 0:
-                inputs.append(var)
-            elif value >= 0:
-                outputs.append(var)
+        for category in query.inputs().values():
+            for input_var, input in category.elements.items():
+                if input_var not in self.__db.items() and input_var != POWER:
+                    continue
+                inputs.append(input_var)
+        for category in query.outputs().values():
+            for output_var, output in category.elements.items():
+                if output_var not in self.__db.items() and output_var != POWER:
+                    continue
+                outputs.append(output_var)
+
+        print("inputs:", inputs, "outputs:", outputs)
 
         enabled_recipes = []
         enabled_power_recipes = []
@@ -658,29 +642,51 @@ class Optimizer:
         print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
-        if query.maximize_objective():
+        if isinstance(query.objective(), Output):
             prob = pulp.LpProblem("max-problem", pulp.LpMaximize)
         else:
             prob = pulp.LpProblem("min-problem", pulp.LpMinimize)
 
         query_vars = query.query_vars()
 
-        prob += pulp.LpAffineExpression(
-            [
-                (self.__variables[var], coeff)
-                for var, coeff in query.objective_coefficients().items()
-            ]
-        )
+        # prob += pulp.LpAffineExpression(
+        #     [
+        #         (self.__variables[query.objective().var], 1)
+        #     ]
+        # )
 
-        for var, bound in query.eq_constraints().items():
-            prob += self.__variables[var] == bound
-        for var, bound in query.ge_constraints().items():
-            prob += self.__variables[var] >= bound
-        for var, bound in query.le_constraints().items():
-            prob += self.__variables[var] <= bound
+        for category in query.inputs().values():
+            for input_var, input in category.elements.items():
+                variable = self.__variables[input_var]
+                if isinstance(input.value, AmountValue):
+                    prob += variable >= -input.value.value
+                elif isinstance(input.value, AnyValue):
+                    prob += variable <= 0
+                elif isinstance(input.value, MaximizeValue):
+                    prob += -variable
+
+        for category in query.outputs().values():
+            for output_var, output in category.elements.items():
+                variable = self.__variables[output_var]
+                if isinstance(output.value, AmountValue):
+                    prob += variable == output.value.value
+                elif isinstance(output.value, AnyValue):
+                    prob += variable >= 0
+                elif isinstance(output.value, MaximizeValue):
+                    prob += variable
+
+        for category in query.includes().values():
+            for include_var in category.elements:
+                variable = self.__variables[include_var]
+                prob += variable >= 0
+
+        for category in query.excludes().values():
+            for exclude_var in category.elements:
+                variable = self.__variables[exclude_var]
+                prob += variable == 0
 
         # Display the problem before all recipes are added
-        # print(prob)
+        # print("Problem:", prob)
 
         # Add constraints for all item, crafter, and power equalities
         for exp in self.__equalities:

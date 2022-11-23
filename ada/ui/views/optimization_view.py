@@ -8,7 +8,7 @@ from ..dispatch import Dispatch
 from ..result_message import ResultMessage
 from ...db.entity import Entity
 from ...info import InfoResult
-from ...optimization_query import Objective, OptimizationQuery
+from ...optimization_query import MaximizeValue, OptimizationQuery
 from ...optimization_result_data import OptimizationResultData
 from ...optimizer import OptimizationResult
 from ...query_parser import QueryParseException
@@ -130,6 +130,8 @@ class EntityDropdown(discord.ui.Select):
         options = []
         for entity in entities:
             options.append(discord.SelectOption(label=entity.human_readable_name(), description=entity.var()))
+        if len(options) == 0:
+            options.append(discord.SelectOption(label="Nothing"))
         super().__init__(
             placeholder="Select one",
             min_values=1,
@@ -308,7 +310,8 @@ class InputCategoryView(OptimizationSelectorView):
             return
         query = cast(OptimizationQuery, query)
         input_var = breadcrumbs.current_page().custom_ids()[-1]
-        query.objective = Objective(input_var, False, -1)
+        query.remove_input(input_var)
+        query.add_input(input_var, MaximizeValue(), False)
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
         await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
@@ -366,7 +369,8 @@ class OutputsCategoryView(OptimizationSelectorView):
             return
         query = cast(OptimizationQuery, query)
         output_var = breadcrumbs.current_page().custom_ids()[-1]
-        query.objective = Objective(output_var, True, 1)
+        query.remove_output(output_var)
+        query.add_output(output_var, MaximizeValue(), False)
         breadcrumbs.add_page(Breadcrumbs.Page(str(query)))
         await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 

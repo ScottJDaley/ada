@@ -26,7 +26,7 @@ from .db.entity import Entity
 from .db.item import Item
 from .help import HelpQuery
 from .info import InfoQuery
-from .optimization_query import Objective, OptimizationQuery
+from .optimization_query import AmountValue, AnyValue, MaximizeValue, OptimizationQuery
 from .recipe_compare_query import RecipeCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
@@ -288,10 +288,12 @@ class QueryParser:
                 if value == "?":
                     if query.has_objective():
                         raise QueryParseException("Only one objective may be specified.")
-                    query.add_objective(Objective(output_var, True, 1))
+                    val = MaximizeValue()
+                elif value == "_":
+                    val = AnyValue()
                 else:
-                    amount = None if value == "_" else int(value)
-                    query.add_output(output_var, amount, strict)
+                    val = AmountValue(int(value))
+                query.add_output(output_var, val, strict)
 
     def _parse_inputs(self, inputs: ParseResults, query: OptimizationQuery) -> None:
         if not inputs:
@@ -314,10 +316,12 @@ class QueryParser:
                 if value == "?":
                     if query.has_objective():
                         raise QueryParseException("Only one objective may be specified.")
-                    query.add_objective(Objective(input_var, False, -1))
+                    val = MaximizeValue()
+                elif value == "_":
+                    val = AnyValue()
                 else:
-                    amount = None if value == "_" else int(value)
-                    query.add_input(input_var, -amount, strict)
+                    val = AmountValue(int(value))
+                query.add_input(input_var, val, strict)
 
     def _parse_includes(self, includes: ParseResults, query: OptimizationQuery) -> None:
         if not includes:
@@ -394,8 +398,8 @@ class QueryParser:
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if not query.has_objective():
-            query.add_objective(Objective("unweighted-resources", False, -1))
+        if len(query.inputs()["resource"].elements) == 0 and not query.has_objective():
+            query.add_input("unweighted-resources", MaximizeValue(), False)
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):

@@ -5,7 +5,7 @@ import tabulate
 from .db.db import DB
 from .db.item import Item
 from .db.recipe import Recipe
-from .optimization_query import Objective, OptimizationQuery
+from .optimization_query import AmountValue, MaximizeValue, OptimizationQuery
 from .optimizer import Optimizer
 from .recipe_compare_query import RecipeCompareQuery
 from .result import Result
@@ -333,17 +333,17 @@ class RecipeComparer:
 
         query = OptimizationQuery()
         var = "weighted-resources" if weighted else "unweighted-resources"
-        query.add_objective(Objective(var, False, -1))
+        query.add_input(var, MaximizeValue(), False)
 
         for ingredient_var, ingredient in recipe.ingredients().items():
             if ingredient.item().is_resource():
                 inputs[ingredient_var] = (ingredient.item(), ingredient.minute_rate())
             else:
                 # query.eq_constraints[ingredient_var] = ingredient.minute_rate()
-                query.add_output(ingredient_var, ingredient.minute_rate(), False)
+                query.add_output(ingredient_var, AmountValue(ingredient.minute_rate()), False)
 
         if include_alternates:
-            query.ge_constraints["alternate-recipes"] = 0
+            query.add_include("alternate-recipes")
 
         result = await self.__opt.optimize(query)
 
