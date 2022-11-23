@@ -228,7 +228,7 @@ class OptimizationSelectorView(OptimizationCategoryView):
 
 class InfoButton(discord.ui.Button):
     def __init__(self, label: str, custom_id: str, dispatch: Dispatch):
-        super().__init__(label=label, style=discord.ButtonStyle.secondary, custom_id=custom_id)
+        super().__init__(label=label, style=discord.ButtonStyle.secondary, custom_id=custom_id, emoji="ℹ")
         self.__dispatch = dispatch
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -279,14 +279,14 @@ class InputCategoryView(OptimizationSelectorView):
 
         self.add_item(InfoButton(label=input_name, custom_id="input_info", dispatch=self.dispatch()))
 
-        self.add_item(
-            discord.ui.Button(
-                label=str(amount),
-                style=discord.ButtonStyle.secondary,
-                custom_id="input_amount",
-                disabled=True
-            )
-        )
+        # self.add_item(
+        #     discord.ui.Button(
+        #         label=str(amount),
+        #         style=discord.ButtonStyle.secondary,
+        #         custom_id="input_amount",
+        #         disabled=True
+        #     )
+        # )
 
         self.__minimize_button = discord.ui.Button(
             label="Minimize",
@@ -339,13 +339,13 @@ class OutputsCategoryView(OptimizationSelectorView):
 
         self.add_item(InfoButton(label=output_name, custom_id="output_info", dispatch=self.dispatch()))
 
-        self.__amount_button = discord.ui.Button(
-            label=str(amount),
-            style=discord.ButtonStyle.secondary,
-            custom_id="output_amount",
-            disabled=True
-        )
-        self.add_item(self.__amount_button)
+        # self.__amount_button = discord.ui.Button(
+        #     label=str(amount),
+        #     style=discord.ButtonStyle.secondary,
+        #     custom_id="output_amount",
+        #     disabled=True
+        # )
+        # self.add_item(self.__amount_button)
 
         self.__maximize_button = discord.ui.Button(
             label="Maximize",
@@ -398,13 +398,13 @@ class RecipesCategoryView(OptimizationSelectorView):
 
         self.add_item(InfoButton(label=recipe_name, custom_id="recipe_info", dispatch=self.dispatch()))
 
-        self.__amount_button = discord.ui.Button(
-            label=str(amount),
-            style=discord.ButtonStyle.secondary,
-            custom_id="recipe_amount",
-            disabled=True
-        )
-        self.add_item(self.__amount_button)
+        # self.__amount_button = discord.ui.Button(
+        #     label=str(amount),
+        #     style=discord.ButtonStyle.secondary,
+        #     custom_id="recipe_amount",
+        #     disabled=True
+        # )
+        # self.add_item(self.__amount_button)
 
         self.add_item(
             EditQueryButton(
@@ -436,13 +436,13 @@ class BuildingsCategoryView(OptimizationSelectorView):
 
         self.add_item(InfoButton(label=building_name, custom_id="building_info", dispatch=self.dispatch()))
 
-        self.__amount_button = discord.ui.Button(
-            label=str(amount),
-            style=discord.ButtonStyle.secondary,
-            custom_id="building_amount",
-            disabled=True
-        )
-        self.add_item(self.__amount_button)
+        # self.__amount_button = discord.ui.Button(
+        #     label=str(amount),
+        #     style=discord.ButtonStyle.secondary,
+        #     custom_id="building_amount",
+        #     disabled=True
+        # )
+        # self.add_item(self.__amount_button)
 
         self.add_item(
             EditQueryButton(
