@@ -332,13 +332,11 @@ class OptimizationResult(Result):
             if not self.__has_value(power_recipe.var()):
                 continue
             fuel_item = power_recipe.fuel_item()
-            fuel_amount = (
-                    self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate()
-            )
+            fuel_amount = (self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate())
             add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
-            power_production = (
-                    self.__get_value(power_recipe.var()) * power_recipe.power_production()
-            )
+            water_amount = (self.__get_value(power_recipe.var()) * power_recipe.water_minute_rate())
+            add_to_target("resource:water", sinks, power_recipe.viz_name(), water_amount)
+            power_production = (self.__get_value(power_recipe.var()) * power_recipe.power_production())
             power_output += power_production
             s.edge(
                 power_recipe.viz_name(),
@@ -445,6 +443,12 @@ class Optimizer:
                 var_coeff[
                     self.__variables[power_recipe.var()]
                 ] = -power_recipe.fuel_minute_rate()
+            if item_var == "resource:water":
+                for generator in self.__db.generators().values():
+                    if generator.requires_water():
+                        var_coeff[
+                            self.__variables[generator.var()]
+                        ] = -generator.water_minute_rate()
             var_coeff[self.__variables[item.var()]] = -1
             # var_coeff[self.__variables[item.output().var()]] = -1
             self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)

@@ -47,6 +47,14 @@ class PowerGenerator(Entity):
     def fuel_items(self) -> List[Union[Any, Item]]:
         return self.__fuel_items
 
+    def requires_water(self) -> bool:
+        if "mRequiresSupplementalResource" not in self.__data:
+            return False
+        return self.__data["mRequiresSupplementalResource"] == "True"
+
+    def water_minute_rate(self) -> float:
+        return 60 * self.power_production() * float(self.__data["mSupplementalToPowerRatio"]) / 1000
+
     def details(self):
         out = [
             self.human_readable_name(),

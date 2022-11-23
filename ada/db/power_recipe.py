@@ -65,6 +65,9 @@ class PowerRecipe(Entity):
                 self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
         )
 
+    def water_minute_rate(self) -> float:
+        return self.__generator.water_minute_rate()
+
     def power_production(self) -> float:
         return self.__generator.power_production()
 
@@ -75,8 +78,11 @@ class PowerRecipe(Entity):
         return self.__generator
 
     def fields(self) -> list[tuple[str, str]]:
-        return [
+        result = [
             ("Fuel Type", self.fuel_item().human_readable_name()),
             ("Fuel Rate", f"{self.fuel_minute_rate()} /minute"),
-            ("Power", f"{self.generator().power_production()} MW"),
         ]
+        if self.__generator.requires_water():
+            result.append(("Water Rate", f"{self.water_minute_rate()} /minute"))
+        result.append(("Power", f"{self.generator().power_production()} MW"))
+        return result
