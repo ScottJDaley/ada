@@ -131,15 +131,15 @@ py bot.py
 - python3's pip
 - Graphviz
 
-1. Create python virtual environment
+1. Create python virtual environment and activate it
 ```bash
 python3 -m venv venv
 source ./venv/bin/activate
 ```
 
-2. Install python requirements to venv
+2. Install python requirements
 ```bash
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 3. Install GraphViz
@@ -147,17 +147,12 @@ pip3 install -r requirements.txt
 brew install graphviz
 ```
 
-4. Install python packages
-```bash
-pip install -r requirements.txt
-```
-
-5. Set up Discord bot
+4. Set up Discord bot
 ```bash
 export DISCORD_TOKEN={token from discord developer portal}
 ```
 
-6. Start the bot
+5. Start the bot
 ```bash
 python bot.py
 ```
