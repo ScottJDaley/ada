@@ -90,7 +90,7 @@ class OptimizationCategoryView(OptimizationView):
 
     def _add_categories(self, active_category: str):
         print("Adding category buttons")
-        for category in ["Inputs", "Outputs", "Recipes", "Buildings", "Settings"]:
+        for category in ["Settings", "Inputs", "Outputs", "Recipes", "Buildings"]:
             custom_id = category.lower()
             disabled = custom_id == active_category
             button = discord.ui.Button(

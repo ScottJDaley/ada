@@ -73,7 +73,7 @@ class ResultMessageFactory:
         print("_from_result: OptimizationResult")
         message = ResultMessage(breadcrumbs)
         if len(breadcrumbs.current_page().custom_ids()) == 0:
-            breadcrumbs.current_page().add_custom_id("inputs")
+            breadcrumbs.current_page().add_custom_id("settings")
         breadcrumbs.current_page().replace_query(str(result.query()))
         if not result.success():
             message.embed = discord.Embed(title=str(result))
