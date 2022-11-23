@@ -268,7 +268,9 @@ class QueryParser:
         matches = []
         for var in allowed_vars:
             match, regex_match = QueryParser._check_var(expr, var)
-            if match and not regex_match:
+            if not match:
+                continue
+            if not regex_match:
                 return [var]
             matches.append(var)
         return matches
