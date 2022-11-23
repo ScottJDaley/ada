@@ -200,7 +200,7 @@ class QueryParser:
     @staticmethod
     def _check_var(
             expr: str, var: Entity
-    ) -> bool:
+    ) -> tuple[bool, bool]:
         # Support the following:
         # 1. singular human-readable name
         # 2. plural human-readable name
@@ -213,59 +213,65 @@ class QueryParser:
         singular = var.human_readable_name().lower()
         singular_parts = list(filter(None, re.split(r"[\s:\-]", singular)))
         if expr_parts == singular_parts:
-            return True
+            return True, False
         plural = inflect.engine().plural(singular)
         plural_parts = list(filter(None, re.split(r"[\s:\-]", plural)))
         if expr_parts == plural_parts:
-            return True
+            return True, False
         if singular.startswith("recipe: alternate: "):
             if expr_parts == singular_parts[2:]:
-                return True
+                return True, False
             if expr_parts == singular_parts[:1] + singular_parts[2:]:
-                return True
+                return True, False
             if expr_parts == plural_parts[2:]:
-                return True
+                return True, False
             if expr_parts == plural_parts[:1] + plural_parts[2:]:
-                return True
+                return True, False
         var_parts = list(filter(None, re.split(r"[:\-]", var.var())))
         if expr_parts == var_parts:
-            return True
+            return True, False
         # Don't require the user to specify the entity type.
         typeless_var = var.var().split(":", 1)[1]
         typeless_var_parts = re.split(r"[:\-]", typeless_var)
         if expr_parts == typeless_var_parts:
-            return True
+            return True, False
 
         return (
-                re.fullmatch(expr, singular) is not None
-                or re.fullmatch(expr, plural) is not None
-                or re.fullmatch(expr, var.var()) is not None
-                or re.fullmatch(expr, typeless_var) is not None
-        )
+                       re.fullmatch(expr, singular) is not None
+                       or re.fullmatch(expr, plural) is not None
+                       or re.fullmatch(expr, var.var()) is not None
+                       or re.fullmatch(expr, typeless_var) is not None
+               ), True
 
     def _get_matches(
             self, expr: str, allowed_types: List[str]
     ) -> list[Entity]:
-        allowed_vars = set()
+        allowed_vars: list[Entity] = []
         if "resource" in allowed_types:
-            allowed_vars.update(
+            allowed_vars.extend(
                 [item for item in self._db.items().values() if item.is_resource()]
             )
         if "item" in allowed_types:
-            allowed_vars.update(
+            allowed_vars.extend(
                 [item for item in self._db.items().values() if not item.is_resource()]
             )
-        if "recipe" in allowed_types:
-            allowed_vars.update(recipe for recipe in self._db.recipes().values())
-        if "power-recipe" in allowed_types:
-            allowed_vars.update(recipe for recipe in self._db.power_recipes().values())
         if "crafter" in allowed_types:
-            allowed_vars.update(crafter for crafter in self._db.crafters().values())
+            allowed_vars.extend(crafter for crafter in self._db.crafters().values())
         if "extractor" in allowed_types:
-            allowed_vars.update(extractor for extractor in self._db.extractors().values())
+            allowed_vars.extend(extractor for extractor in self._db.extractors().values())
         if "generator" in allowed_types:
-            allowed_vars.update(generator for generator in self._db.generators().values())
-        return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
+            allowed_vars.extend(generator for generator in self._db.generators().values())
+        if "recipe" in allowed_types:
+            allowed_vars.extend(recipe for recipe in self._db.recipes().values())
+        if "power-recipe" in allowed_types:
+            allowed_vars.extend(recipe for recipe in self._db.power_recipes().values())
+        matches = []
+        for var in allowed_vars:
+            match, regex_match = QueryParser._check_var(expr, var)
+            if match and not regex_match:
+                return [var]
+            matches.append(var)
+        return matches
 
     def _parse_outputs(self, outputs: ParseResults, query: OptimizationQuery) -> None:
         if not outputs:
