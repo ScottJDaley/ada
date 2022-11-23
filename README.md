@@ -99,142 +99,142 @@ outputs, and adhere to any given constraints.
  - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
  
 3. Run the following as admin to configure GraphViz:
-```
-dot -c
-```
+   ```
+   dot -c
+   ```
 
 4. Clone repo (in directory of you choosing)
-```cmd
-git clone https://github.com/ScottJDaley/ada.git
-```
+   ```cmd
+   git clone https://github.com/ScottJDaley/ada.git
+   ```
 
 5. Move inside the repo
-```cmd
-cd ada
-```
+   ```cmd
+   cd ada
+   ```
 
 5. Create virtual environment and activate it
 
-```cmd
-py -m venv venv && venv\Scripts\activate
-```
-:bulb: You may deactivate the virtual environment with `deactivate`
+   ```cmd
+   py -m venv venv && venv\Scripts\activate
+   ```
 
+   :bulb: You may deactivate the virtual environment with `deactivate`
 
 6. Install python modules
-```cmd
-py -m pip install -r requirements.txt
-```
+   ```cmd
+   py -m pip install -r requirements.txt
+   ```
 
 7. Start the bot
-```cmd
-py bot.py
-```
+   ```cmd
+   py bot.py
+   ```
 
 ### MacOS Installation
 
 1. Download and install [Homebrew](https://brew.sh/)
 
 2. Install Python 3
-```zsh
-brew install python3
-```
+   ```zsh
+   brew install python3
+   ```
 
 3. Install GraphViz
-```zsh
-brew install graphviz
-```
+   ```zsh
+   brew install graphviz
+   ```
 
 1. Clone repo (in directory of you choosing)
 
-```zsh
-git clone https://github.com/ScottJDaley/ada.git
-```
+   ```zsh
+   git clone https://github.com/ScottJDaley/ada.git
+   ```
 
-:bulb: MacOS might prompt you to download `Xcode Commandline Tools` the first time you use the `git` command
+   :bulb: MacOS might prompt you to download `Xcode Commandline Tools` the first time you use the `git` command
 
 2. Move inside the repo
-```zsh
-cd ada
-```
+   ```zsh
+   cd ada
+   ```
 
 1. Create python virtual environment and activate it
-```zsh
-python3 -m venv venv && source ./venv/bin/activate
-```
+   ```zsh
+   python3 -m venv venv && source ./venv/bin/activate
+   ```
 
-:bulb: You may deactivate the virtual environment with `deactivate`
+   :bulb: You may deactivate the virtual environment with `deactivate`
 
 2. Install python requirements
-```zsh
-pip install -r requirements.txt
-```
+   ```zsh
+    pip install -r requirements.txt
+   ```
 
 
 
 4. Set up Discord bot
-```bash
-export DISCORD_TOKEN={token from discord developer portal}
-```
+   ```bash
+   export DISCORD_TOKEN={token from discord developer portal}
+   ```
 
 5. Start the bot
-```bash
-python bot.py
-```
+   ```bash
+   python bot.py
+   ```
  
 ### Linux Installation
 
 1. Install python3
-```bash
-sudo apt-get install python3
-```
+   ```bash
+   sudo apt-get install python3
+   ```
 
 2. Install pip
-```bash
-sudo apt-get install python3-pip
-```
+   ```bash
+   sudo apt-get install python3-pip
+   ```
 
 3. Install GraphViz
-```bash
-sudo apt-get install graphviz
-```
+   ```bash
+   sudo apt-get install graphviz
+   ```
 
 4. Install git
-```bash
-sudo apt-get install git
-```
+   ```bash
+   sudo apt-get install git
+   ```
 
 5. Clone repo (in directory of you choosing)
-```bash
-git clone https://github.com/ScottJDaley/ada.git
-```
+   ```bash
+   git clone https://github.com/ScottJDaley/ada.git
+   ```
 
 6. Move inside the repo
-```bash
-cd ada
-```
+   ```bash
+   cd ada
+   ```
 
 7. Create Virtual environment and activate it
-```bash
-python3 -m venv venv && source venv/bin/acivate
-```
+   ```bash
+   python3 -m venv venv && source venv/bin/acivate
+   ```
 
-:bulb: You may deactivate the virtual environment with `deactivate`
+   :bulb: You may deactivate the virtual environment with `deactivate`
 
 7. Install python packages 
-```bash
-pip3 install -r requirements.txt
-```
+   ```bash
+   pip3 install -r requirements.txt
+   ```
 
 8. Set up Discord bot
-```bash
-export DISCORD_TOKEN={token from discord developer portal}
-```
+   ```bash
+   export DISCORD_TOKEN={token from discord developer portal}
+   ```
 
 9. Start the bot
-```bash
-python3 bot.py
-```
+   ```bash
+   python3 bot.py
+   ```
 
 
 #### Usage
