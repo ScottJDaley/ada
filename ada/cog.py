@@ -36,7 +36,7 @@ class AdaCog(commands.Cog):
             CrafterView(self.__dispatch),
             RecipeView(self.__dispatch),
             MultiEntityView([], 0, self.__dispatch),
-            OptimizationSelectorView(container, ""),
+            OptimizationSelectorView(container, "", None),
             InputCategoryView(container, ""),
             OutputsCategoryView(container, ""),
             RecipesCategoryView(container, ""),

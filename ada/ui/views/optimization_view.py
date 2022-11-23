@@ -121,6 +121,7 @@ class EntityDropdown(discord.ui.Select):
     def __init__(
             self,
             entities: list[Entity],
+            placeholder: str,
             dispatch: Dispatch,
             callback: Callable[[str, discord.Interaction], Awaitable[None]]
     ):
@@ -132,7 +133,7 @@ class EntityDropdown(discord.ui.Select):
         if len(options) == 0:
             options.append(discord.SelectOption(label="None"))
         super().__init__(
-            placeholder="Select one",
+            placeholder=placeholder,
             min_values=1,
             max_values=1,
             options=options,
@@ -150,7 +151,8 @@ class OptimizationSelectorView(OptimizationCategoryView):
     def __init__(
             self,
             container: OptimizationContainer,
-            category: str
+            category: str,
+            placeholder: Optional[str],
     ):
         super().__init__(container, category)
         entities: list[Entity] = []
@@ -159,19 +161,27 @@ class OptimizationSelectorView(OptimizationCategoryView):
             if category == "inputs":
                 for item, _ in data.inputs().values():
                     entities.append(item)
+                if not placeholder:
+                    placeholder = "Select an input"
             elif category == "outputs":
                 for item, _ in data.outputs().values():
                     entities.append(item)
+                if not placeholder:
+                    placeholder = "Select an output"
             elif category == "recipes":
                 for recipe, _ in data.recipes().values():
                     entities.append(recipe)
+                if not placeholder:
+                    placeholder = "Select a recipe"
             elif category == "buildings":
                 for crafter, _ in data.crafters().values():
                     entities.append(crafter)
                 for generator, _ in data.generators().values():
                     entities.append(generator)
+                if not placeholder:
+                    placeholder = "Select a building"
         # TODO: add cases for other categories
-        self.add_item(EntityDropdown(entities, self.dispatch(), self.on_select))
+        self.add_item(EntityDropdown(entities, placeholder, self.dispatch(), self.on_select))
 
     @staticmethod
     def get_view(
@@ -184,7 +194,7 @@ class OptimizationSelectorView(OptimizationCategoryView):
         if category == "settings":
             return SettingsCategoryView(container)
         if len(breadcrumbs.current_page().custom_ids()) != 2:
-            return OptimizationSelectorView(container, category)
+            return OptimizationSelectorView(container, category, None)
         selected = custom_ids[1]
         if category == "inputs":
             return InputCategoryView(container, selected)
@@ -194,9 +204,13 @@ class OptimizationSelectorView(OptimizationCategoryView):
             return RecipesCategoryView(container, selected)
         if category == "buildings":
             return BuildingsCategoryView(container, selected)
-        return OptimizationSelectorView(container, category)
+        return OptimizationSelectorView(container, category, None)
 
     async def on_select(self, selected: str, interaction: discord.Interaction):
+        if selected == "None":
+            print("Selected None")
+            await interaction.response.defer()
+            return
         message = ResultMessage.copy_from(interaction)
         custom_ids = message.breadcrumbs.current_page().custom_ids()
         if len(custom_ids) < 2:
@@ -253,7 +267,7 @@ class InputCategoryView(OptimizationSelectorView):
             container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(container, "inputs")
+        super().__init__(container, "inputs", selected)
 
         input_name = ""
         amount = 0
@@ -313,7 +327,7 @@ class OutputsCategoryView(OptimizationSelectorView):
             container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(container, "outputs")
+        super().__init__(container, "outputs", selected)
 
         output_name = ""
         amount = 0
@@ -372,7 +386,7 @@ class RecipesCategoryView(OptimizationSelectorView):
             container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(container, "recipes")
+        super().__init__(container, "recipes", selected)
 
         recipe_name = ""
         amount = 0
@@ -407,7 +421,7 @@ class BuildingsCategoryView(OptimizationSelectorView):
             container: OptimizationContainer,
             selected: str
     ):
-        super().__init__(container, "buildings")
+        super().__init__(container, "buildings", selected)
 
         building_name = ""
         amount = 0
