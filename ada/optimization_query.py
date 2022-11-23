@@ -210,13 +210,13 @@ class OptimizationQuery(Query):
             values = category.elements.values()
             if len(values) == 0:
                 continue
-            includes.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
+            includes.append(f"{'only ' if category.strict else ''}{' and '.join([str(value) for value in values])}")
 
         for category in self.__excludes.values():
             values = category.elements.values()
             if len(values) == 0:
                 continue
-            excludes.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
+            excludes.append(f"{'only ' if category.strict else ''}{' or '.join([str(value) for value in values])}")
 
         parts = [f"produce {' and '.join(outputs)}"]
         if len(inputs) > 0:

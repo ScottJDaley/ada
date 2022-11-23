@@ -12,7 +12,17 @@ class Breadcrumbs:
         self.__pages = pages
 
     def __str__(self) -> str:
-        return "```\n" + "\n╰ ".join(str(page) for page in self.__pages) + "\n```"
+        out = ["```"]
+        space = 0
+        for page in self.__pages:
+            if space == 0:
+                out.append(str(page))
+                space += 3
+                continue
+            out.append("┗━ ".rjust(space) + str(page))
+            space += 3
+        out.append("```")
+        return "\n".join(out)
 
     def format_content(self, content: Optional[str]) -> str:
         return str(self) + (f"\n{content}" if content else "")
@@ -52,7 +62,7 @@ class Breadcrumbs:
             raise BreadcrumbsException("Content missing breadcrumbs end:\n" + str(content_lines))
 
         print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
-        pages = [Breadcrumbs.Page.extract(x.removeprefix("╰").strip()) for x in content_lines[1:1 + num_pages]]
+        pages = [Breadcrumbs.Page.extract(x.strip().removeprefix("┗━").strip()) for x in content_lines[1:1 + num_pages]]
         if 2 + num_pages >= len(content_lines):
             remaining_content = ""
         else:
