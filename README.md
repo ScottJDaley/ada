@@ -135,6 +135,8 @@ outputs, and adhere to any given constraints.
 
 1. Download and install [Homebrew](https://brew.sh/)
 
+   :bulb: Make sure Hombrew's package lists are up-to-date with `brew update`
+
 2. Install Python 3
    ```zsh
    brew install python3
