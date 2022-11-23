@@ -271,7 +271,7 @@ class RecipeComparison:
             base_stats_normalized: RecipeStats,
             related_recipe_stats: List[RelatedRecipeStats],
     ) -> None:
-        self.query = query
+        self.query: RecipeCompareQuery = query
         self.base_stats_normalized = base_stats_normalized
         self.related_recipe_stats = related_recipe_stats
 

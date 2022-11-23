@@ -488,7 +488,7 @@ class QueryParser:
     def _parse_recipe_compare_query(
             self, raw_query: str, parse_results: ParseResults
     ) -> RecipeCompareQuery:
-        query = RecipeCompareQuery(raw_query)
+        query = RecipeCompareQuery()
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(

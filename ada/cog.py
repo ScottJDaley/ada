@@ -4,6 +4,7 @@ from discord.ext import commands
 
 from .ada import Ada
 from .ui.ada_dispatch import AdaDispatch
+from .ui.views.compare_recipes_view import CompareRecipesView
 from .ui.views.crafter_view import CrafterView
 from .ui.views.item_view import ItemView
 from .ui.views.multi_entity_view import MultiEntityView
@@ -42,6 +43,7 @@ class AdaCog(commands.Cog):
             RecipesCategoryView(container, ""),
             BuildingsCategoryView(container, ""),
             SettingsCategoryView(container),
+            CompareRecipesView(False, self.__dispatch)
         ]
         for view in views:
             self.__bot.add_view(view)

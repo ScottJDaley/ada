@@ -5,6 +5,7 @@ from multimethod import multimethod
 from .breadcrumbs import Breadcrumbs
 from .dispatch import Dispatch
 from .result_message import ResultMessage
+from .views.compare_recipes_view import CompareRecipesView
 from .views.crafter_view import CrafterView
 from .views.item_view import ItemView
 from .views.multi_entity_view import MultiEntityView
@@ -71,10 +72,10 @@ class ResultMessageFactory:
     @multimethod
     def _from_result(result: OptimizationResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         print("_from_result: OptimizationResult")
-        message = ResultMessage(breadcrumbs)
         if len(breadcrumbs.current_page().custom_ids()) == 0:
             breadcrumbs.current_page().add_custom_id("settings")
         breadcrumbs.current_page().replace_query(str(result.query()))
+        message = ResultMessage(breadcrumbs)
         if not result.success():
             message.embed = discord.Embed(title=str(result))
             message.view = OptimizationSelectorView.get_view(
@@ -141,21 +142,31 @@ class ResultMessageFactory:
     @staticmethod
     @multimethod
     def _from_result(result: RecipeCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+        query = result.stats().query
+        breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
         message.embed = None
 
-        product_name = result.stats().query.product_item.human_readable_name()
+        product_name = query.product_item.human_readable_name()
+
+        alternates_str = "\n*The above stats and requirements are computed from optimal production chains that " \
+                         "may include alternate recipes.*"
+
+        no_alternates_str = "\n*The above stats and requirements are computed from optimal production chains using " \
+                            "only base recipes.*"
 
         out = [
             f"**Recipe Stats:**",
             f"```\n{tabulate.tabulate(result.overall_stats(), headers='keys', tablefmt='simple')}```",
             f"**Recipe Requirements:**",
             f"```\n{tabulate.tabulate(result.input_stats(), headers='keys', tablefmt='simple')}```",
+            alternates_str if query.include_alternates else no_alternates_str
         ]
 
         message.content = "\n".join(out)
         if len(message.content) > 2000:
             message.content = "Output was too long"
+        message.view = CompareRecipesView(query.include_alternates, dispatch)
         return message
 
     @multimethod
