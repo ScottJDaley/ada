@@ -71,8 +71,11 @@ class ResultMessageFactory:
     @multimethod
     def _from_result(result: OptimizationResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         print("_from_result: OptimizationResult")
+        message = ResultMessage(breadcrumbs)
+        if len(breadcrumbs.current_page().custom_ids()) == 0:
+            breadcrumbs.current_page().add_custom_id("inputs")
+        breadcrumbs.current_page().replace_query(str(result.query()))
         if not result.success():
-            message = ResultMessage(breadcrumbs)
             message.embed = discord.Embed(title=str(result))
             message.view = OptimizationSelectorView.get_view(
                 breadcrumbs,
@@ -82,7 +85,6 @@ class ResultMessageFactory:
             )
             return message
 
-        message = ResultMessage(breadcrumbs)
         message.embed = discord.Embed(title="Optimization Query")
 
         result_data = result.result_data()
@@ -128,9 +130,6 @@ class ResultMessageFactory:
         # The image already shows up from the attached file, so no need to place it in the embed as well.
         message.embed.set_image(url="attachment://" + filename + ".png")
         message.file = file
-        if len(breadcrumbs.current_page().custom_ids()) == 0:
-            breadcrumbs.current_page().add_custom_id("inputs")
-        breadcrumbs.current_page().replace_query(str(result.query()))
         message.view = OptimizationSelectorView.get_view(
             breadcrumbs,
             dispatch,
