@@ -7,7 +7,6 @@ from ..breadcrumbs import Breadcrumbs
 from ..dispatch import Dispatch
 from ..result_message import ResultMessage
 from ...db.entity import Entity
-from ...info import InfoResult
 from ...optimization_query import MaximizeValue, OptimizationQuery
 from ...optimization_result_data import OptimizationResultData
 from ...optimizer import OptimizationResult
@@ -129,7 +128,7 @@ class EntityDropdown(discord.ui.Select):
         self.__callback = callback
         options = []
         for entity in entities:
-            options.append(discord.SelectOption(label=entity.human_readable_name(), description=entity.var()))
+            options.append(discord.SelectOption(label=entity.var(), description=entity.human_readable_name()))
         if len(options) == 0:
             options.append(discord.SelectOption(label="Nothing"))
         super().__init__(
@@ -144,15 +143,7 @@ class EntityDropdown(discord.ui.Select):
         print("EntityDropdown callback")
         selection_option = self.values[0]
         print("Selected option", self.values[0])
-        if len(self.options) == 0:
-            # Need to restore the options so that we know what option
-            result = await self.__dispatch.query(selection_option)
-            result = cast(InfoResult, result)
-            selection_var = result.entities()[0].var()
-        else:
-            print("All options", [option.label for option in self.options])
-            selection_var = next(option.description for option in self.options if selection_option == option.label)
-        await self.__callback(selection_var, interaction)
+        await self.__callback(selection_option, interaction)
 
 
 class OptimizationSelectorView(OptimizationCategoryView):
