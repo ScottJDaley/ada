@@ -32,8 +32,6 @@ class Item(Entity):
         return slug
 
     def var(self) -> str:
-        if self.__is_resource:
-            return "resource:" + self.slug()
         return "item:" + self.slug()
 
     def class_name(self) -> str:
@@ -43,8 +41,6 @@ class Item(Entity):
         return self.__native_class_name
 
     def viz_name(self) -> str:
-        if self.__is_resource:
-            return "resource-" + self.slug()
         return "item-" + self.slug()
 
     def viz_label(self, amount: float) -> str:

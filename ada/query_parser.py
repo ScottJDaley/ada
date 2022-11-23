@@ -247,24 +247,18 @@ class QueryParser:
             self, expr: str, allowed_types: List[str]
     ) -> list[Entity]:
         allowed_vars: list[Entity] = []
-        if "resource" in allowed_types:
-            allowed_vars.extend(
-                [item for item in self._db.items().values() if item.is_resource()]
-            )
         if "crafter" in allowed_types:
-            allowed_vars.extend(crafter for crafter in self._db.crafters().values())
+            allowed_vars.extend(self._db.crafters().values())
         if "extractor" in allowed_types:
-            allowed_vars.extend(extractor for extractor in self._db.extractors().values())
+            allowed_vars.extend(self._db.extractors().values())
         if "generator" in allowed_types:
-            allowed_vars.extend(generator for generator in self._db.generators().values())
+            allowed_vars.extend(self._db.generators().values())
         if "recipe" in allowed_types:
-            allowed_vars.extend(recipe for recipe in self._db.recipes().values())
+            allowed_vars.extend(self._db.recipes().values())
         if "power-recipe" in allowed_types:
-            allowed_vars.extend(recipe for recipe in self._db.power_recipes().values())
+            allowed_vars.extend(self._db.power_recipes().values())
         if "item" in allowed_types:
-            allowed_vars.extend(
-                [item for item in self._db.items().values() if not item.is_resource()]
-            )
+            allowed_vars.extend(self._db.items().values())
         matches = []
         for var in allowed_vars:
             match, regex_match = QueryParser._check_var(expr, var)
@@ -311,10 +305,10 @@ class QueryParser:
             if "literal" in input_:
                 input_vars = [input_["literal"]]
             elif "entity" in input_:
-                input_vars.extend([var.var() for var in self._get_matches(input_["entity"], ["resource", "item"])])
+                input_vars.extend([var.var() for var in self._get_matches(input_["entity"], ["item"])])
                 if len(input_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse resource or item expression '"
+                        "Could not parse item expression '"
                         + input_["entity"]
                         + "'."
                     )
@@ -406,7 +400,7 @@ class QueryParser:
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if len(query.inputs()["resource"].elements) == 0 and not query.has_objective():
+        if len(query.inputs()["item"].elements) == 0 and not query.has_objective():
             query.add_input("unweighted-resources", MaximizeValue(), False)
         return query
 
@@ -438,17 +432,17 @@ class QueryParser:
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["resource", "item", "crafter", "extractor", "generator"],
+            ["item", "crafter", "extractor", "generator"],
         )
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resource, item, crafter, or generator expression '"
+                "Could not parse item, crafter, or generator expression '"
                 + parse_results.get("entity")
                 + "'."
             )
         for match in matches:
             var = match.var()
-            if var.startswith("item") or var.startswith("resource"):
+            if var.startswith("item"):
                 for recipe in self._db.recipes_for_product(var):
                     query.vars.append(recipe)
             elif var.startswith("crafter"):
@@ -465,10 +459,10 @@ class QueryParser:
 
     def _parse_recipes_from_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
-        matches = self._get_matches(parse_results.get("entity"), ["resource", "item"])
+        matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resource or item expression '"
+                "Could not parse item expression '"
                 + parse_results.get("entity")
                 + "'."
             )
@@ -545,7 +539,7 @@ class QueryParser:
         )
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resource or item expression '"
+                "Could not parse recipe or power recipe expression '"
                 + parse_results.get("entity")
                 + "'."
             )
@@ -570,7 +564,7 @@ class QueryParser:
         )
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resource or item expression '"
+                "Could not parse recipe expression '"
                 + parse_results.get("entity")
                 + "'."
             )
@@ -589,7 +583,7 @@ class QueryParser:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["resource", "item", "crafter", "extractor", "generator"],
+            ["item", "crafter", "extractor", "generator"],
         )
         if len(non_recipe_matches) > 0:
             query.vars.extend(non_recipe_matches)

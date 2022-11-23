@@ -58,18 +58,18 @@ class ProductionCompStats:
 
         # TODO: Pull this from the same place that the optimizer does
         weighted_resources = {
-            "resource:water": 0,
-            "resource:iron-ore": 1,
-            "resource:copper-ore": 3.29,
-            "resource:limestone": 1.47,
-            "resource:coal": 2.95,
-            "resource:crude-oil": 4.31,
-            "resource:bauxite": 8.48,
-            "resource:caterium-ore": 6.36,
-            "resource:uranium": 46.67,
-            "resource:raw-quartz": 6.36,
-            "resource:sulfur": 13.33,
-            "resource:nitrogen-gas": 4.5,  # TODO
+            "item:water": 0,
+            "item:iron-ore": 1,
+            "item:copper-ore": 3.29,
+            "item:limestone": 1.47,
+            "item:coal": 2.95,
+            "item:crude-oil": 4.31,
+            "item:bauxite": 8.48,
+            "item:caterium-ore": 6.36,
+            "item:uranium": 46.67,
+            "item:raw-quartz": 6.36,
+            "item:sulfur": 13.33,
+            "item:nitrogen-gas": 4.5,  # TODO
         }
 
         def get_delta_percentage(new, old):

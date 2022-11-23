@@ -335,7 +335,7 @@ class OptimizationResult(Result):
             fuel_amount = (self.__get_value(power_recipe.var()) * power_recipe.fuel_minute_rate())
             add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
             water_amount = (self.__get_value(power_recipe.var()) * power_recipe.water_minute_rate())
-            add_to_target("resource:water", sinks, power_recipe.viz_name(), water_amount)
+            add_to_target("item:water", sinks, power_recipe.viz_name(), water_amount)
             power_production = (self.__get_value(power_recipe.var()) * power_recipe.power_production())
             power_output += power_production
             s.edge(
@@ -443,7 +443,7 @@ class Optimizer:
                 var_coeff[
                     self.__variables[power_recipe.var()]
                 ] = -power_recipe.fuel_minute_rate()
-            if item_var == "resource:water":
+            if item_var == "item:water":
                 for generator in self.__db.generators().values():
                     if generator.requires_water():
                         var_coeff[
@@ -487,52 +487,51 @@ class Optimizer:
         self.__equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
         unweighted_resources = {
-            self.__variables["resource:water"]: 0,
-            self.__variables["resource:iron-ore"]: 1,
-            self.__variables["resource:copper-ore"]: 1,
-            self.__variables["resource:limestone"]: 1,
-            self.__variables["resource:coal"]: 1,
-            self.__variables["resource:crude-oil"]: 1,
-            self.__variables["resource:bauxite"]: 1,
-            self.__variables["resource:caterium-ore"]: 1,
-            self.__variables["resource:uranium"]: 1,
-            self.__variables["resource:raw-quartz"]: 1,
-            self.__variables["resource:sulfur"]: 1,
-            self.__variables["resource:nitrogen-gas"]: 1,
+            self.__variables["item:water"]: 0,
+            self.__variables["item:iron-ore"]: 1,
+            self.__variables["item:copper-ore"]: 1,
+            self.__variables["item:limestone"]: 1,
+            self.__variables["item:coal"]: 1,
+            self.__variables["item:crude-oil"]: 1,
+            self.__variables["item:bauxite"]: 1,
+            self.__variables["item:caterium-ore"]: 1,
+            self.__variables["item:raw-quartz"]: 1,
+            self.__variables["item:sulfur"]: 1,
+            self.__variables["item:nitrogen-gas"]: 1,
             self.__variables[UNWEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(pulp.LpAffineExpression(unweighted_resources) == 0)
         # Proportional to amount of resource on map
         weighted_resources = {
-            self.__variables["resource:water"]: 0,
-            self.__variables["resource:iron-ore"]: 1,
-            self.__variables["resource:copper-ore"]: 3.29,
-            self.__variables["resource:limestone"]: 1.47,
-            self.__variables["resource:coal"]: 2.95,
-            self.__variables["resource:crude-oil"]: 4.31,
-            self.__variables["resource:bauxite"]: 8.48,
-            self.__variables["resource:caterium-ore"]: 6.36,
-            self.__variables["resource:uranium"]: 46.67,
-            self.__variables["resource:raw-quartz"]: 6.36,
-            self.__variables["resource:sulfur"]: 13.33,
-            self.__variables["resource:nitrogen-gas"]: 4.5,  # TODO
+            self.__variables["item:water"]: 0,
+            self.__variables["item:iron-ore"]: 1,
+            self.__variables["item:copper-ore"]: 3.29,
+            self.__variables["item:limestone"]: 1.47,
+            self.__variables["item:coal"]: 2.95,
+            self.__variables["item:crude-oil"]: 4.31,
+            self.__variables["item:bauxite"]: 8.48,
+            self.__variables["item:caterium-ore"]: 6.36,
+            self.__variables["item:uranium"]: 46.67,
+            self.__variables["item:raw-quartz"]: 6.36,
+            self.__variables["item:sulfur"]: 13.33,
+            self.__variables["item:nitrogen-gas"]: 4.5,  # TODO
             self.__variables[WEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(pulp.LpAffineExpression(weighted_resources) == 0)
         # Square root of weighted amounts above
         mean_weighted_resources = {
-            self.__variables["resource:water"]: 0,
-            self.__variables["resource:iron-ore"]: 1,
-            self.__variables["resource:copper-ore"]: 1.81,
-            self.__variables["resource:limestone"]: 1.21,
-            self.__variables["resource:coal"]: 1.72,
-            self.__variables["resource:crude-oil"]: 2.08,
-            self.__variables["resource:bauxite"]: 2.91,
-            self.__variables["resource:caterium-ore"]: 2.52,
-            self.__variables["resource:uranium"]: 6.83,
-            self.__variables["resource:raw-quartz"]: 2.52,
-            self.__variables["resource:sulfur"]: 3.65,
-            self.__variables["resource:nitrogen-gas"]: 2.2,  # TODO
+            self.__variables["item:water"]: 0,
+            self.__variables["item:iron-ore"]: 1,
+            self.__variables["item:copper-ore"]: 1.81,
+            self.__variables["item:limestone"]: 1.21,
+            self.__variables["item:coal"]: 1.72,
+            self.__variables["item:crude-oil"]: 2.08,
+            self.__variables["item:bauxite"]: 2.91,
+            self.__variables["item:caterium-ore"]: 2.52,
+            self.__variables["item:uranium"]: 6.83,
+            self.__variables["item:raw-quartz"]: 2.52,
+            self.__variables["item:sulfur"]: 3.65,
+            self.__variables["item:nitrogen-gas"]: 2.2,  # TODO
             self.__variables[MEAN_WEIGHTED_RESOURCES]: -1,
         }
         self.__equalities.append(pulp.LpAffineExpression(mean_weighted_resources) == 0)
@@ -589,8 +588,8 @@ class Optimizer:
                     print("  Found connection!")
                     print("  " + " -> ".join(reversed(stack)))
                 return True
-            if var.startswith("resource:"):
-                return False
+            # if var.startswith("resource:"):
+            #     return False
             if len(self.__db.recipes_for_product(var)) == 0:
                 return False
             is_var_connected = False
@@ -707,17 +706,17 @@ class Optimizer:
             prob += exp
 
         # Add item constraints
-        for item in self.__db.items().values():
-            if item.var() in query_vars:
-                continue
-            if item.is_resource():
-                if query.strict_inputs():
-                    prob.addConstraint(self.__variables[item.var()] == 0, item.var())
-                else:
+        if query.strict_inputs():
+            for item in self.__db.items().values():
+                if item.var() in query_vars:
+                    continue
+                prob.addConstraint(self.__variables[item.var()] == 0, item.var())
+        else:
+            for item in self.__db.items().values():
+                if item.var() in query_vars:
+                    continue
+                if item.is_resource():
                     prob.addConstraint(self.__variables[item.var()] <= 0, item.var())
-            else:
-                if query.strict_outputs():
-                    prob.addConstraint(self.__variables[item.var()] == 0, item.var())
                 else:
                     prob.addConstraint(self.__variables[item.var()] >= 0, item.var())
 

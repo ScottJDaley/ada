@@ -92,7 +92,7 @@ def _remove_element(dictionary: dict[str, Category], var: str):
 
 class OptimizationQuery(Query):
     def __init__(self) -> None:
-        self.__inputs: dict[str, Category[Input]] = {"resource": Category("item", False)}
+        self.__inputs: dict[str, Category[Input]] = {"item": Category("item", False)}
         self.__outputs: dict[str, Category[Output]] = {"item": Category("item", False)}
         self.__includes: dict[str, Category[Include]] = {
             "crafter": Category("crafter", True),
@@ -156,13 +156,13 @@ class OptimizationQuery(Query):
         return self.__excludes
 
     def strict_inputs(self):
-        return self.__inputs["resource"].strict
+        return self.__inputs["item"].strict
 
     def strict_outputs(self):
         return self.__outputs["item"].strict
 
     def set_strict_inputs(self, value: bool):
-        self.__inputs["resource"].strict = value
+        self.__inputs["item"].strict = value
 
     def set_strict_outputs(self, value: bool):
         self.__outputs["item"].strict = value
