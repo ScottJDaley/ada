@@ -104,48 +104,73 @@ dot -c
 ```
 
 4. Clone repo (in directory of you choosing)
-```console
+```cmd
 git clone https://github.com/ScottJDaley/ada.git
 ```
 
 5. Move inside the repo
-```console
+```cmd
 cd ada
 ```
 
+5. Create virtual environment and activate it
+
+```cmd
+py -m venv venv && venv\Scripts\activate
+```
+:bulb: You may deactivate the virtual environment with `deactivate`
+
+
 6. Install python modules
-```console
+```cmd
 py -m pip install -r requirements.txt
 ```
 
 7. Start the bot
-```
+```cmd
 py bot.py
 ```
 
 ### MacOS Installation
 
-#### Requirements
-- Homebrew
-- python3 3.9+
-- python3's pip
-- Graphviz
+1. Download and install [Homebrew](https://brew.sh/)
 
-1. Create python virtual environment and activate it
-```bash
-python3 -m venv venv
-source ./venv/bin/activate
-```
-
-2. Install python requirements
-```bash
-pip install -r requirements.txt
+2. Install Python 3
+```zsh
+brew install python3
 ```
 
 3. Install GraphViz
-```bash
+```zsh
 brew install graphviz
 ```
+
+1. Clone repo (in directory of you choosing)
+
+```zsh
+git clone https://github.com/ScottJDaley/ada.git
+```
+
+:bulb: MacOS might prompt you to download `Xcode Commandline Tools` the first time you use the `git` command
+
+2. Move inside the repo
+```zsh
+cd ada
+```
+
+1. Create python virtual environment and activate it
+```zsh
+python3 -m venv venv && source ./venv/bin/activate
+```
+
+:bulb: You may deactivate the virtual environment with `deactivate`
+
+2. Install python requirements
+```zsh
+pip install -r requirements.txt
+```
+
+
 
 4. Set up Discord bot
 ```bash
@@ -160,71 +185,68 @@ python bot.py
 ### Linux Installation
 
 1. Install python3
-```console
+```bash
 sudo apt-get install python3
 ```
 
 2. Install pip
-```console
+```bash
 sudo apt-get install python3-pip
 ```
 
 3. Install GraphViz
-```console
+```bash
 sudo apt-get install graphviz
 ```
 
 4. Install git
-```console
+```bash
 sudo apt-get install git
 ```
 
 5. Clone repo (in directory of you choosing)
-```console
+```bash
 git clone https://github.com/ScottJDaley/ada.git
 ```
 
 6. Move inside the repo
-```console
+```bash
 cd ada
 ```
 
-7. Install python packages
-```console
+7. Create Virtual environment and activate it
+```bash
+python3 -m venv venv && source venv/bin/acivate
+```
+
+:bulb: You may deactivate the virtual environment with `deactivate`
+
+7. Install python packages 
+```bash
 pip3 install -r requirements.txt
 ```
 
 8. Set up Discord bot
-```console
-echo "DISCORD_TOKEN={token from discord developer portal}" > .env
+```bash
+export DISCORD_TOKEN={token from discord developer portal}
 ```
 
 9. Start the bot
-```
+```bash
 python3 bot.py
 ```
- 
-### How to run
+
+
+#### Usage
+1. Ensure the bot is running and was started with a valid `DISCORD_TOKEN` as described above.
+2. Invite the bot to your server using a link generated from OAuth2 page on https://discord.com/developers/applications.
+3. The bot should be able to respond to commands in Discord after a few seconds.
+4. Press enter in the terminal to shut down the bot.
 
 #### Command line tool
-
-1. Double click `tool.py` to run it.
+1. Run `tool.py`.
 2. Type a query and press Enter.
 3. Type `exit` to quit.
-
-#### Discord bot
-
-1. Create a file called .env in source folder.
-2. Add the following to the file:
-   ```
-   DISCORD_TOKEN={discord bot token}
-   ```
-   *Replace {discord bot token} with the token generated for the bot from the Discord developer portal.*
-   
-3. Double click `bot.py` to run the bot.
-4. Invite the bot to your server using a link generated from OAuth2 page on https://discord.com/developers/applications.
-5. The bot should be able to respond to commands in Discord after a few seconds.
-6. Press enter in the terminal to shut down the bot.
 
 ## Acknowledgements
 - Images are taken from the [Official Satisfactory Wiki](https://satisfactory.gamepedia.com/Satisfactory_Wiki).
