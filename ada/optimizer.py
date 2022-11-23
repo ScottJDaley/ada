@@ -589,6 +589,9 @@ class Optimizer:
             for recipe in self.__db.recipes_for_product(var):
                 if recipe.var() in connected_recipes:
                     continue
+                if recipe.is_craftable_in_building() and recipe.crafter().var() == "crafter:packager":
+                    # We don't want to use the packager recipes to find connections between inputs and outputs
+                    continue
                 stack.append(recipe.var())
                 connected_recipes.append(recipe.var())
                 # print("Checking recipe", recipe.var())
@@ -615,6 +618,9 @@ class Optimizer:
                                 "\nChecking connection from", input_var, "to", fuel_var
                             )
                         if check(input_var, fuel_var, connected_recipes, stack):
+                            if debug:
+                                print("enabling connected recipes:", connected_recipes)
+                                print("enabling connected power recipe:", power_recipe.var())
                             enabled_recipes.extend(connected_recipes)
                             enabled_power_recipes.append(power_recipe.var())
 
@@ -627,8 +633,8 @@ class Optimizer:
                         enabled_recipes.extend(connected_recipes)
 
         if debug:
-            print(enabled_recipes)
-            print(enabled_power_recipes)
+            print("enabled recipes:", enabled_recipes)
+            print("enabled power recipes:", enabled_power_recipes)
 
         # Disable any disconnected recipes.
         for recipe_var in self.__db.recipes():

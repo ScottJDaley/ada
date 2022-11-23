@@ -251,10 +251,6 @@ class QueryParser:
             allowed_vars.extend(
                 [item for item in self._db.items().values() if item.is_resource()]
             )
-        if "item" in allowed_types:
-            allowed_vars.extend(
-                [item for item in self._db.items().values() if not item.is_resource()]
-            )
         if "crafter" in allowed_types:
             allowed_vars.extend(crafter for crafter in self._db.crafters().values())
         if "extractor" in allowed_types:
@@ -265,6 +261,10 @@ class QueryParser:
             allowed_vars.extend(recipe for recipe in self._db.recipes().values())
         if "power-recipe" in allowed_types:
             allowed_vars.extend(recipe for recipe in self._db.power_recipes().values())
+        if "item" in allowed_types:
+            allowed_vars.extend(
+                [item for item in self._db.items().values() if not item.is_resource()]
+            )
         matches = []
         for var in allowed_vars:
             match, regex_match = QueryParser._check_var(expr, var)

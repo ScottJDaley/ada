@@ -167,7 +167,7 @@ class DB:
     def recipes(self):
         return self.__recipes
 
-    def recipes_for_product(self, product):
+    def recipes_for_product(self, product) -> list[Recipe]:
         if product not in self.__recipes_for_product:
             return []
         return self.__recipes_for_product[product]
