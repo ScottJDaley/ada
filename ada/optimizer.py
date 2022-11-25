@@ -530,6 +530,19 @@ class Optimizer:
         }
         self.__equalities.append(pulp.LpAffineExpression(mean_weighted_resources) == 0)
 
+        # Map resource limits
+        self.__equalities.append(self.__variables["item:iron-ore"] >= -70380)
+        self.__equalities.append(self.__variables["item:copper-ore"] >= -70380)
+        self.__equalities.append(self.__variables["item:limestone"] >= -70380)
+        self.__equalities.append(self.__variables["item:coal"] >= -70380)
+        self.__equalities.append(self.__variables["item:crude-oil"] >= -70380)
+        self.__equalities.append(self.__variables["item:bauxite"] >= -70380)
+        self.__equalities.append(self.__variables["item:caterium-ore"] >= -70380)
+        self.__equalities.append(self.__variables["item:uranium"] >= -70380)
+        self.__equalities.append(self.__variables["item:raw-quartz"] >= -70380)
+        self.__equalities.append(self.__variables["item:sulfur"] >= -70380)
+        self.__equalities.append(self.__variables["item:nitrogen-gas"] >= -70380)
+
         alternate_coeffs = {}
         for recipe in self.__db.recipes().values():
             if recipe.is_alternate():
