@@ -136,7 +136,7 @@ class QueryParser:
     outputs = output_expr + ZeroOrMore(Suppress(and_kw) + output_expr)
     inputs = input_expr + ZeroOrMore(Suppress(and_kw) + input_expr)
     includes = include_expr + ZeroOrMore(Suppress(and_kw) + include_expr)
-    excludes = exclude_expr + ZeroOrMore(Suppress(or_kw) + exclude_expr)
+    excludes = exclude_expr + ZeroOrMore((Suppress(or_kw) | Suppress(and_kw)) + exclude_expr)
 
     outputs_expr = (Suppress(output_kw) + outputs)("outputs")
     inputs_expr = Optional(Suppress(input_kw) + inputs)("inputs")
