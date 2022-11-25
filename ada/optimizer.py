@@ -690,17 +690,17 @@ class Optimizer:
             prob += exp
 
         # Add item constraints
-        if query.is_strict_input_category("item"):
-            for item in self.__db.items().values():
-                if item.var() in query_vars:
-                    continue
-                prob.addConstraint(self.__variables[item.var()] == 0, item.var())
-        else:
-            for item in self.__db.items().values():
-                if item.var() in query_vars:
-                    continue
-                if item.is_resource():
+        for item in self.__db.items().values():
+            if item.var() in query_vars:
+                continue
+            if item.is_resource():
+                if query.is_strict_input_category("item"):
+                    prob.addConstraint(self.__variables[item.var()] == 0, item.var())
+                else:
                     prob.addConstraint(self.__variables[item.var()] <= 0, item.var())
+            else:
+                if query.is_strict_output_category("item"):
+                    prob.addConstraint(self.__variables[item.var()] == 0, item.var())
                 else:
                     prob.addConstraint(self.__variables[item.var()] >= 0, item.var())
 

@@ -24,6 +24,8 @@ ITEM_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildingDescriptor'",
     "Class'/Script/FactoryGame.FGPoleDescriptor'",
     "Class'/Script/FactoryGame.FGVehicleDescriptor'",
+    "Class'/Script/FactoryGame.FGAmmoTypeProjectile'",
+    "Class'/Script/FactoryGame.FGAmmoTypeInstantHit'",
 ]
 CRAFTER_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildableManufacturer'",
