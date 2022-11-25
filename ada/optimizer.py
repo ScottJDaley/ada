@@ -1,5 +1,4 @@
 import os
-import sys
 from typing import Dict
 
 import pulp
@@ -17,6 +16,8 @@ from .db.db import DB
 from .optimization_query import AmountValue, AnyValue, MaximizeValue, OptimizationQuery, Output
 from .optimization_result_data import OptimizationResultData
 from .result import Result
+
+EPSILON = 0.000001
 
 
 class OptimizationResult(Result):
@@ -83,7 +84,7 @@ class OptimizationResult(Result):
     def __has_value(self, var):
         return (
                 self.__vars[var].value()
-                and abs(self.__vars[var].value()) > sys.float_info.epsilon
+                and abs(self.__vars[var].value()) > EPSILON
         )
 
     def __get_value(self, var):
@@ -253,7 +254,7 @@ class OptimizationResult(Result):
             var = obj.var()
             if not self.__has_value(var):
                 continue
-            amount = self.__get_value(var)
+            amount = abs(self.__get_value(var))
             s.node(obj.viz_name(), obj.viz_label(amount), shape="plaintext")
 
     def __has_non_zero_var(self):
@@ -303,14 +304,15 @@ class OptimizationResult(Result):
             amount = self.__get_value(item.var())
             target = sources if amount < 0 else sinks
             add_to_target(
-                item.var(), target, item.viz_name(), self.__get_value(item.var())
+                item.var(), target, item.viz_name(), abs(amount)
             )
         # recipes
         self.__add_nodes(s, self.__db.recipes().values())
         for recipe in self.__db.recipes().values():
             if not self.__has_value(recipe.var()):
                 continue
-            recipe_amount = self.__get_value(recipe.var())
+            recipe_amount = -self.__get_value(recipe.var())
+            print(f"recipe {recipe.var()}, amount:  {recipe_amount}")
             for item_var, ingredient in recipe.ingredients().items():
                 ingredient_amount = recipe_amount * ingredient.minute_rate()
                 add_to_target(item_var, sinks, recipe.viz_name(), ingredient_amount)
@@ -336,7 +338,7 @@ class OptimizationResult(Result):
             add_to_target(fuel_item.var(), sinks, power_recipe.viz_name(), fuel_amount)
             water_amount = (self.__get_value(power_recipe.var()) * power_recipe.water_minute_rate())
             add_to_target("item:water", sinks, power_recipe.viz_name(), water_amount)
-            power_production = (self.__get_value(power_recipe.var()) * power_recipe.power_production())
+            power_production = -(self.__get_value(power_recipe.var()) * power_recipe.power_production())
             power_output += power_production
             s.edge(
                 power_recipe.viz_name(),
@@ -379,7 +381,6 @@ UNWEIGHTED_RESOURCES = "unweighted-resources"
 WEIGHTED_RESOURCES = "weighted-resources"
 MEAN_WEIGHTED_RESOURCES = "mean-weighted-resources"
 ALTERNATE_RECIPES = "alternate-recipes"
-BYPRODUCTS = "byproducts"
 
 
 class Optimizer:
@@ -391,15 +392,15 @@ class Optimizer:
         # Create problem variables
         self.__variables = {}
         for recipe in self.__db.recipes():
-            self.__variables[recipe] = pulp.LpVariable(recipe, lowBound=0)
+            self.__variables[recipe] = pulp.LpVariable(recipe, upBound=0)
         for power_recipe in self.__db.power_recipes():
-            self.__variables[power_recipe] = pulp.LpVariable(power_recipe, lowBound=0)
+            self.__variables[power_recipe] = pulp.LpVariable(power_recipe, upBound=0)
         for item in self.__db.items().values():
             self.__variables[item.var()] = pulp.LpVariable(item.var())
         for crafter in self.__db.crafters():
-            self.__variables[crafter] = pulp.LpVariable(crafter, lowBound=0)
+            self.__variables[crafter] = pulp.LpVariable(crafter, upBound=0)
         for generator_var, generator in self.__db.generators().items():
-            self.__variables[generator_var] = pulp.LpVariable(generator_var, lowBound=0)
+            self.__variables[generator_var] = pulp.LpVariable(generator_var, upBound=0)
         self.__variables[POWER] = pulp.LpVariable(POWER)
         self.__variables[UNWEIGHTED_RESOURCES] = pulp.LpVariable(UNWEIGHTED_RESOURCES)
         self.__variables[WEIGHTED_RESOURCES] = pulp.LpVariable(WEIGHTED_RESOURCES)
@@ -407,21 +408,14 @@ class Optimizer:
             MEAN_WEIGHTED_RESOURCES
         )
         self.__variables[ALTERNATE_RECIPES] = pulp.LpVariable(
-            ALTERNATE_RECIPES, lowBound=0
-        )
-        self.__variables[BYPRODUCTS] = pulp.LpVariable(
-            BYPRODUCTS, lowBound=0
+            ALTERNATE_RECIPES, upBound=0
         )
 
         self.__equalities = []
 
-        # For each item, create an equality for all inputs and outputs
-        # For items:
+        # For each item, create an equality for all inputs and outputs:
         #   products - ingredients = net output
         #   products - ingredients - net output = 0
-        # For resources:
-        #   products - ingredients = - net input
-        #   products - ingredients + net input = 0
         for item_var, item in self.__db.items().items():
             var_coeff = {}  # variable => coefficient
             recipes_for_item = self.__db.recipes_for_product(item_var)
@@ -449,7 +443,7 @@ class Optimizer:
                         var_coeff[
                             self.__variables[generator.var()]
                         ] = -generator.water_minute_rate()
-            var_coeff[self.__variables[item.var()]] = -1
+            var_coeff[self.__variables[item.var()]] = 1
             # var_coeff[self.__variables[item.output().var()]] = -1
             self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
@@ -483,7 +477,7 @@ class Optimizer:
             power_coeff[
                 self.__variables[recipe_var]
             ] = -recipe.crafter().power_consumption()
-        power_coeff[self.__variables["power"]] = -1
+        power_coeff[self.__variables["power"]] = 1
         self.__equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
         unweighted_resources = {
@@ -688,16 +682,6 @@ class Optimizer:
                 elif isinstance(output.value, MaximizeValue):
                     prob += variable
 
-        for category in query.includes().values():
-            for include_var in category.elements:
-                variable = self.__variables[include_var]
-                prob += variable >= 0
-
-        for category in query.excludes().values():
-            for exclude_var in category.elements:
-                variable = self.__variables[exclude_var]
-                prob += variable == 0
-
         # Display the problem before all recipes are added
         # print("Problem:", prob)
 
@@ -706,7 +690,7 @@ class Optimizer:
             prob += exp
 
         # Add item constraints
-        if query.strict_inputs():
+        if query.is_strict_input_category("item"):
             for item in self.__db.items().values():
                 if item.var() in query_vars:
                     continue
@@ -720,22 +704,22 @@ class Optimizer:
                 else:
                     prob.addConstraint(self.__variables[item.var()] >= 0, item.var())
 
-        if query.strict_crafters():
+        if query.is_strict_input_category("crafter"):
             for crafter_var in self.__db.crafters():
                 if crafter_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[crafter_var] == 0, crafter_var)
-        if query.strict_generators():
+        if query.is_strict_input_category("generator"):
             for generator_var in self.__db.generators():
                 if generator_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[generator_var] == 0, generator_var)
-        if query.strict_recipes():
+        if query.is_strict_input_category("recipe"):
             for recipe_var in self.__db.recipes():
                 if recipe_var in query_vars:
                     continue
                 prob.addConstraint(self.__variables[recipe_var] == 0, recipe_var)
-        if query.strict_power_recipes():
+        if query.is_strict_input_category("power_recipe"):
             for power_recipe_var in self.__db.power_recipes():
                 if power_recipe_var in query_vars:
                     continue
@@ -775,5 +759,9 @@ class Optimizer:
         # Solve
         status = prob.solve()
         result = OptimizationResult(self.__db, self.__variables, prob, status, query)
+
+        for var_name, var in self.__variables.items():
+            if var.value() and abs(var.value()) > EPSILON:
+                print(f"Variable {var_name} had a value of {var.value()}")
 
         return result

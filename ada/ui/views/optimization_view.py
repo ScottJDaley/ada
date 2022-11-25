@@ -474,7 +474,7 @@ class SettingsCategoryView(OptimizationCategoryView):
         self.__alternate_recipes_button.callback = self.on_alternate_recipes
         self.add_item(self.__alternate_recipes_button)
 
-        allows_byproducts = not query.strict_outputs()
+        allows_byproducts = not query.is_strict_output_category("item")
         self.__byproducts_button = discord.ui.Button(
             label="Exclude Byproducts" if allows_byproducts else "Allow Byproducts",
             style=discord.ButtonStyle.danger if allows_byproducts else discord.ButtonStyle.success,
@@ -496,9 +496,9 @@ class SettingsCategoryView(OptimizationCategoryView):
             return
         query = cast(OptimizationQuery, query)
         if "alternate-recipes" in query.query_vars():
-            query.remove_include("alternate-recipes")
+            query.remove_input("alternate-recipes")
         else:
-            query.add_include("alternate-recipes")
+            query.add_input("alternate-recipes")
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
         await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
@@ -512,6 +512,6 @@ class SettingsCategoryView(OptimizationCategoryView):
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
         query = cast(OptimizationQuery, query)
-        query.set_strict_outputs(not query.strict_outputs())
+        query.set_strict_output_category("item", not query.is_strict_output_category("item"))
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
         await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)

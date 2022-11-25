@@ -72,8 +72,7 @@ class QueryParseException(Exception):
 
 class QueryParser:
     output_kw = PRODUCE | MAKE | CREATE | OUTPUT
-    input_kw = FROM | INPUT
-    include_kw = USING | WITH
+    input_kw = FROM | INPUT | USING | WITH
     exclude_kw = WITHOUT | EXCLUDING
 
     and_kw = AND | PLUS
@@ -91,7 +90,6 @@ class QueryParser:
     entity_expr_end = (
             output_kw
             | input_kw
-            | include_kw
             | exclude_kw
             | and_kw
             | or_kw
@@ -108,13 +106,10 @@ class QueryParser:
     output_literal = (POWER("power") | TICKETS)("literal")
     output_var = output_literal | entity_expr
 
-    input_literal = (POWER | SPACE | unweighted_resources_kw | weighted_resources_kw)(
+    input_literal = (POWER | unweighted_resources_kw | weighted_resources_kw | alternate_recipes_kw)(
         "literal"
     )
     input_var = input_literal | entity_expr
-
-    include_literal = SPACE("literal") | alternate_recipes_kw("literal")
-    include_var = include_literal | entity_expr
 
     exclude_literal = alternate_recipes_kw("literal")
     byproducts = BYPRODUCTS("byproducts")
@@ -122,28 +117,25 @@ class QueryParser:
 
     objective_value = QUESTION_MARK
     any_value = Optional(ANY | UNDERSCORE).setParseAction(replaceWith("_"))
+    no_value = NO
     num_value = pyparsing_common.integer
-    value = (objective_value | num_value | any_value)("value")
+    value = (objective_value | num_value | any_value | no_value)("value")
 
     strict = Optional(ONLY)("strict").setParseAction(lambda t: len(t) != 0)
 
     output_expr = Group(strict + value + output_var)
     input_expr = Group(strict + value + input_var)
-    # includes are always strict
-    include_expr = Group(Optional(ONLY) + include_var)
     exclude_expr = Group(exclude_var)
 
     outputs = output_expr + ZeroOrMore(Suppress(and_kw) + output_expr)
     inputs = input_expr + ZeroOrMore(Suppress(and_kw) + input_expr)
-    includes = include_expr + ZeroOrMore(Suppress(and_kw) + include_expr)
     excludes = exclude_expr + ZeroOrMore((Suppress(or_kw) | Suppress(and_kw)) + exclude_expr)
 
     outputs_expr = (Suppress(output_kw) + outputs)("outputs")
     inputs_expr = Optional(Suppress(input_kw) + inputs)("inputs")
-    includes_expr = Optional(Suppress(include_kw) + includes)("includes")
     excludes_expr = Optional(Suppress(exclude_kw) + excludes)("excludes")
 
-    optimization_query = (outputs_expr + inputs_expr + includes_expr + excludes_expr)(
+    optimization_query = (outputs_expr + inputs_expr + excludes_expr)(
         "optimization"
     )
 
@@ -253,12 +245,12 @@ class QueryParser:
             allowed_vars.extend(self._db.extractors().values())
         if "generator" in allowed_types:
             allowed_vars.extend(self._db.generators().values())
+        if "item" in allowed_types:
+            allowed_vars.extend(self._db.items().values())
         if "recipe" in allowed_types:
             allowed_vars.extend(self._db.recipes().values())
         if "power-recipe" in allowed_types:
             allowed_vars.extend(self._db.power_recipes().values())
-        if "item" in allowed_types:
-            allowed_vars.extend(self._db.items().values())
         matches = []
         for var in allowed_vars:
             match, regex_match = QueryParser._check_var(expr, var)
@@ -305,10 +297,21 @@ class QueryParser:
             if "literal" in input_:
                 input_vars = [input_["literal"]]
             elif "entity" in input_:
-                input_vars.extend([var.var() for var in self._get_matches(input_["entity"], ["item"])])
+                input_vars.extend(
+                    [var.var() for var in self._get_matches(
+                        input_["entity"], [
+                            "item",
+                            "recipe",
+                            "power-recipe",
+                            "crafter",
+                            "extractor",
+                            "generator",
+                        ]
+                    )]
+                )
                 if len(input_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse item expression '"
+                        "Could not parse item, recipe, power recipe, crafter, or generator expression '"
                         + input_["entity"]
                         + "'."
                     )
@@ -325,38 +328,6 @@ class QueryParser:
                     val = AmountValue(int(value))
                 query.add_input(input_var, val, strict)
 
-    def _parse_includes(self, includes: ParseResults, query: OptimizationQuery) -> None:
-        if not includes:
-            return
-        for include in includes:
-            include_vars = []
-            if "literal" in include:
-                include_vars = [include["literal"]]
-            elif "entity" in include:
-                include_vars.extend(
-                    [
-                        var.var()
-                        for var in self._get_matches(
-                        include["entity"],
-                        [
-                            "recipe",
-                            "power-recipe",
-                            "crafter",
-                            "extractor",
-                            "generator",
-                        ],
-                    )
-                    ]
-                )
-                if len(include_vars) == 0:
-                    raise QueryParseException(
-                        "Could not parse recipe, power recipe, crafter, or generator expression '"
-                        + include["entity"]
-                        + "'."
-                    )
-            for include_var in include_vars:
-                query.add_include(include_var)
-
     def _parse_excludes(self, excludes: ParseResults, query: OptimizationQuery) -> None:
         if not excludes:
             return
@@ -366,19 +337,15 @@ class QueryParser:
                 exclude_vars = [exclude["literal"]]
             elif "entity" in exclude:
                 exclude_vars.extend(
-                    [
-                        var.var()
-                        for var in self._get_matches(
-                        exclude["entity"],
-                        [
+                    [var.var() for var in self._get_matches(
+                        exclude["entity"], [
                             "recipe",
                             "power-recipe",
                             "crafter",
                             "extractor",
                             "generator",
-                        ],
-                    )
-                    ]
+                        ]
+                    )]
                 )
                 if len(exclude_vars) == 0:
                     raise QueryParseException(
@@ -391,6 +358,7 @@ class QueryParser:
                 query.set_strict_outputs(True)
             for exclude_var in exclude_vars:
                 query.add_exclude(exclude_var)
+                query.add_output(exclude_var, AmountValue(0), False)
 
     def _parse_optimization_query(
             self, raw_query: str, parse_results: ParseResults
@@ -398,10 +366,12 @@ class QueryParser:
         query = OptimizationQuery()
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
-        self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if len(query.inputs()["item"].elements) == 0 and not query.has_objective():
-            query.add_input("unweighted-resources", MaximizeValue(), False)
+        if not query.has_input_in_category("item"):
+            if not query.has_objective():
+                query.add_input("unweighted-resources", MaximizeValue(), False)
+            else:
+                query.add_input("unweighted-resources")
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):
