@@ -690,15 +690,14 @@ class Optimizer:
                 elif isinstance(input.value, MaximizeValue):
                     prob += -variable
 
-        for category in query.outputs().values():
-            for output_var, output in category.elements.items():
-                variable = self.__variables[output_var]
-                if isinstance(output.value, AmountValue):
-                    prob += variable == output.value.value
-                elif isinstance(output.value, AnyValue):
-                    prob += variable >= 0
-                elif isinstance(output.value, MaximizeValue):
-                    prob += variable
+        for output_var, output in query.outputs().elements.items():
+            variable = self.__variables[output_var]
+            if isinstance(output.value, AmountValue):
+                prob += variable == output.value.value
+            elif isinstance(output.value, AnyValue):
+                prob += variable >= 0
+            elif isinstance(output.value, MaximizeValue):
+                prob += variable
 
         # Display the problem before all recipes are added
         # print("Problem:", prob)
@@ -717,7 +716,7 @@ class Optimizer:
                 else:
                     prob.addConstraint(self.__variables[item.var()] <= 0, item.var())
             else:
-                if query.is_strict_output_category("item"):
+                if query.is_strict_outputs():
                     prob.addConstraint(self.__variables[item.var()] == 0, item.var())
                 else:
                     prob.addConstraint(self.__variables[item.var()] >= 0, item.var())
@@ -745,7 +744,7 @@ class Optimizer:
                     self.__variables[power_recipe_var] == 0, power_recipe_var
                 )
 
-        self.enable_related_recipes(query, prob, debug=False)
+        self.enable_related_recipes(query, prob, debug=self.__debug)
 
         # Disable power recipes unless the query specifies something about power
         if not query.has_power_output():
@@ -765,6 +764,7 @@ class Optimizer:
         # Disable alternate recipes unless the query specifically allows it
         if ALTERNATE_RECIPES not in query_vars:
             prob += self.__variables[ALTERNATE_RECIPES] == 0
+
         # Display the problem
         # print(prob)
 

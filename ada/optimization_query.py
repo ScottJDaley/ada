@@ -77,7 +77,7 @@ def _remove_element(dictionary: dict[str, Category], var: str):
 class OptimizationQuery(Query):
     def __init__(self) -> None:
         self.__inputs: dict[str, Category[Input]] = {}
-        self.__outputs: dict[str, Category[Output]] = {}
+        self.__outputs: Category[Output] = Category("output", False)
         self.__objective: Input | Output | None = None
 
     def objective(self) -> Input | Output | None:
@@ -87,15 +87,16 @@ class OptimizationQuery(Query):
         return self.__objective is not None
 
     def add_output(self, var: str, value: AmountValue | MaximizeValue | AnyValue = AnyValue(), strict: bool = False):
-        # print(f"Adding output, var={var}, amount={value}, strict={strict}")
+        print(f"Adding output, var={var}, amount={value}, strict={strict}")
         output = Output(var, value)
         if isinstance(value, MaximizeValue):
             self.__objective = output
-        _add_element(self.__outputs, var, output, strict)
+        self.__outputs.elements[var] = output
+        self.__outputs.strict |= strict
 
     def remove_output(self, var: str):
         # print(f"Remove output, var={var}")
-        _remove_element(self.__outputs, var)
+        self.__outputs.elements.pop(var)
 
     def add_input(self, var: str, value: AmountValue | MaximizeValue | AnyValue = AnyValue(), strict: bool = False):
         # print(f"Adding input, var={var}, amount={value}, strict={strict}")
@@ -117,47 +118,36 @@ class OptimizationQuery(Query):
     def has_input_in_category(self, category: str) -> bool:
         return category in self.__inputs and len(self.__inputs[category].elements) > 0
 
-    def has_output_in_category(self, category: str) -> bool:
-        return category in self.__outputs and len(self.__outputs[category].elements) > 0
+    def has_output(self) -> bool:
+        return len(self.__outputs.elements) > 0
 
     def is_strict_input_category(self, category: str) -> bool:
         return category in self.__inputs and self.__inputs[category].strict
 
-    def is_strict_output_category(self, category: str) -> bool:
-        return category in self.__outputs and self.__outputs[category].strict
+    def is_strict_outputs(self) -> bool:
+        return self.__outputs.strict
 
     def set_strict_input_category(self, category: str, value: bool) -> None:
-        if category not in self.__inputs:
-            self.__inputs[category] = Category(category, value)
-        else:
-            self.__inputs[category].strict = value
+        self.__inputs[category].strict = value
 
-    def set_strict_output_category(self, category: str, value: bool) -> None:
-        if category not in self.__outputs:
-            self.__outputs[category] = Category(category, value)
-        else:
-            self.__outputs[category].strict = value
+    def set_strict_outputs(self, value: bool) -> None:
+        self.__outputs.strict = value
 
     def has_power_output(self):
-        return "power" in self.__outputs
+        return "power" in self.__outputs.elements
 
     def __str__(self) -> str:
 
         outputs = []
         inputs = []
-        includes = []
-        excludes = []
 
         # if isinstance(self.__objective, Output):
         #     outputs.append(f"? {self.__objective.var}")
         # elif isinstance(self.__objective, Input):
         #     inputs.append(f"? {self.__objective.var}")
 
-        for category in self.__outputs.values():
-            values = category.elements.values()
-            if len(values) == 0:
-                continue
-            outputs.append(f"{'only ' if category.strict else ''}{' and '.join([str(value) for value in values])}")
+        output_str = ' and '.join([str(value) for value in self.__outputs.elements.values()])
+        outputs.append(f"{'only ' if self.__outputs.strict else ''}{output_str}")
 
         for category in self.__inputs.values():
             values = category.elements.values()
@@ -178,8 +168,7 @@ class OptimizationQuery(Query):
         query_vars = []
         if self.has_objective():
             query_vars.append(self.__objective.var)
-        for category in self.__outputs.values():
-            query_vars.extend(category.elements.keys())
+        query_vars.extend(self.__outputs.elements.keys())
         for category in self.__inputs.values():
             query_vars.extend(category.elements.keys())
         return query_vars

@@ -49,7 +49,6 @@ AND = CaselessKeyword("and")
 OR = CaselessKeyword("or")
 NOR = CaselessKeyword("nor")
 POWER = CaselessKeyword("power")
-TICKETS = CaselessKeyword("tickets")
 SPACE = CaselessKeyword("space")
 RESOURCES = CaselessKeyword("resources")
 UNWEIGHTED_RESOURCES = CaselessKeyword("unweighted resources") | CaselessKeyword("unweighted-resources")
@@ -57,7 +56,6 @@ WEIGHTED_RESOURCES = CaselessKeyword("weighted resources") | CaselessKeyword("we
 ALTERNATE_RECIPES = CaselessKeyword("alternate recipes") | CaselessKeyword("alternate-recipes")
 RECIPES = CaselessKeyword("recipes")
 RECIPE = CaselessKeyword("recipe")
-BYPRODUCTS = CaselessKeyword("byproducts")
 INGREDIENTS = CaselessKeyword("ingredients")
 PRODUCTS = CaselessKeyword("products")
 FOR = CaselessKeyword("for")
@@ -106,7 +104,7 @@ class QueryParser:
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
-    output_literal = (POWER("power") | TICKETS)("literal")
+    output_literal = POWER("power")("literal")
     output_var = output_literal | entity_expr
 
     input_literal = (POWER | unweighted_resources_kw | weighted_resources_kw | alternate_recipes_kw)(
@@ -115,8 +113,7 @@ class QueryParser:
     input_var = input_literal | entity_expr
 
     exclude_literal = alternate_recipes_kw("literal")
-    byproducts = BYPRODUCTS("byproducts")
-    exclude_var = exclude_literal | byproducts | entity_expr
+    exclude_var = exclude_literal | entity_expr
 
     objective_value = QUESTION_MARK
     any_value = Optional(ANY | UNDERSCORE).setParseAction(replaceWith("_"))
@@ -364,8 +361,6 @@ class QueryParser:
                         + "'."
                     )
 
-            if "byproducts" in exclude:
-                query.set_strict_output_category("items", True)
             for exclude_var in exclude_vars:
                 query.add_output(exclude_var, AmountValue(0), False)
 
