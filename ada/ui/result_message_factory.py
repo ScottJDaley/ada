@@ -142,12 +142,12 @@ class ResultMessageFactory:
 
     @multimethod
     def _from_result(result: CompareRecipesForResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
-        query = result.stats().query
+        query = result.query()
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
         message.embed = None
 
-        product_name = query.product_item.human_readable_name()
+        product_name = query.product().human_readable_name()
 
         alternates_str = "\n*The above stats and requirements are computed from optimal production chains that " \
                          "may include alternate recipes.*"
@@ -166,7 +166,7 @@ class ResultMessageFactory:
         message.content = "\n".join(out)
         if len(message.content) > 2000:
             message.content = "Output was too long"
-        message.view = CompareRecipesForView(query.include_alternates, dispatch)
+        message.view = CompareRecipesForView(query.include_alternates(), dispatch)
         return message
 
     @staticmethod
@@ -176,9 +176,9 @@ class ResultMessageFactory:
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
         message.embed = None
-        message.content = f"The recipe `{query.base_recipe.human_readable_name()}` has multiple products. " \
+        message.content = f"The recipe `{query.recipe().human_readable_name()}` has multiple products. " \
                           f"Please select a product below to compare all recipes for that item."
-        products = [product.item() for product in query.base_recipe.products().values()]
+        products = [product.item() for product in query.recipe().products().values()]
         message.view = CompareRecipeSelectorView(products, dispatch)
         return message
 

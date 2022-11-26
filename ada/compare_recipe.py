@@ -4,13 +4,19 @@ from .result import Result
 
 
 class CompareRecipeQuery(Query):
-    def __init__(self) -> None:
-        self.base_recipe: Recipe | None = None
-        self.include_alternates = False
+    def __init__(self, recipe: Recipe, include_alternates: bool) -> None:
+        self.__recipe = recipe
+        self.__include_alternates = include_alternates
 
     def __str__(self):
-        return f"compare {self.base_recipe.var()}" \
-               f"{' with alternate recipes' if self.include_alternates else ''}"
+        return f"compare {self.__recipe.var()}" \
+               f"{' with alternate recipes' if self.__include_alternates else ''}"
+
+    def recipe(self) -> Recipe:
+        return self.__recipe
+
+    def include_alternates(self) -> bool:
+        return self.__include_alternates
 
 
 class CompareRecipeResult(Result):

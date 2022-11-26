@@ -1,7 +1,5 @@
-from typing import cast
-
 from .compare_recipe import CompareRecipeQuery, CompareRecipeResult
-from .compare_recipes_for import CompareRecipesForQuery, CompareRecipesForResult
+from .compare_recipes_for import CompareRecipesForQuery
 from .db.db import DB
 from .help import HelpQuery, HelpResult
 from .info import InfoQuery, InfoResult
@@ -42,12 +40,11 @@ class Ada:
         if isinstance(query, InfoQuery):
             return InfoResult(query.vars, query.raw_query)
         if isinstance(query, CompareRecipesForQuery):
-            return CompareRecipesForResult(await self.__recipe_comp.compare(query))
+            return await self.__recipe_comp.compare(query)
         if isinstance(query, CompareRecipeQuery):
-            if len(query.base_recipe.products()) == 1:
-                product = next(iter(query.base_recipe.products()))
-                new_query = cast(CompareRecipesForQuery, self.parse(f"compare recipes for {product}"))
-                return CompareRecipesForResult(await self.__recipe_comp.compare(new_query))
+            if len(query.recipe().products()) == 1:
+                product = next(iter(query.recipe().products()))
+                return await self.__recipe_comp.compare(CompareRecipesForQuery(product, query.include_alternates()))
             return CompareRecipeResult(query)
         return ErrorResult("Unknown query.")
 

@@ -467,7 +467,6 @@ class QueryParser:
     def _parse_compare_recipe_query(
             self, raw_query: str, parse_results: ParseResults
     ) -> CompareRecipeQuery:
-        query = CompareRecipeQuery()
         matches = self._get_matches(parse_results.get("entity"), ["recipe"])
         if len(matches) == 0:
             raise QueryParseException(
@@ -481,16 +480,12 @@ class QueryParser:
                 + "\n   ".join([match.human_readable_name() for match in matches])
                 + "\nPlease repeat the command with a more specific recipe name."
             )
-        base_recipe: Recipe = cast(Recipe, matches[0])
-
-        query.base_recipe = base_recipe
-        query.include_alternates = "include-alternates" in parse_results
-        return query
+        recipe: Recipe = cast(Recipe, matches[0])
+        return CompareRecipeQuery(recipe, "include-alternates" in parse_results)
 
     def _parse_compare_recipes_for_query(
             self, raw_query: str, parse_results: ParseResults
     ) -> CompareRecipesForQuery:
-        query = CompareRecipesForQuery()
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(
@@ -504,33 +499,8 @@ class QueryParser:
                 + "\n   ".join([match.human_readable_name() for match in matches])
                 + "\nPlease repeat the command with a more specific item name."
             )
-        product_item: Item = cast(Item, matches[0])
-        related_recipes = list(self._db.recipes_for_product(product_item.var()))
-        base_recipe = None
-        if len(related_recipes) == 0:
-            raise QueryParseException(
-                "Could not find any recipe that produces "
-                + product_item.human_readable_name()
-            )
-        elif len(related_recipes) == 1:
-            base_recipe = related_recipes[0]
-            related_recipes.clear()
-        else:
-            for recipe in list(related_recipes):
-                if recipe.slug().removeprefix("alternate-") == product_item.slug():
-                    base_recipe = recipe
-                    related_recipes.remove(recipe)
-                    break
-        if base_recipe is None:
-            # Just grab the first one
-            base_recipe = related_recipes[0]
-            related_recipes.remove(base_recipe)
-
-        query.product_item = product_item
-        query.base_recipe = base_recipe
-        query.related_recipes = related_recipes
-        query.include_alternates = "include-alternates" in parse_results
-        return query
+        product: Item = cast(Item, matches[0])
+        return CompareRecipesForQuery(product, "include-alternates" in parse_results)
 
     def _parse_ingredients_for_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)

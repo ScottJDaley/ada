@@ -7,15 +7,19 @@ from .result import Result
 
 
 class CompareRecipesForQuery(Query):
-    def __init__(self) -> None:
-        self.product_item: Item | None = None
-        self.base_recipe = None
-        self.related_recipes = None
-        self.include_alternates = False
+    def __init__(self, product: Item, include_alternates: bool) -> None:
+        self.__product = product
+        self.__include_alternates = include_alternates
 
     def __str__(self):
-        return f"compare recipes for {self.product_item.var()}" \
-               f"{' with alternate recipes' if self.include_alternates else ''}"
+        return f"compare recipes for {self.__product.var()}" \
+               f"{' with alternate recipes' if self.__include_alternates else ''}"
+
+    def product(self) -> Item:
+        return self.__product
+
+    def include_alternates(self) -> bool:
+        return self.__include_alternates
 
 
 class ProductionStats:
@@ -271,34 +275,17 @@ class RelatedRecipeStats:
         return "\n".join(out)
 
 
-class RecipeComparison:
+class CompareRecipesForResult(Result):
     def __init__(
             self,
             query: CompareRecipesForQuery,
+            base_recipe: Recipe,
             base_stats_normalized: RecipeStats,
-            related_recipe_stats: list[RelatedRecipeStats],
+            related_recipe_stats: list[RelatedRecipeStats]
     ) -> None:
-        self.query: CompareRecipesForQuery = query
-        self.base_stats_normalized = base_stats_normalized
-        self.related_recipe_stats = related_recipe_stats
-
-    def __str__(self):
-        out = [
-            "=== Comparing Recipes for " + self.query.product_item.human_readable_name() + " ===",
-            "",
-            "To make 1 " + self.query.product_item.human_readable_name() + " with "
-            + self.query.base_recipe.human_readable_name(),
-            str(self.base_stats_normalized.base)
-        ]
-        for related_stats in self.related_recipe_stats:
-            out.append("")
-            out.append(str(related_stats))
-        return "\n".join(out)
-
-
-class CompareRecipesForResult(Result):
-    def __init__(self, stats: RecipeComparison) -> None:
-        self.__stats = stats
+        self.__query: CompareRecipesForQuery = query
+        self.__base_stats_normalized = base_stats_normalized
+        self.__related_recipe_stats = related_recipe_stats
 
         def get_percentage_str(percentage):
             if isinstance(percentage, str):
@@ -314,13 +301,13 @@ class CompareRecipesForResult(Result):
         power = []
         complexity = []
 
-        recipes.append(stats.query.base_recipe.human_readable_name())
+        recipes.append(base_recipe.human_readable_name())
         unweighted.append("")
         weighted.append("")
         power.append("")
         complexity.append("")
 
-        for related_stats in stats.related_recipe_stats:
+        for related_stats in related_recipe_stats:
             recipes.append(related_stats.recipe.human_readable_name())
             unweighted.append(
                 get_percentage_str(
@@ -355,22 +342,22 @@ class CompareRecipesForResult(Result):
 
         input_vars = {}
 
-        for (_input, value) in stats.base_stats_normalized.unweighted_stats.inputs.values():
+        for (_input, value) in base_stats_normalized.unweighted_stats.inputs.values():
             input_vars[_input.var()] = _input.human_readable_name()
-        for related_stats in stats.related_recipe_stats:
+        for related_stats in related_recipe_stats:
             for (_input, value) in related_stats.recipe_stats.unweighted_stats.inputs.values():
                 input_vars[_input.var()] = _input.human_readable_name()
 
         inputs = {"Recipe": recipes}
         for input_var, input_name in input_vars.items():
-            if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
-                _input, value = stats.base_stats_normalized.unweighted_stats.inputs[
+            if input_var in base_stats_normalized.unweighted_stats.inputs:
+                _input, value = base_stats_normalized.unweighted_stats.inputs[
                     input_var
                 ]
                 inputs[input_name] = [str(round(value, 2))]
             else:
                 inputs[input_name] = [""]
-            for related_stats in stats.related_recipe_stats:
+            for related_stats in related_recipe_stats:
                 if input_var in related_stats.recipe_stats.unweighted_stats.inputs:
                     _input, value = related_stats.recipe_stats.unweighted_stats.inputs[
                         input_var
@@ -389,9 +376,9 @@ class CompareRecipesForResult(Result):
                     inputs[input_name].append("")
 
         raw_power = []
-        power_value = stats.base_stats_normalized.unweighted_stats.power_consumption
+        power_value = base_stats_normalized.unweighted_stats.power_consumption
         raw_power.append("{} MW".format(round(power_value, 1)))
-        for related_stats in stats.related_recipe_stats:
+        for related_stats in related_recipe_stats:
             power_value = related_stats.recipe_stats.unweighted_stats.power_consumption
             power_percentage = (
                 related_stats.recipe_comp_stats.unweighted_comp_stats.power_consumption
@@ -419,7 +406,7 @@ class CompareRecipesForResult(Result):
         #  Recipe: Iron Rod             | 0.75/m        |              |             |   0.27 MW  |
         #  -----------------------------|---------------|--------------|-------------|------------|
         #  Recipe: Alternate: Steel Rod | 0.25/m (-75%) | 0.45/m (NEW) |             |   1.2 MW   |
-        product_name = self.__stats.query.product_item.human_readable_name()
+        product_name = self.__query.product().human_readable_name()
 
         out = [
             "All recipes that produce " + product_name,
@@ -432,8 +419,8 @@ class CompareRecipesForResult(Result):
 
         # return str(self.__stats)
 
-    def stats(self):
-        return self.__stats
+    def query(self) -> CompareRecipesForQuery:
+        return self.__query
 
     def overall_stats(self):
         return self.__overall_stats

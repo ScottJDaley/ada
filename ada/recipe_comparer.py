@@ -1,8 +1,8 @@
 from .compare_recipes_for import (
     CompareRecipesForQuery,
+    CompareRecipesForResult,
     ProductionStats,
     RecipeCompStats,
-    RecipeComparison,
     RecipeStats,
     RelatedRecipeStats,
 )
@@ -10,6 +10,7 @@ from .db.db import DB
 from .db.recipe import Recipe
 from .optimization_query import AmountValue, MaximizeValue, OptimizationQuery
 from .optimizer import Optimizer
+from .result import ErrorResult, Result
 
 
 class RecipeComparer:
@@ -94,7 +95,7 @@ class RecipeComparer:
             weighted_stats,
         )
 
-    async def compare(self, query: CompareRecipesForQuery) -> RecipeComparison:
+    async def compare(self, query: CompareRecipesForQuery) -> Result:
 
         # For the base and each related recipe we want to run an optimization query to produce
         # one of the product. We also need to disable all related recipes to force this candidate
@@ -103,28 +104,48 @@ class RecipeComparer:
         # The goal is to get, for each candidate recipe, the ingredients, any other products,
         # the raw resources, total power, physical space required, number of steps, etc.
 
+        product = query.product()
+
+        related_recipes = list(self.__db.recipes_for_product(product.var()))
+        base_recipe = None
+        if len(related_recipes) == 0:
+            return ErrorResult(f"Could not find any recipe that produces {product.human_readable_name()}")
+        elif len(related_recipes) == 1:
+            base_recipe = related_recipes[0]
+            related_recipes.clear()
+        else:
+            for recipe in list(related_recipes):
+                if recipe.slug().removeprefix("alternate-") == product.slug():
+                    base_recipe = recipe
+                    related_recipes.remove(recipe)
+                    break
+        if base_recipe is None:
+            # Just grab the first one
+            base_recipe = related_recipes[0]
+            related_recipes.remove(base_recipe)
+
         base_stats = await self.compute_recipe_stats(
-            query.base_recipe, query.include_alternates
+            base_recipe, query.include_alternates()
         )
 
-        product = query.base_recipe.products()[query.product_item.var()]
+        product = base_recipe.products()[query.product().var()]
 
         base_stats_normalized = self.scaled_recipe_stats(
             base_stats, 1 / product.minute_rate()
         )
 
         related_recipe_stats = []
-        for related_recipe in query.related_recipes:
-            if related_recipe.var() == query.base_recipe.var():
+        for related_recipe in related_recipes:
+            if related_recipe.var() == base_recipe.var():
                 continue
 
             related_product_minute_rate = 1
             for related_product in related_recipe.products().values():
-                if related_product.item().var() == query.product_item.var():
+                if related_product.item().var() == query.product().var():
                     related_product_minute_rate = related_product.minute_rate()
 
             related_stats = await self.compute_recipe_stats(
-                related_recipe, query.include_alternates
+                related_recipe, query.include_alternates()
             )
             related_stats_normalized = self.scaled_recipe_stats(
                 related_stats, 1 / related_product_minute_rate
@@ -140,4 +161,4 @@ class RecipeComparer:
                 )
             )
 
-        return RecipeComparison(query, base_stats_normalized, related_recipe_stats)
+        return CompareRecipesForResult(query, base_recipe, base_stats_normalized, related_recipe_stats)
