@@ -30,6 +30,37 @@ class AdaCog(commands.Cog):
         """ /ada """
         await self.__dispatch.query_and_send(query, interaction)
 
+    @ada.autocomplete('query')
+    async def autocomplete_callback(
+            self,
+            interaction: discord.Interaction,
+            current: str
+    ) -> list[app_commands.Choice[str]]:
+        # Do stuff with the "current" parameter, e.g. querying it search results...
+        # Then return a list of app_commands.Choice
+        # return [
+        #     app_commands.Choice(name='Option 1', value='Option 1')
+        # ]
+        # if len(current) == 0:
+        print("Autocomplete, current:", current)
+        if len(current) == 0:
+            return [
+                app_commands.Choice(name="iron plate", value="iron plate"),
+                app_commands.Choice(name="recipes for iron plate", value="recipes for iron plate"),
+                app_commands.Choice(name="recipes from iron plate", value="recipes from iron plate"),
+                app_commands.Choice(name="compare recipes for iron plate", value="compare recipes for iron plate"),
+                app_commands.Choice(name="produce 30 iron plates", value="produce 30 iron plates"),
+                app_commands.Choice(
+                    name="produce ? iron plates from 30 iron ore",
+                    value="produce ? iron plates from 30 iron ore"
+                ),
+                app_commands.Choice(
+                    name="produce ? iron plates from 30 iron ore and alternate recipes",
+                    value="produce ? iron plates from 30 iron ore and alternate recipes"
+                ),
+            ]
+        return []
+
     def _setup_views(self):
         container = OptimizationContainer(self.__dispatch)
         views = [
