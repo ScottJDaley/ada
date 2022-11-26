@@ -69,7 +69,6 @@ steps:
       repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
       tags:
         - production-latest
-        - ${DRONE_TAG}
 
 
   - name: deploy
