@@ -117,7 +117,7 @@ outputs, and adhere to any given constraints.
     - Add install directory `C:\Program Files (x86)\Graphviz2.38\bin` to PATH
 
 3. Run the following as admin to configure GraphViz:
-   ```
+   ```cmd
    dot -c
    ```
 
@@ -191,7 +191,7 @@ outputs, and adhere to any given constraints.
    ```
 
 8. Set up Discord bot
-   ```bash
+   ```zsh
    export DISCORD_TOKEN={token from discord developer portal}
    ```
 
