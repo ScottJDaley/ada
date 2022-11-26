@@ -69,6 +69,12 @@ outputs, and adhere to any given constraints.
 - Only one objective `?` can be provided in the entire query.
 - If no inputs are specified, the optimizer will attempt to minimize
   unweighted resources. This is equivalent to an input of `from _ unweighted resources`.
+- Using the `only` keyword in the output will prevent byproducts, but may produce an infeasible solution.
+- Using the `only` keyword in the input will restrict the inputs for a specific category. For
+  example `produce ? power from only coal and water and coal generators` will prevent any other items from being used as
+  input besides coal and water because they both fall into the `item` category. However, it does not restrict the types
+  of generators being used. To limit the inputs to only coal generators and prevent other generators from being used,
+  add the `only` keyword in front of `coal generators`.
 
 #### Examples
 
