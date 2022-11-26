@@ -136,3 +136,4 @@ monkeytype.sqlite3
 
 # ansible roles
 .ansible/roles/docker
+.idea/workspace.xml
