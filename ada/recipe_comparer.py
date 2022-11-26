@@ -343,7 +343,7 @@ class RecipeComparer:
                 query.add_output(ingredient_var, AmountValue(ingredient.minute_rate()), False)
 
         if include_alternates:
-            query.add_include("alternate-recipes")
+            query.add_input("alternate-recipes")
 
         result = await self.__opt.optimize(query)
 
