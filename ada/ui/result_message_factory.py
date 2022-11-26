@@ -5,6 +5,7 @@ from multimethod import multimethod
 from .breadcrumbs import Breadcrumbs
 from .dispatch import Dispatch
 from .result_message import ResultMessage
+from .views.compare_recipe_selector_view import CompareRecipeSelectorView
 from .views.compare_recipes_view import CompareRecipesView
 from .views.crafter_view import CrafterView
 from .views.item_view import ItemView
@@ -21,7 +22,7 @@ from ..help import HelpResult
 from ..info import InfoResult
 from ..optimization_result_data import OptimizationResultData
 from ..optimizer import OptimizationResult
-from ..recipe_comparer import RecipeCompareResult
+from ..recipe_comparer import RecipeCompareResult, RecipesCompareResult
 from ..result import ErrorResult, Result
 
 
@@ -138,9 +139,8 @@ class ResultMessageFactory:
         )
         return message
 
-    @staticmethod
     @multimethod
-    def _from_result(result: RecipeCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    def _from_result(result: RecipesCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         query = result.stats().query
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
@@ -166,6 +166,18 @@ class ResultMessageFactory:
         if len(message.content) > 2000:
             message.content = "Output was too long"
         message.view = CompareRecipesView(query.include_alternates, dispatch)
+        return message
+
+    @staticmethod
+    @multimethod
+    def _from_result(result: RecipeCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+        query = result.query()
+        breadcrumbs.current_page().replace_query(str(query))
+        message = ResultMessage(breadcrumbs)
+        message.embed = None
+
+        products = [product.item() for product in query.base_recipe.products().values()]
+        message.view = CompareRecipeSelectorView(products, dispatch)
         return message
 
     @multimethod

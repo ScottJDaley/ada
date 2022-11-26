@@ -1,5 +1,5 @@
 import re
-from typing import List, Union, cast
+from typing import List, cast
 
 import inflect
 from pyparsing import (
@@ -24,10 +24,12 @@ from pyparsing.results import ParseResults
 from .db.db import DB
 from .db.entity import Entity
 from .db.item import Item
+from .db.recipe import Recipe
 from .help import HelpQuery
 from .info import InfoQuery
 from .optimization_query import AmountValue, AnyValue, MaximizeValue, OptimizationQuery
-from .recipe_compare_query import RecipeCompareQuery
+from .query import Query
+from .recipe_compare_query import RecipeCompareQuery, RecipesCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
 MAKE = CaselessKeyword("make")
@@ -170,8 +172,14 @@ class QueryParser:
 
     help_query = HELP("help")
 
-    compare_recipe_query = (
+    compare_recipes_for_query = (
             Suppress(COMPARE + RECIPES + FOR)
+            + entity_expr
+            + Optional(WITH + ALTERNATE_RECIPES)("include-alternates")
+    )("recipes-compare")
+
+    compare_recipe_query = (
+            Suppress(COMPARE)
             + entity_expr
             + Optional(WITH + ALTERNATE_RECIPES)("include-alternates")
     )("recipe-compare")
@@ -180,6 +188,7 @@ class QueryParser:
             help_query
             ^ optimization_query
             ^ recipe_query
+            ^ compare_recipes_for_query
             ^ compare_recipe_query
             ^ ingredients_for_query
             ^ products_for_query
@@ -458,6 +467,29 @@ class QueryParser:
             self, raw_query: str, parse_results: ParseResults
     ) -> RecipeCompareQuery:
         query = RecipeCompareQuery()
+        matches = self._get_matches(parse_results.get("entity"), ["recipe"])
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse compare recipe expression '"
+                + parse_results.get("entity")
+                + "'."
+            )
+        elif len(matches) > 1:
+            raise QueryParseException(
+                "Multiple recipes were matched:\n   "
+                + "\n   ".join([match.human_readable_name() for match in matches])
+                + "\nPlease repeat the command with a more specific recipe name."
+            )
+        base_recipe: Recipe = cast(Recipe, matches[0])
+
+        query.base_recipe = base_recipe
+        query.include_alternates = "include-alternates" in parse_results
+        return query
+
+    def _parse_recipes_compare_query(
+            self, raw_query: str, parse_results: ParseResults
+    ) -> RecipesCompareQuery:
+        query = RecipesCompareQuery()
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(
@@ -484,15 +516,15 @@ class QueryParser:
             related_recipes.clear()
         else:
             for recipe in list(related_recipes):
-                if recipe.slug() == product_item.slug():
+                print("Considering", recipe.var(), recipe.slug(), product_item.slug())
+                if recipe.slug().removeprefix("alternate-") == product_item.slug():
                     base_recipe = recipe
                     related_recipes.remove(recipe)
                     break
-            if base_recipe is None:
-                raise QueryParseException(
-                    "Could not find base recipe for "
-                    + product_item.human_readable_name()
-                )
+        if base_recipe is None:
+            # Just grab the first one
+            base_recipe = related_recipes[0]
+            related_recipes.remove(base_recipe)
 
         query.product_item = product_item
         query.base_recipe = base_recipe
@@ -570,9 +602,7 @@ class QueryParser:
         query.vars.extend(recipe_matches)
         return query
 
-    def parse(
-            self, raw_query: str
-    ) -> Union[InfoQuery, HelpQuery, RecipeCompareQuery, OptimizationQuery]:
+    def parse(self, raw_query: str) -> Query:
         try:
             results = QueryParser.query_grammar.parseString(raw_query, parseAll=True)
         except ParseException as pe:
@@ -602,6 +632,8 @@ class QueryParser:
             return self._parse_recipes_from_query(raw_query, results)
         elif "recipe-compare" in results:
             return self._parse_recipe_compare_query(raw_query, results)
+        elif "recipes-compare" in results:
+            return self._parse_recipes_compare_query(raw_query, results)
         elif "ingredients-for" in results:
             return self._parse_ingredients_for_query(raw_query, results)
         elif "products-for" in results:

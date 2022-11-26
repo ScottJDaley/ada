@@ -1,3 +1,5 @@
+from typing import cast
+
 from .db.db import DB
 from .help import HelpQuery, HelpResult
 from .info import InfoQuery, InfoResult
@@ -5,8 +7,8 @@ from .optimization_query import OptimizationQuery
 from .optimizer import Optimizer
 from .query import Query
 from .query_parser import QueryParseException, QueryParser
-from .recipe_compare_query import RecipeCompareQuery
-from .recipe_comparer import RecipeCompareResult, RecipeComparer
+from .recipe_compare_query import RecipeCompareQuery, RecipesCompareQuery
+from .recipe_comparer import RecipeCompareResult, RecipeComparer, RecipesCompareResult
 from .result import ErrorResult, Result
 
 
@@ -38,8 +40,14 @@ class Ada:
             return await self.__opt.optimize(query)
         if isinstance(query, InfoQuery):
             return InfoResult(query.vars, query.raw_query)
+        if isinstance(query, RecipesCompareQuery):
+            return RecipesCompareResult(await self.__recipe_comp.compare(query))
         if isinstance(query, RecipeCompareQuery):
-            return RecipeCompareResult(await self.__recipe_comp.compare(query))
+            if len(query.base_recipe.products()) == 1:
+                product = next(iter(query.base_recipe.products()))
+                new_query = cast(RecipesCompareQuery, self.parse(f"compare recipes for {product}"))
+                return RecipesCompareResult(await self.__recipe_comp.compare(new_query))
+            return RecipeCompareResult(query)
         return ErrorResult("Unknown query.")
 
     def lookup(self, var: str):

@@ -5,7 +5,7 @@ import discord
 from ..breadcrumbs import Breadcrumbs
 from ..dispatch import Dispatch
 from ...query_parser import QueryParseException
-from ...recipe_compare_query import RecipeCompareQuery
+from ...recipe_compare_query import RecipesCompareQuery
 
 
 class CompareRecipesView(discord.ui.View):
@@ -30,7 +30,7 @@ class CompareRecipesView(discord.ui.View):
         except QueryParseException as parse_exception:
             print(f"Failed to parse {raw_query}: {parse_exception}")
             return
-        query = cast(RecipeCompareQuery, query)
+        query = cast(RecipesCompareQuery, query)
         query.include_alternates = not query.include_alternates
         breadcrumbs.add_page(Breadcrumbs.Page(str(query), breadcrumbs.current_page().custom_ids()))
         await self.__dispatch.execute_and_replace(query, breadcrumbs, interaction)

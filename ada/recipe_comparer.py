@@ -7,7 +7,7 @@ from .db.item import Item
 from .db.recipe import Recipe
 from .optimization_query import AmountValue, MaximizeValue, OptimizationQuery
 from .optimizer import Optimizer
-from .recipe_compare_query import RecipeCompareQuery
+from .recipe_compare_query import RecipeCompareQuery, RecipesCompareQuery
 from .result import Result
 
 
@@ -267,11 +267,11 @@ class RelatedRecipeStats:
 class RecipeComparison:
     def __init__(
             self,
-            query: RecipeCompareQuery,
+            query: RecipesCompareQuery,
             base_stats_normalized: RecipeStats,
             related_recipe_stats: List[RelatedRecipeStats],
     ) -> None:
-        self.query: RecipeCompareQuery = query
+        self.query: RecipesCompareQuery = query
         self.base_stats_normalized = base_stats_normalized
         self.related_recipe_stats = related_recipe_stats
 
@@ -371,7 +371,7 @@ class RecipeComparer:
             weighted_stats,
         )
 
-    async def compare(self, query: RecipeCompareQuery) -> RecipeComparison:
+    async def compare(self, query: RecipesCompareQuery) -> RecipeComparison:
 
         # For the base and each related recipe we want to run an optimization query to produce
         # one of the product. We also need to disable all related recipes to force this candidate
@@ -421,6 +421,17 @@ class RecipeComparer:
 
 
 class RecipeCompareResult(Result):
+    def __init__(self, query: RecipeCompareQuery):
+        self.__query = query
+
+    def query(self):
+        return self.__query
+
+    def __str__(self):
+        return "TODO"
+
+
+class RecipesCompareResult(Result):
     def __init__(self, stats: RecipeComparison) -> None:
         self.__stats = stats
 
