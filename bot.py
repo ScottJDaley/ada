@@ -38,7 +38,7 @@ class Bot(commands.Bot):
 
     async def setup_hook(self):
         print(f"Logged in as {self.user}")
-        guilds = None
+        guilds = discord.utils.MISSING
         if self.guild:
             guilds = [self.guild]
         await self.add_cog(AdaCog(self, Ada()), guilds=guilds)

@@ -26,7 +26,7 @@ class AdaCog(commands.Cog):
 
     @app_commands.command(name="ada")
     @discord.app_commands.describe(query="The query you wish to perform. Try /ada help to see examples.")
-    async def help(self, interaction: discord.Interaction, query: str) -> None:
+    async def ada(self, interaction: discord.Interaction, query: str) -> None:
         """ /ada """
         await self.__dispatch.query_and_send(query, interaction)
 
