@@ -569,13 +569,12 @@ class Optimizer:
                 if isinstance(input.value, AmountValue) and input.value.value == 0:
                     continue
                 inputs.append(input_var)
-        for category in query.outputs().values():
-            for output_var, output in category.elements.items():
-                if output_var not in self.__db.items() and output_var != POWER:
-                    continue
-                if isinstance(output.value, AmountValue) and output.value.value == 0:
-                    continue
-                outputs.append(output_var)
+        for output_var, output in query.outputs().elements.items():
+            if output_var not in self.__db.items() and output_var != POWER:
+                continue
+            if isinstance(output.value, AmountValue) and output.value.value == 0:
+                continue
+            outputs.append(output_var)
 
         # print("inputs:", inputs, "outputs:", outputs)
 
