@@ -176,7 +176,8 @@ class ResultMessageFactory:
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
         message.embed = None
-
+        message.content = f"The recipe `{query.base_recipe.human_readable_name()}` has multiple products. " \
+                          f"Please select a product below to compare all recipes for that item."
         products = [product.item() for product in query.base_recipe.products().values()]
         message.view = CompareRecipeSelectorView(products, dispatch)
         return message
