@@ -1,13 +1,32 @@
 from railroad import Choice, Diagram, Group, OneOrMore, Optional, Sequence, Stack
 
+# Run this file to generate the svg images that are used in the README.
+
 queries = {
-    "entity_query": Choice(0, "<item>", "<recipe>", "<building>"),
-    "recipe_query": Sequence("recipe", Optional("for"), "<item>"),
-    "recipes_query": Sequence("recipes", Choice(0, "for", "from"), Choice(0, "item", "building")),
-    "compare_recipe_query": Sequence("compare", "<recipe>"),
-    "compare_recipes_for_query": Sequence("compare", "recipes", "for", "<item>"),
-    "ingredients_for_query": Sequence("ingredients", "for", "<recipe>"),
-    "products_for_query": Sequence("products", "for", "<recipe>"),
+    "info_query": Choice(
+        0,
+        Group(Choice(0, "<item>", "<recipe>", "<building>"), "Entity Lookup"),
+        Group(
+            Sequence(
+                Choice(
+                    0,
+                    Sequence("recipe", Optional("for")),
+                    Sequence("recipes", Choice(0, "for", "from"))
+                ),
+                Choice(0, "<item>", "<building>")
+            ),
+            "Recipe Lookup"
+        ),
+        Group(Sequence("compare", Choice(0, Sequence("recipes", "for", "<item>"), "<recipe>")), "Recipe Comparison"),
+        Group(
+            Choice(
+                0,
+                Sequence("ingredients", "for", "<recipe>"),
+                Sequence("products", "for", "<recipe>")
+            ),
+            "Recipe Details"
+        )
+    ),
     "optimization_query": Stack(
         Group(
             Sequence(

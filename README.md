@@ -33,25 +33,7 @@ Provides information about items, buildings, and recipes in the game.
 
 #### Query Syntax
 
-#### Entity Query
-
-![alt text](/docs/railroad/entity_query.svg "Entity Query")
-
-#### Recipe Query
-
-![alt text](/docs/railroad/recipe_query.svg "Recipe Query")
-
-#### Recipes Query
-
-![alt text](/docs/railroad/recipes_query.svg "Recipes For Query")
-
-#### Ingredients For Query
-
-![alt text](/docs/railroad/ingredients_for_query.svg "Ingredients For Query")
-
-#### Products For Query
-
-![alt text](/docs/railroad/ingredients_for_query.svg "Ingredients For Query")
+![alt text](/docs/railroad/info_query.svg "Info Query")
 
 #### Notes
 
@@ -59,11 +41,17 @@ Provides information about items, buildings, and recipes in the game.
 
 #### Examples
 
-- `ada iron rod`: Information about iron rods.
-- `ada recipes for iron rod`: All recipes for making iron rods.
-- `ada recipes from iron rods`: All recipes with iron rods as an ingredient.
-- `ada recipes for refineries`: All recipes available in refineries.
-- `ada recipes for iron.*`: All recipes for items whose name starts with "iron".
+- `/ada iron rod`: Information about iron rods.
+- `/ada recipe iron rod`: Information about the iron rod recipe.
+- `/ada refinery`: Information about refineries.
+- `/ada recipes for iron rod`: Browse all recipes for making iron rods.
+- `/ada recipes from iron rods`: Browse all recipes with iron rods as an ingredient.
+- `/ada recipes for refineries`: Browse all recipes available in refineries.
+- `/ada recipes for iron.*`: Browse all recipes for items whose name starts with "iron".
+- `/ada compare recipe iron rod`: Compare the iron rod recipe against all other recipes for iron rods.
+- `/ada compare recipes for iron rod`: Compare all recipes that produce iron rods.
+- `/ada ingredients for recipe iron rod`: Browse all ingredients in the iron rod recipe.
+- `/ada products for recipe iron rod`: Browse all products in the iron rod recipe.
 
 ### Optimization Query
 
@@ -76,19 +64,31 @@ outputs, and adhere to any given constraints.
 
 #### Notes
 
-- Regexes can be used when specifying items, recipes, and buildings.
+- Alternate recipes are disabled by default. They can be enabled by adding `alternate-recipes` to the input clause. For
+  example, `/ada produce 10 modular frames from alternate-recipes`.
 - Only one objective `?` can be provided in the entire query.
 - If no inputs are specified, the optimizer will attempt to minimize
   unweighted resources. This is equivalent to an input of `from _ unweighted resources`.
 
 #### Examples
 
-- `ada produce 60 iron rod from ? iron ore`: Produces exactly 60 iron rods while minimizing iron ore.
-- `ada produce ? iron rods from 60 iron ore`: Produce as many iron rods as possible from 60 iron ore.
-- `ada produce ? power from 240 crude oil with only fuel generators`: Produce as much power as possible from only 240
+- `/ada produce 60 iron rod`: Produces exactly 60 iron rods while minimizing the input resources (evenly weighted).
+- `/ada produce 60 iron rod from unweighted resources`: Same as above.
+- `/ada produce 60 iron rod from weighted resources`: Similar to above, but weights resources by their frequency on the
+  map.
+- `/ada produce 60 iron rod from ? iron ore`: Produces exactly 60 iron rods while minimizing iron ore.
+- `/ada produce 60 iron rod from only ? iron ore`: Produces exactly 60 iron rods from exclusively iron ore.
+- `/ada produce 60 iron rod from only ? iron ore and _ coal and alternate-recipes`: Produces exactly 60 iron rods from
+  exclusively iron ore and coal, but only minimizing iron ore. Alternate recipes are allowed.
+- `/ada produce ? iron rods from 60 iron ore`: Produce as many iron rods as possible from 60 iron ore.
+- `/ada produce ? iron rods from only 60 iron ore`: Produce as many iron rods as possible from exclusively 60 iron ore.
+- `/ada produce ? power from 240 crude oil with only fuel generators`: Produce as much power as possible from only 240
   crude oil only using fuel generators (no other generators allowed).
-- `ada produce 60 modular frames without refineries`: Produce exactly 60 modular frames without using any refineries,
+- `/ada produce 60 modular frames without refineries`: Produce exactly 60 modular frames without using any refineries,
   minimizing unweighted resources.
+- `/ada produce ? iron rods from 10 constructors`: Produce as many iron rods as possible from 10 constructors.
+- `/ada produce ? iron rods from only 10 constructors and _ smelters`: Produce as many iron rods as possible from only
+  10 constructors and however many smelters.
 
 ## Hosting ADA yourself
 
