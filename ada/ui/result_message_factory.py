@@ -6,12 +6,14 @@ from .breadcrumbs import Breadcrumbs
 from .dispatch import Dispatch
 from .result_message import ResultMessage
 from .views.compare_recipe_selector_view import CompareRecipeSelectorView
-from .views.compare_recipes_view import CompareRecipesView
+from .views.compare_recipes_for_view import CompareRecipesForView
 from .views.crafter_view import CrafterView
 from .views.item_view import ItemView
 from .views.multi_entity_view import MultiEntityView
 from .views.optimization_view import OptimizationSelectorView
 from .views.recipe_view import RecipeView
+from ..compare_recipe import CompareRecipeResult
+from ..compare_recipes_for import CompareRecipesForResult
 from ..db.crafter import Crafter
 from ..db.extractor import Extractor
 from ..db.item import Item
@@ -22,7 +24,6 @@ from ..help import HelpResult
 from ..info import InfoResult
 from ..optimization_result_data import OptimizationResultData
 from ..optimizer import OptimizationResult
-from ..recipe_comparer import RecipeCompareResult, RecipesCompareResult
 from ..result import ErrorResult, Result
 
 
@@ -140,7 +141,7 @@ class ResultMessageFactory:
         return message
 
     @multimethod
-    def _from_result(result: RecipesCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    def _from_result(result: CompareRecipesForResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         query = result.stats().query
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
@@ -165,12 +166,12 @@ class ResultMessageFactory:
         message.content = "\n".join(out)
         if len(message.content) > 2000:
             message.content = "Output was too long"
-        message.view = CompareRecipesView(query.include_alternates, dispatch)
+        message.view = CompareRecipesForView(query.include_alternates, dispatch)
         return message
 
     @staticmethod
     @multimethod
-    def _from_result(result: RecipeCompareResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    def _from_result(result: CompareRecipeResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
         query = result.query()
         breadcrumbs.current_page().replace_query(str(query))
         message = ResultMessage(breadcrumbs)
