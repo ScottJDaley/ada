@@ -10,7 +10,7 @@ class MaximizeValue:
 
 class AnyValue:
     def __str__(self):
-        return "_"
+        return ""
 
 
 class AmountValue:
@@ -27,7 +27,7 @@ class Input:
         self.value = value
 
     def __str__(self):
-        return f"{self.value} {self.var}"
+        return f"{self.value} {self.var}".strip()
 
 
 class Output:
@@ -36,7 +36,7 @@ class Output:
         self.value = value
 
     def __str__(self):
-        return f"{self.value} {self.var}"
+        return f"{self.value} {self.var}".strip()
 
 
 T = TypeVar("T")
@@ -157,7 +157,7 @@ class OptimizationQuery(Query):
             values = category.elements.values()
             if len(values) == 0:
                 continue
-            outputs.append(f"{'only ' if category.strict else ''}{' '.join([str(value) for value in values])}")
+            outputs.append(f"{'only ' if category.strict else ''}{' and '.join([str(value) for value in values])}")
 
         for category in self.__inputs.values():
             values = category.elements.values()
