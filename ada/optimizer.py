@@ -3,6 +3,7 @@ from typing import Dict
 
 import pulp
 from graphviz import Digraph
+from pulp import PULP_CBC_CMD
 from pulp.constants import (
     LpStatusInfeasible,
     LpStatusNotSolved,
@@ -312,7 +313,6 @@ class OptimizationResult(Result):
             if not self.__has_value(recipe.var()):
                 continue
             recipe_amount = -self.__get_value(recipe.var())
-            print(f"recipe {recipe.var()}, amount:  {recipe_amount}")
             for item_var, ingredient in recipe.ingredients().items():
                 ingredient_amount = recipe_amount * ingredient.minute_rate()
                 add_to_target(item_var, sinks, recipe.viz_name(), ingredient_amount)
@@ -384,8 +384,9 @@ ALTERNATE_RECIPES = "alternate-recipes"
 
 
 class Optimizer:
-    def __init__(self, db: DB) -> None:
+    def __init__(self, db: DB, debug: bool = False) -> None:
         self.__db = db
+        self.__debug = debug
 
         self.variable_names = []
 
@@ -580,19 +581,18 @@ class Optimizer:
                     continue
                 outputs.append(output_var)
 
-        print("inputs:", inputs, "outputs:", outputs)
+        # print("inputs:", inputs, "outputs:", outputs)
 
-        enabled_recipes = []
-        enabled_power_recipes = []
+        connected = set()
 
         # If there is a path from var to the query_input_var, then add all
         # connected recipes.
 
-        def check(input_var, var, connected_recipes, stack):
+        def check(input_var, var, connected: set, stack):
             # print("Checking if", var, "is connected to", input_var)
             if var == input_var:
                 if debug:
-                    print("  Found connection!")
+                    print("Found connection!")
                     print("  " + " -> ".join(reversed(stack)))
                 return True
             # if var.startswith("resource:"):
@@ -601,17 +601,21 @@ class Optimizer:
                 return False
             is_var_connected = False
             for recipe in self.__db.recipes_for_product(var):
-                if recipe.var() in connected_recipes:
+                if recipe.var() in connected or recipe.var() in stack:
                     continue
                 if recipe.is_craftable_in_building() and recipe.crafter().var() == "crafter:packager":
                     # We don't want to use the packager recipes to find connections between inputs and outputs
                     continue
                 stack.append(recipe.var())
-                connected_recipes.append(recipe.var())
-                # print("Checking recipe", recipe.var())
+                # print("Checking recipe", recipe.var(), "for product", var)
+                # print("Connected:", connected)
                 for ingredient in recipe.ingredients():
                     stack.append(ingredient)
-                    if check(input_var, ingredient, connected_recipes, stack):
+                    if ingredient == "item:water":
+                        continue
+                    if check(input_var, ingredient, connected, stack):
+                        connected.update(stack)
+                        # print("Recipe", recipe.var(), "is connected, connected:", connected)
                         is_var_connected = True
                     stack.pop()
                 stack.pop()
@@ -624,42 +628,40 @@ class Optimizer:
             for output_var in outputs:
                 if output_var == POWER:
                     for power_recipe in self.__db.power_recipes().values():
-                        connected_recipes = []
+
                         fuel_var = power_recipe.fuel_item().var()
                         stack = [fuel_var]
                         if debug:
                             print(
                                 "\nChecking connection from", input_var, "to", fuel_var
                             )
-                        if check(input_var, fuel_var, connected_recipes, stack):
+                        if check(input_var, fuel_var, connected, stack):
                             if debug:
-                                print("enabling connected recipes:", connected_recipes)
-                                print("enabling connected power recipe:", power_recipe.var())
-                            enabled_recipes.extend(connected_recipes)
-                            enabled_power_recipes.append(power_recipe.var())
+                                print("enabling connected:", connected)
+                            connected.add(power_recipe.var())
 
                 else:
-                    connected_recipes = []
                     stack = [output_var]
                     if debug:
                         print("\nChecking connection from", input_var, "to", output_var)
-                    if check(input_var, output_var, connected_recipes, stack):
-                        enabled_recipes.extend(connected_recipes)
+                    if check(input_var, output_var, connected, stack):
+                        if debug:
+                            print("Found connection from", input_var, "to", output_var)
 
         if debug:
-            print("enabled recipes:", enabled_recipes)
-            print("enabled power recipes:", enabled_power_recipes)
+            print("Connected:", connected)
 
         # Disable any disconnected recipes.
         for recipe_var in self.__db.recipes():
-            if recipe_var not in enabled_recipes:
+            if recipe_var not in connected:
                 prob += self.__variables[recipe_var] == 0
         for power_recipe_var in self.__db.power_recipes():
-            if power_recipe_var not in enabled_power_recipes:
+            if power_recipe_var not in connected:
                 prob += self.__variables[power_recipe_var] == 0
 
     async def optimize(self, query: OptimizationQuery) -> OptimizationResult:
-        print("called optimize() with query:\n\n" + str(query) + "\n")
+        if self.__debug:
+            print("called optimize() with query:\n\n" + str(query) + "\n")
 
         # TODO: Always max since inputs are negative?
         if isinstance(query.objective(), Output):
@@ -770,11 +772,12 @@ class Optimizer:
             f.write(str(prob))
 
         # Solve
-        status = prob.solve()
+        status = prob.solve(PULP_CBC_CMD(msg=False))
         result = OptimizationResult(self.__db, self.__variables, prob, status, query)
 
-        for var_name, var in self.__variables.items():
-            if var.value() and abs(var.value()) > EPSILON:
-                print(f"Variable {var_name} had a value of {var.value()}")
+        if self.__debug:
+            for var_name, var in self.__variables.items():
+                if var.value() and abs(var.value()) > EPSILON:
+                    print(f"Variable {var_name} had a value of {var.value()}")
 
         return result
