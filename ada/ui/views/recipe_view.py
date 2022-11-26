@@ -37,3 +37,10 @@ class RecipeView(discord.ui.View):
         query = building.var()
         breadcrumbs.add_page(Breadcrumbs.Page(query))
         await self.__dispatch.query_and_replace(breadcrumbs, interaction)
+
+    @discord.ui.button(label="Compare", style=discord.ButtonStyle.grey, custom_id="recipe_compare")
+    async def building(self, interaction: discord.Interaction, button: discord.ui.Button):
+        breadcrumbs = Breadcrumbs.extract(interaction.message.content)
+        query = f"compare {breadcrumbs.current_page().query()}"
+        breadcrumbs.add_page(Breadcrumbs.Page(query))
+        await self.__dispatch.query_and_replace(breadcrumbs, interaction)
