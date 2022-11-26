@@ -1,0 +1,53 @@
+<svg class="railroad-diagram" height="191" viewBox="0 0 431.5 191" width="431.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>/* <![CDATA[ */
+	svg.railroad-diagram {
+		background-color:hsl(30,20%,95%);
+	}
+	svg.railroad-diagram path {
+		stroke-width:3;
+		stroke:black;
+		fill:rgba(0,0,0,0);
+	}
+	svg.railroad-diagram text {
+		font:bold 14px monospace;
+		text-anchor:middle;
+	}
+	svg.railroad-diagram text.label{
+		text-anchor:start;
+	}
+	svg.railroad-diagram text.comment{
+		font:italic 12px monospace;
+	}
+	svg.railroad-diagram rect{
+		stroke-width:3;
+		stroke:black;
+		fill:hsl(120,100%,90%);
+	}
+	svg.railroad-diagram rect.group-box {
+		stroke: gray;
+		stroke-dasharray: 10 5;
+		fill: none;
+	}
+
+/* ]]> */
+</style><g transform="translate(.5 .5)">
+<g>
+<path d="M20 21v20m10 -20v20m-10 -10h20" /></g><g>
+<path d="M40 31h0.0" /><path d="M391.5 31h0.0" /><path d="M40.0 31h20" /><g>
+<path d="M60.0 31h83.25" /><path d="M288.25 31h83.25" /><path d="M143.25 31h20" /><g class="terminal ">
+<path d="M163.25 31h17.0" /><path d="M251.25 31h17.0" /><rect height="22" rx="10" ry="10" width="71" x="180.25" y="20"></rect><text x="215.75" y="35">&lt;item></text></g><path d="M268.25 31h20" /><path d="M143.25 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M163.25 61h0.0" /><path d="M268.25 61h0.0" /><rect height="22" rx="10" ry="10" width="105" x="163.25" y="50"></rect><text x="215.75" y="65">&lt;building></text></g><path d="M268.25 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g><path d="M371.5 31h20" /><path d="M40.0 31a10 10 0 0 1 10 10v49a10 10 0 0 0 10 10" /><g>
+<path d="M60.0 100h32.0" /><path d="M339.5 100h32.0" /><g class="terminal ">
+<path d="M92.0 100h0.0" /><path d="M163.0 100h0.0" /><rect height="22" rx="10" ry="10" width="71" x="92" y="89"></rect><text x="127.5" y="104">recipe</text></g><path d="M163.0 100h10" /><g>
+<path d="M173.0 100h0.0" /><path d="M258.5 100h0.0" /><path d="M173.0 100a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10" /><g>
+<path d="M193.0 80h45.5" /></g><path d="M238.5 80a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10" /><path d="M173.0 100h20" /><g class="terminal ">
+<path d="M193.0 100h0.0" /><path d="M238.5 100h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="193" y="89"></rect><text x="215.75" y="104">for</text></g><path d="M238.5 100h20" /></g><path d="M258.5 100h10" /><g class="terminal ">
+<path d="M268.5 100h0.0" /><path d="M339.5 100h0.0" /><rect height="22" rx="10" ry="10" width="71" x="268.5" y="89"></rect><text x="304" y="104">&lt;item></text></g></g><path d="M371.5 100a10 10 0 0 0 10 -10v-49a10 10 0 0 1 10 -10" /><path d="M40.0 31a10 10 0 0 1 10 10v79a10 10 0 0 0 10 10" /><g>
+<path d="M60.0 130h0.0" /><path d="M371.5 130h0.0" /><g class="terminal ">
+<path d="M60.0 130h0.0" /><path d="M139.5 130h0.0" /><rect height="22" rx="10" ry="10" width="79.5" x="60" y="119"></rect><text x="99.75" y="134">recipes</text></g><path d="M139.5 130h10" /><g>
+<path d="M149.5 130h0.0" /><path d="M243.5 130h0.0" /><path d="M149.5 130h20" /><g class="terminal ">
+<path d="M169.5 130h4.25" /><path d="M219.25 130h4.25" /><rect height="22" rx="10" ry="10" width="45.5" x="173.75" y="119"></rect><text x="196.5" y="134">for</text></g><path d="M223.5 130h20" /><path d="M149.5 130a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M169.5 160h0.0" /><path d="M223.5 160h0.0" /><rect height="22" rx="10" ry="10" width="54" x="169.5" y="149"></rect><text x="196.5" y="164">from</text></g><path d="M223.5 160a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g><g>
+<path d="M243.5 130h0.0" /><path d="M371.5 130h0.0" /><path d="M243.5 130h20" /><g class="terminal ">
+<path d="M263.5 130h17.0" /><path d="M334.5 130h17.0" /><rect height="22" rx="10" ry="10" width="54" x="280.5" y="119"></rect><text x="307.5" y="134">item</text></g><path d="M351.5 130h20" /><path d="M243.5 130a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M263.5 160h0.0" /><path d="M351.5 160h0.0" /><rect height="22" rx="10" ry="10" width="88" x="263.5" y="149"></rect><text x="307.5" y="164">building</text></g><path d="M351.5 160a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><path d="M371.5 130a10 10 0 0 0 10 -10v-79a10 10 0 0 1 10 -10" /></g><path d="M 391.5 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>
