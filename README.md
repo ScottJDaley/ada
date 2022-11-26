@@ -33,19 +33,25 @@ Provides information about items, buildings, and recipes in the game.
 
 #### Query Syntax
 
-![alt text](/images/rr_diagram/information_query.png "Information Query")
-
 #### Entity Query
 
-![alt text](/images/rr_diagram/entity_query.png "Entity Query")
+![alt text](/docs/railroad/entity_query.svg "Entity Query")
 
-#### Recipes For Query
+#### Recipe Query
 
-![alt text](/images/rr_diagram/recipes_for_query.png "Recipes For Query")
+![alt text](/docs/railroad/recipe_query.svg "Recipe Query")
 
-#### Recipes From Query
+#### Recipes Query
 
-![alt text](/images/rr_diagram/recipes_from_query.png "Recipes From Query")
+![alt text](/docs/railroad/recipes_query.svg "Recipes For Query")
+
+#### Ingredients For Query
+
+![alt text](/docs/railroad/ingredients_for_query.svg "Ingredients For Query")
+
+#### Products For Query
+
+![alt text](/docs/railroad/ingredients_for_query.svg "Ingredients For Query")
 
 #### Notes
 
@@ -66,23 +72,7 @@ outputs, and adhere to any given constraints.
 
 #### Query Syntax
 
-![alt text](/images/rr_diagram/optimization_query.png "Optimization Query")
-
-#### Outputs
-
-![alt text](/images/rr_diagram/outputs.png "Outputs")
-
-#### Inputs
-
-![alt text](/images/rr_diagram/inputs.png "Inputs")
-
-#### Includes
-
-![alt text](/images/rr_diagram/includes.png "Includes")
-
-#### Excludes
-
-![alt text](/images/rr_diagram/excludes.png "Excludes")
+![alt text](/docs/railroad/optimization_query.svg "Optimization Query")
 
 #### Notes
 
