@@ -468,17 +468,13 @@ class Optimizer:
             var_coeff[self.__variables[generator_var]] = -1
             self.__equalities.append(pulp.LpAffineExpression(var_coeff) == 0)
 
-        # Create a single power equality for all recipes and generators
+        # Create a single power equality for all crafters and generators
         power_coeff = {}
         for generator_var, generator in self.__db.generators().items():
-            power_coeff[self.__variables[generator_var]] = generator.power_production()
-        for recipe_var, recipe in self.__db.recipes().items():
-            if not recipe.is_craftable_in_building():
-                continue
-            power_coeff[
-                self.__variables[recipe_var]
-            ] = -recipe.crafter().power_consumption()
-        power_coeff[self.__variables["power"]] = 1
+            power_coeff[self.__variables[generator_var]] = -generator.power_production()
+        for crafter_var, crafter in self.__db.crafters().items():
+            power_coeff[self.__variables[crafter_var]] = crafter.power_consumption()
+        power_coeff[self.__variables["power"]] = -1
         self.__equalities.append(pulp.LpAffineExpression(power_coeff) == 0)
 
         unweighted_resources = {
@@ -601,13 +597,19 @@ class Optimizer:
                 return False
             is_var_connected = False
             for recipe in self.__db.recipes_for_product(var):
-                if recipe.var() in connected or recipe.var() in stack:
+                # print("Checking recipe", recipe.var(), "for product", var)
+                if recipe.var() in connected:
+                    # print("Recipe already connected")
+                    is_var_connected = True
+                    continue
+                if recipe.var() in stack:
+                    # print("Recipe already in stack")
                     continue
                 if recipe.is_craftable_in_building() and recipe.crafter().var() == "crafter:packager":
                     # We don't want to use the packager recipes to find connections between inputs and outputs
+                    # print("Recipe not craftable in building or package recipe")
                     continue
                 stack.append(recipe.var())
-                # print("Checking recipe", recipe.var(), "for product", var)
                 # print("Connected:", connected)
                 for ingredient in recipe.ingredients():
                     stack.append(ingredient)
@@ -628,7 +630,6 @@ class Optimizer:
             for output_var in outputs:
                 if output_var == POWER:
                     for power_recipe in self.__db.power_recipes().values():
-
                         fuel_var = power_recipe.fuel_item().var()
                         stack = [fuel_var]
                         if debug:
@@ -638,6 +639,7 @@ class Optimizer:
                         if check(input_var, fuel_var, connected, stack):
                             if debug:
                                 print("enabling connected:", connected)
+                                print("enabling power recipe:", power_recipe.var())
                             connected.add(power_recipe.var())
 
                 else:
@@ -657,6 +659,7 @@ class Optimizer:
                 prob += self.__variables[recipe_var] == 0
         for power_recipe_var in self.__db.power_recipes():
             if power_recipe_var not in connected:
+                # print("disabling power recipe", power_recipe_var)
                 prob += self.__variables[power_recipe_var] == 0
 
     async def optimize(self, query: OptimizationQuery) -> OptimizationResult:

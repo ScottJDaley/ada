@@ -127,10 +127,16 @@ class OptimizationQuery(Query):
         return category in self.__outputs and self.__outputs[category].strict
 
     def set_strict_input_category(self, category: str, value: bool) -> None:
-        self.__inputs[category].strict = value
+        if category not in self.__inputs:
+            self.__inputs[category] = Category(category, value)
+        else:
+            self.__inputs[category].strict = value
 
     def set_strict_output_category(self, category: str, value: bool) -> None:
-        self.__outputs[category].strict = value
+        if category not in self.__outputs:
+            self.__outputs[category] = Category(category, value)
+        else:
+            self.__outputs[category].strict = value
 
     def has_power_output(self):
         return "power" in self.__outputs
