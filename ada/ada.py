@@ -43,8 +43,10 @@ class Ada:
             return await self.__recipe_comp.compare(query)
         if isinstance(query, CompareRecipeQuery):
             if len(query.recipe().products()) == 1:
-                product = next(iter(query.recipe().products()))
-                return await self.__recipe_comp.compare(CompareRecipesForQuery(product, query.include_alternates()))
+                product = next(iter(query.recipe().products().values()))
+                return await self.__recipe_comp.compare(
+                    CompareRecipesForQuery(product.item(), query.include_alternates())
+                )
             return CompareRecipeResult(query)
         return ErrorResult("Unknown query.")
 
