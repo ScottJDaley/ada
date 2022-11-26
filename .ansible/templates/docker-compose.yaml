@@ -5,4 +5,3 @@ services:
     image: {{ docker_image }}
     environment:
       DISCORD_TOKEN: "{{ lookup('env','DISCORD_TOKEN') }}"
-      DISCORD_PREFIX: "{{ lookup('env','DISCORD_PREFIX') }}"

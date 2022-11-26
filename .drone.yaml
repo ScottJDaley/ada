@@ -28,7 +28,6 @@ steps:
   - name: deploy
     image: docker.nexus.diesel.net/drone-ansible:2.13
     environment:
-      DISCORD_PREFIX: "ada-test "
       DISCORD_TOKEN:
         from_secret: discord_token_test
     settings:
@@ -76,7 +75,6 @@ steps:
   - name: deploy
     image: docker.nexus.diesel.net/drone-ansible:2.13
     environment:
-      DISCORD_PREFIX: "ada "
       DISCORD_TOKEN:
         from_secret: discord_token_prod
     settings:
