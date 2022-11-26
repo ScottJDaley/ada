@@ -376,7 +376,10 @@ class QueryParser:
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if not query.has_input_in_category("item"):
+        has_item = query.has_input_in_category("item")
+        has_unweighted_resources = query.has_input_in_category("unweighted-resources")
+        has_weighted_resources = query.has_input_in_category("weighted-resources")
+        if not has_item and not has_unweighted_resources and not has_weighted_resources:
             if not query.has_objective():
                 query.add_input("unweighted-resources", MaximizeValue(), False)
             else:
