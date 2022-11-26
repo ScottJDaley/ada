@@ -1,9 +1,9 @@
 import math
 from typing import Dict, List, Tuple
 
-from ada.db.crafter import Crafter
-from ada.db.item import Item
-from discord import Embed
+from .crafter import Crafter
+from .entity import Entity
+from .item import Item
 
 
 def parse_list(raw: str) -> List[str]:
@@ -43,7 +43,7 @@ class RecipeItem:
         )
 
 
-class Recipe:
+class Recipe(Entity):
     def __init__(self, data: Dict[str, str], items, crafters) -> None:
         self.__data = data
         self.__crafter = None
@@ -97,16 +97,16 @@ class Recipe:
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
         out += (
-            '<TD COLSPAN="4" BGCOLOR="lightgray">'
-            + str(round(amount, 2))
-            + "x "
-            + self.crafter().human_readable_name()
-            + " ("
-            + str(num_buildings)
-            + "x @"
-            + underclock_str
-            + ")"
-            + "</TD>"
+                '<TD COLSPAN="4" BGCOLOR="lightgray">'
+                + str(round(amount, 2))
+                + "x "
+                + self.crafter().human_readable_name()
+                + " ("
+                + str(num_buildings)
+                + "x @"
+                + underclock_str
+                + ")"
+                + "</TD>"
         )
         out += "</TR>"
         out += "<TR>"
@@ -122,9 +122,9 @@ class Recipe:
             out += "<TD>" + ingredient.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(ingredient, amount) + "</TD>"
             out += (
-                "<TD>"
-                + get_component_amount_label(ingredient, amount / num_buildings)
-                + " each</TD>"
+                    "<TD>"
+                    + get_component_amount_label(ingredient, amount / num_buildings)
+                    + " each</TD>"
             )
             out += "</TR>"
         for product in self.products().values():
@@ -133,9 +133,9 @@ class Recipe:
             out += "<TD>" + product.item().human_readable_name() + "</TD>"
             out += "<TD>" + get_component_amount_label(product, amount) + "</TD>"
             out += (
-                "<TD>"
-                + get_component_amount_label(product, amount / num_buildings)
-                + " each</TD>"
+                    "<TD>"
+                    + get_component_amount_label(product, amount / num_buildings)
+                    + " each</TD>"
             )
             out += "</TR>"
         out += "</TABLE>>"
@@ -144,12 +144,17 @@ class Recipe:
     def human_readable_name(self) -> str:
         return "Recipe: " + self.__data["mDisplayName"]
 
+    def description(self):
+        return ""
+
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  time: " + str(float(self.__data["mManufactoringDuration"])) + "s")
-        out.append("  crafted in: " + self.crafter().human_readable_name())
-        out.append("  ingredients:")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  time: " + str(float(self.__data["mManufactoringDuration"])) + "s",
+            "  crafted in: " + self.crafter().human_readable_name() if self.is_craftable_in_building() else "None",
+            "  ingredients:"
+        ]
         for ingredient in self.__ingredients.values():
             out.append("    " + ingredient.human_readable_name())
         out.append("  products:")
@@ -157,28 +162,6 @@ class Recipe:
             out.append("    " + product.human_readable_name())
         out.append("")
         return "\n".join(out)
-
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        if self.is_alternate():
-            embed.description = "**Alternate**"
-        ingredients = "\n".join(
-            [ing.human_readable_name() for ing in self.ingredients().values()]
-        )
-        embed.add_field(name="Ingredients", value=ingredients, inline=True)
-        products = "\n".join(
-            [pro.human_readable_name() for pro in self.products().values()]
-        )
-        embed.add_field(name="Products", value=products, inline=True)
-        embed.add_field(
-            name="Crafting Time",
-            value=str(float(self.__data["mManufactoringDuration"])) + " seconds",
-            inline=True,
-        )
-        embed.add_field(
-            name="Building", value=self.crafter().human_readable_name(), inline=True
-        )
-        return embed
 
     def ingredients(self) -> Dict[str, RecipeItem]:
         return self.__ingredients
@@ -200,3 +183,17 @@ class Recipe:
 
     def is_craftable_in_building(self) -> bool:
         return self.__crafter is not None
+
+    def fields(self) -> list[tuple[str, str]]:
+        ingredients = "\n".join(
+            [ing.human_readable_name() for ing in self.ingredients().values()]
+        )
+        products = "\n".join(
+            [pro.human_readable_name() for pro in self.products().values()]
+        )
+        return [
+            ("Ingredients", ingredients),
+            ("Products", products),
+            ("Crafting Time", str(float(self.__data["mManufactoringDuration"])) + " seconds"),
+            ("Building", self.crafter().human_readable_name() if self.is_craftable_in_building() else "None")
+        ]

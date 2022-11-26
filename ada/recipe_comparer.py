@@ -2,41 +2,31 @@ from typing import Dict, List, Tuple
 
 import tabulate
 
-from ada.breadcrumbs import Breadcrumbs
-from ada.db.db import DB
-from ada.db.item import Item
-from ada.db.recipe import Recipe
-from ada.optimizer import OptimizationQuery, Optimizer
-from ada.result import Result, ResultMessage
-
-
-class RecipeCompareQuery:
-    def __init__(self, raw_query: str) -> None:
-        self.raw_query = raw_query
-        self.product_item = None
-        self.base_recipe = None
-        self.related_recipes = None
-        self.include_alternates = False
-
-    def __str__(self):
-        return self.raw_query
+from .db.db import DB
+from .db.item import Item
+from .db.recipe import Recipe
+from .optimization_query import AmountValue, MaximizeValue, OptimizationQuery
+from .optimizer import Optimizer
+from .recipe_compare_query import RecipeCompareQuery
+from .result import Result
 
 
 class ProductionStats:
     def __init__(
-        self,
-        inputs: Dict[str, Tuple[Item, float]],
-        power_consumption: float,
-        step_count: int,
+            self,
+            inputs: Dict[str, Tuple[Item, float]],
+            power_consumption: float,
+            step_count: int,
     ) -> None:
         self.inputs = inputs
         self.power_consumption = power_consumption
         self.step_count = step_count
 
     def to_string(self, indent=0):
-        out = []
-        out.append("")
-        out.append(indent * "  " + "INPUTS:")
+        out = [
+            "",
+            indent * "  " + "INPUTS:"
+        ]
         indent += 1
         for _, (_input, value) in self.inputs.items():
             out.append(
@@ -60,26 +50,26 @@ class ProductionStats:
 
 class ProductionCompStats:
     def __init__(
-        self,
-        base_production_stats: ProductionStats,
-        comp_production_stats: ProductionStats,
-        weighted: bool,
+            self,
+            base_production_stats: ProductionStats,
+            comp_production_stats: ProductionStats,
+            weighted: bool,
     ) -> None:
 
         # TODO: Pull this from the same place that the optimizer does
         weighted_resources = {
-            "resource:water": 0,
-            "resource:iron-ore": 1,
-            "resource:copper-ore": 3.29,
-            "resource:limestone": 1.47,
-            "resource:coal": 2.95,
-            "resource:crude-oil": 4.31,
-            "resource:bauxite": 8.48,
-            "resource:caterium-ore": 6.36,
-            "resource:uranium": 46.67,
-            "resource:raw-quartz": 6.36,
-            "resource:sulfur": 13.33,
-            "resource:nitrogen-gas": 4.5,  # TODO
+            "item:water": 0,
+            "item:iron-ore": 1,
+            "item:copper-ore": 3.29,
+            "item:limestone": 1.47,
+            "item:coal": 2.95,
+            "item:crude-oil": 4.31,
+            "item:bauxite": 8.48,
+            "item:caterium-ore": 6.36,
+            "item:uranium": 46.67,
+            "item:raw-quartz": 6.36,
+            "item:sulfur": 13.33,
+            "item:nitrogen-gas": 4.5,  # TODO
         }
 
         def get_delta_percentage(new, old):
@@ -127,26 +117,27 @@ class ProductionCompStats:
 
 class RecipeStats:
     def __init__(
-        self,
-        base: ProductionStats,
-        unweighted_stats: ProductionStats,
-        weighted_stats: ProductionStats,
+            self,
+            base: ProductionStats,
+            unweighted_stats: ProductionStats,
+            weighted_stats: ProductionStats,
     ) -> None:
         self.base = base
         self.unweighted_stats = unweighted_stats
         self.weighted_stats = weighted_stats
 
     def __str__(self):
-        out = []
-        out.append("")
-        out.append("Base:")
-        out.append(str(self.base))
-        out.append("")
-        out.append("Unweighted")
-        out.append(str(self.unweighted_stats))
-        out.append("")
-        out.append("Weighted")
-        out.append(str(self.weighted_stats))
+        out = [
+            "",
+            "Base:",
+            str(self.base),
+            "",
+            "Unweighted",
+            str(self.unweighted_stats),
+            "",
+            "Weighted",
+            str(self.weighted_stats)
+        ]
         return "\n".join(out)
 
 
@@ -168,14 +159,13 @@ class RecipeCompStats:
                 percentage_string = "+" + percentage_string
             return percentage_string + "%"
 
-        out = []
-        out.append(indent * "  " + "Inputs:")
+        out = [indent * "  " + "Inputs:"]
         indent += 1
         # out.append(indent * '  ' + "Unweighted w/o alternates:")
         # indent += 1
         for _, (
-            resource,
-            percentage,
+                resource,
+                percentage,
         ) in self.unweighted_comp_stats.resources.items():
             out.append(
                 indent * "  "
@@ -252,11 +242,11 @@ class RecipeCompStats:
 
 class RelatedRecipeStats:
     def __init__(
-        self,
-        recipe: Recipe,
-        product_item: Item,
-        recipe_stats: RecipeStats,
-        recipe_comp_stats: RecipeCompStats,
+            self,
+            recipe: Recipe,
+            product_item: Item,
+            recipe_stats: RecipeStats,
+            recipe_comp_stats: RecipeCompStats,
     ) -> None:
         self.recipe = recipe
         self.product_item = product_item
@@ -264,46 +254,35 @@ class RelatedRecipeStats:
         self.recipe_comp_stats = recipe_comp_stats
 
     def __str__(self):
-        out = []
-        out.append(
-            "To make 1 "
-            + self.product_item.human_readable_name()
-            + " with "
-            + self.recipe.human_readable_name()
-        )
-        out.append(str(self.recipe_stats.base))
-        out.append("")
-        out.append("Relative Statistics:")
-        out.append(self.recipe_comp_stats.to_string(1))
+        out = [
+            "To make 1 " + self.product_item.human_readable_name() + " with " + self.recipe.human_readable_name(),
+            str(self.recipe_stats.base),
+            "",
+            "Relative Statistics:",
+            self.recipe_comp_stats.to_string(1)
+        ]
         return "\n".join(out)
 
 
 class RecipeComparison:
     def __init__(
-        self,
-        query: RecipeCompareQuery,
-        base_stats_normalized: RecipeStats,
-        related_recipe_stats: List[RelatedRecipeStats],
+            self,
+            query: RecipeCompareQuery,
+            base_stats_normalized: RecipeStats,
+            related_recipe_stats: List[RelatedRecipeStats],
     ) -> None:
-        self.query = query
+        self.query: RecipeCompareQuery = query
         self.base_stats_normalized = base_stats_normalized
         self.related_recipe_stats = related_recipe_stats
 
     def __str__(self):
-        out = []
-        out.append(
-            "=== Comparing Recipes for "
-            + self.query.product_item.human_readable_name()
-            + " ==="
-        )
-        out.append("")
-        out.append(
-            "To make 1 "
-            + self.query.product_item.human_readable_name()
-            + " with "
-            + self.query.base_recipe.human_readable_name()
-        )
-        out.append(str(self.base_stats_normalized.base))
+        out = [
+            "=== Comparing Recipes for " + self.query.product_item.human_readable_name() + " ===",
+            "",
+            "To make 1 " + self.query.product_item.human_readable_name() + " with "
+            + self.query.base_recipe.human_readable_name(),
+            str(self.base_stats_normalized.base)
+        ]
         for related_stats in self.related_recipe_stats:
             out.append("")
             out.append(str(related_stats))
@@ -315,8 +294,9 @@ class RecipeComparer:
         self.__db = db
         self.__opt = opt
 
+    @staticmethod
     def scaled_production_stats(
-        self, stats: ProductionStats, scalar: float
+            stats: ProductionStats, scalar: float
     ) -> ProductionStats:
         return ProductionStats(
             {
@@ -327,14 +307,16 @@ class RecipeComparer:
             stats.step_count,
         )
 
-    def scaled_recipe_stats(self, stats: RecipeStats, scalar: float) -> RecipeStats:
+    @staticmethod
+    def scaled_recipe_stats(stats: RecipeStats, scalar: float) -> RecipeStats:
         return RecipeStats(
-            self.scaled_production_stats(stats.base, scalar),
-            self.scaled_production_stats(stats.unweighted_stats, scalar),
-            self.scaled_production_stats(stats.weighted_stats, scalar),
+            RecipeComparer.scaled_production_stats(stats.base, scalar),
+            RecipeComparer.scaled_production_stats(stats.unweighted_stats, scalar),
+            RecipeComparer.scaled_production_stats(stats.weighted_stats, scalar),
         )
 
-    def get_base_stats(self, recipe: Recipe) -> ProductionStats:
+    @staticmethod
+    def get_base_stats(recipe: Recipe) -> ProductionStats:
         return ProductionStats(
             {
                 ingredient.item().var(): (ingredient.item(), ingredient.minute_rate())
@@ -345,37 +327,36 @@ class RecipeComparer:
         )
 
     async def compute_production_stats(
-        self, recipe: Recipe, weighted: bool, include_alternates: bool
+            self, recipe: Recipe, weighted: bool, include_alternates: bool
     ) -> ProductionStats:
         inputs = {}
 
-        query = OptimizationQuery("")
-        query.maximize_objective = False
-        if weighted:
-            query.objective_coefficients = {"weighted-resources": -1}
-        else:
-            query.objective_coefficients = {"unweighted-resources": -1}
+        query = OptimizationQuery()
+        var = "weighted-resources" if weighted else "unweighted-resources"
+        query.add_input(var, MaximizeValue(), False)
+
         for ingredient_var, ingredient in recipe.ingredients().items():
             if ingredient.item().is_resource():
                 inputs[ingredient_var] = (ingredient.item(), ingredient.minute_rate())
             else:
-                query.eq_constraints[ingredient_var] = ingredient.minute_rate()
+                # query.eq_constraints[ingredient_var] = ingredient.minute_rate()
+                query.add_output(ingredient_var, AmountValue(ingredient.minute_rate()), False)
 
         if include_alternates:
-            query.ge_constraints["alternate-recipes"] = 0
+            query.add_include("alternate-recipes")
 
         result = await self.__opt.optimize(query)
 
-        inputs.update(result.inputs())
+        inputs.update(result.result_data().inputs())
 
         return ProductionStats(
             inputs,
-            -result.net_power() + recipe.crafter().power_consumption(),
-            len(result.recipes()) + len(inputs) + 1,
+            -result.result_data().net_power() + recipe.crafter().power_consumption(),
+            len(result.result_data().recipes()) + len(inputs) + 1,
         )
 
     async def compute_recipe_stats(
-        self, recipe: Recipe, include_alternates: bool
+            self, recipe: Recipe, include_alternates: bool
     ) -> RecipeStats:
         base_stats = self.get_base_stats(recipe)
         unweighted_stats = await self.compute_production_stats(
@@ -498,20 +479,13 @@ class RecipeCompareResult(Result):
 
         input_vars = {}
 
-        for (
-            _input,
-            value,
-        ) in stats.base_stats_normalized.unweighted_stats.inputs.values():
+        for (_input, value) in stats.base_stats_normalized.unweighted_stats.inputs.values():
             input_vars[_input.var()] = _input.human_readable_name()
         for related_stats in stats.related_recipe_stats:
-            for (
-                _input,
-                value,
-            ) in related_stats.recipe_stats.unweighted_stats.inputs.values():
+            for (_input, value) in related_stats.recipe_stats.unweighted_stats.inputs.values():
                 input_vars[_input.var()] = _input.human_readable_name()
 
-        inputs = {}
-        inputs["Recipe"] = recipes
+        inputs = {"Recipe": recipes}
         for input_var, input_name in input_vars.items():
             if input_var in stats.base_stats_normalized.unweighted_stats.inputs:
                 _input, value = stats.base_stats_normalized.unweighted_stats.inputs[
@@ -571,41 +545,43 @@ class RecipeCompareResult(Result):
         #  Recipe: Alternate: Steel Rod | 0.25/m (-75%) | 0.45/m (NEW) |             |   1.2 MW   |
         product_name = self.__stats.query.product_item.human_readable_name()
 
-        out = []
-        out.append("All recipes that produce " + product_name)
-        out.append(tabulate(self.__overall_stats, headers="keys", tablefmt="grid"))
-        out.append("")
-        out.append("Raw Inputs for 1/m " + product_name)
-        out.append(tabulate(self.__input_stats, headers="keys", tablefmt="grid"))
+        out = [
+            "All recipes that produce " + product_name,
+            tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="grid"),
+            "",
+            "Raw Inputs for 1/m " + product_name,
+            tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="grid")
+        ]
         return "\n".join(out)
 
         # return str(self.__stats)
 
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
-        message = ResultMessage()
-        # message.embed = Embed(title="Error")
-        # message.embed.description = "hello"  # "```{}```".format(str(self))
+    def stats(self):
+        return self.__stats
 
-        product_name = self.__stats.query.product_item.human_readable_name()
+    def overall_stats(self):
+        return self.__overall_stats
 
-        out = []
-        out.append("All recipes that produce " + product_name)
-        out.append(
-            "```\n{}```".format(
-                tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
-            )
-        )
-        out.append("Raw Inputs for 1/m " + product_name)
-        out.append(
-            "```\n{}```".format(
-                tabulate(self.__input_stats, headers="keys", tablefmt="simple")
-            )
-        )
+    def input_stats(self):
+        return self.__input_stats
 
-        message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
-        if len(message.content) > 2000:
-            message.content = "Output was too long"
-        return [message]
-
-    def handle_reaction(self, emoji, breadcrumbs):
-        return None
+    # def message(self, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
+    #     message = ResultMessage()
+    #     # message.embed = Embed(title="Error")
+    #     # message.embed.description = "hello"  # "```{}```".format(str(self))
+    #
+    #     product_name = self.__stats.query.product_item.human_readable_name()
+    #
+    #     out = [
+    #         "All recipes that produce " + product_name, "```\n{}```".format(
+    #             tabulate.tabulate(self.__overall_stats, headers="keys", tablefmt="simple")
+    #         ),
+    #         "Raw Inputs for 1/m " + product_name, "```\n{}```".format(
+    #             tabulate.tabulate(self.__input_stats, headers="keys", tablefmt="simple")
+    #         )
+    #     ]
+    #
+    #     message.content = "{}\n{}".format(str(breadcrumbs), "\n".join(out))
+    #     if len(message.content) > 2000:
+    #         message.content = "Output was too long"
+    #     return message

@@ -1,10 +1,10 @@
 from typing import Dict
 
-import ada.image_fetcher
-from discord import Embed
+from .entity import Entity
+from ..utils import image_fetcher
 
 
-class Crafter:
+class Crafter(Entity):
     def __init__(self, data: Dict[str, str]) -> None:
         self.__data = data
 
@@ -20,33 +20,32 @@ class Crafter:
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
 
+    def description(self):
+        return self.__data["mDescription"]
+
     def power_consumption(self) -> float:
         return float(self.__data["mPowerConsumption"])
 
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  power consumption: " + str(self.power_consumption()) + " MW")
-        out.append(self.__data["mDescription"])
-        out.append("")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  power consumption: " + str(self.power_consumption()) + " MW",
+            self.__data["mDescription"],
+            ""
+        ]
         return "\n".join(out)
 
     def wiki(self):
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self):
-        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
-        return ada.image_fetcher.fetch_first_on_page(self.wiki())
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(
-            name="Power Consumption", value=(str(self.power_consumption()) + " MW")
-        )
-        # TODO
-        return embed
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Power Consumption", f"{self.power_consumption()} MW"),
+        ]

@@ -1,9 +1,10 @@
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
-from discord import Embed
+from .entity import Entity
+from .item import Item
+from .power_generator import PowerGenerator
 
 
-class PowerRecipe:
+class PowerRecipe(Entity):
+
     def __init__(self, fuel_item: Item, generator: PowerGenerator) -> None:
         # item var => recipe item
         self.__fuel_item = fuel_item
@@ -32,37 +33,26 @@ class PowerRecipe:
     def human_readable_name(self):
         return "Power Recipe: " + self.__fuel_item.human_readable_name()
 
+    def description(self):
+        return "Produces power from " + self.fuel_item().human_readable_name()
+
     def details(self):
+        # noinspection PyListCreation
         out = [self.human_readable_name()]
         out.append("  var: " + self.var())
         out.append("  generator: " + self.__generator.human_readable_name())
         out.append("  fuel:")
         out.append(
             "    "
-            + self.fuel_minute_rate()
+            + str(self.fuel_minute_rate())
             + " "
-            + self.__fuel_item.human_readable_name()
+            + str(self.__fuel_item.human_readable_name())
             + "/m"
         )
         out.append("  power:")
-        out.append("    " + self.__generator.power_production())
+        out.append("    " + str(self.__generator.power_production()))
         out.append("")
         return "\n".join(out)
-
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        embed.description = (
-            "Produces power from " + self.fuel_item().human_readable_name()
-        )
-
-        embed.add_field(
-            name="Fuel Type", value=self.fuel_item().human_readable_name(), inline=True
-        )
-        embed.add_field(name="Fuel Rate", value=(self.fuel_minute_rate() + "/minute"))
-        embed.add_field(
-            name="Power", value=(self.__generator.power_production() + " MW")
-        )
-        return embed
 
     def fuel_minute_rate(self) -> float:
         # Example:
@@ -72,8 +62,11 @@ class PowerRecipe:
         # 300 MJ energy value of coal
         # 4500 MJ/m / 300 MJ/coal = 15 coal/m
         return (
-            self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
+                self.__generator.power_production() * 60 / self.__fuel_item.energy_value()
         )
+
+    def water_minute_rate(self) -> float:
+        return self.__generator.water_minute_rate()
 
     def power_production(self) -> float:
         return self.__generator.power_production()
@@ -83,3 +76,13 @@ class PowerRecipe:
 
     def generator(self) -> PowerGenerator:
         return self.__generator
+
+    def fields(self) -> list[tuple[str, str]]:
+        result = [
+            ("Fuel Type", self.fuel_item().human_readable_name()),
+            ("Fuel Rate", f"{self.fuel_minute_rate()} /minute"),
+        ]
+        if self.__generator.requires_water():
+            result.append(("Water Rate", f"{self.water_minute_rate()} /minute"))
+        result.append(("Power", f"{self.generator().power_production()} MW"))
+        return result

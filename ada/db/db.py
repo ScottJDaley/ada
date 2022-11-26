@@ -2,14 +2,15 @@
 # into data\Docs.json
 
 import json
+import pkgutil
 
-from ada.db.buildable_recipe import BuildableRecipe
-from ada.db.crafter import Crafter
-from ada.db.extractor import Extractor
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
-from ada.db.power_recipe import PowerRecipe
-from ada.db.recipe import Recipe
+from .crafter import Crafter
+from .entity import Entity
+from .extractor import Extractor
+from .item import Item
+from .power_generator import PowerGenerator
+from .power_recipe import PowerRecipe
+from .recipe import Recipe
 
 RESOURCE_CLASSES = [
     "Class'/Script/FactoryGame.FGResourceDescriptor'",
@@ -20,9 +21,11 @@ ITEM_CLASSES = [
     "Class'/Script/FactoryGame.FGItemDescriptorBiomass'",
     "Class'/Script/FactoryGame.FGItemDescriptorNuclearFuel'",
     "Class'/Script/FactoryGame.FGConsumableDescriptor'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeColorCartridge'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeProjectile'",
-    "Class'/Script/FactoryGame.FGItemDescAmmoTypeInstantHit'",
+    "Class'/Script/FactoryGame.FGBuildingDescriptor'",
+    "Class'/Script/FactoryGame.FGPoleDescriptor'",
+    "Class'/Script/FactoryGame.FGVehicleDescriptor'",
+    "Class'/Script/FactoryGame.FGAmmoTypeProjectile'",
+    "Class'/Script/FactoryGame.FGAmmoTypeInstantHit'",
 ]
 CRAFTER_CLASSES = [
     "Class'/Script/FactoryGame.FGBuildableManufacturer'",
@@ -43,8 +46,10 @@ RECIPE_CLASSES = [
 class DB:
     def __init__(self):
         # Parse data file
-        with open("data/Docs.json", encoding="utf8") as f:
-            data = json.load(f)
+        raw = pkgutil.get_data("ada.data", "Docs.json")
+        if not raw:
+            raise FileNotFoundError("Cannot find data file 'data/Docs.json'")
+        data = json.loads(raw)
 
         native_classes = {}
         for native_class in data:
@@ -60,18 +65,19 @@ class DB:
             self.__item_vars_from_native_class_name[resource_class_short] = []
             for resource_data in native_classes[resource_class]:
                 item = Item(resource_data, resource_class_short, is_resource=True)
-                self.__items[item.var()] = item
+                self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[resource_class_short].append(
                     item.var()
                 )
+
         # Parse items
         for item_class in ITEM_CLASSES:
             item_class_short = item_class.split(".")[1][:-1]
             self.__item_vars_from_native_class_name[item_class_short] = []
             for item_data in native_classes[item_class]:
                 item = Item(item_data, item_class_short, is_resource=False)
-                self.__items[item.var()] = item
+                self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
                 self.__item_vars_from_native_class_name[item_class_short].append(
                     item.var()
@@ -110,19 +116,12 @@ class DB:
         # Create a dictionary from ingredient => [recipe]
         self.__recipes_for_ingredient = {}
         self.__recipes = {}
-        self.__buildable_recipes = {}
         for recipe_class in RECIPE_CLASSES:
             for recipe_data in native_classes[recipe_class]:
                 recipe = Recipe(
                     recipe_data, self.__items.values(), self.__crafters.values()
                 )
-                if not recipe.is_craftable_in_building():
-                    buildable_recipe = BuildableRecipe(
-                        recipe_data, self.__items.values()
-                    )
-                    self.__buildable_recipes[buildable_recipe.var()] = buildable_recipe
-                else:
-                    self.__recipes[recipe.var()] = recipe
+                self.__recipes[recipe.var()] = recipe
                 for ingredient in recipe.ingredients().keys():
                     if ingredient not in self.__recipes_for_ingredient:
                         self.__recipes_for_ingredient[ingredient] = []
@@ -140,8 +139,18 @@ class DB:
                 if fuel_item.energy_value() <= 0:
                     continue
                 power_recipe = PowerRecipe(fuel_item, generator)
+                # print(f"Found power recipe var {power_recipe.var()}")
                 self.__power_recipes[power_recipe.var()] = power_recipe
                 self.__power_recipes_by_fuel[fuel_item.var()] = power_recipe
+
+        self.__all_entities = self.__items | self.__crafters | self.__extractors | self.__generators | self.__recipes \
+                              | self.__power_recipes
+
+    def _add_item(self, item: Item):
+        if item.var() in self.__items:
+            existing = self.__items[item.var()]
+            print(f"Found duplicate item var {item.var()}, old {existing.class_name()}, new {item.class_name()}")
+        self.__items[item.var()] = item
 
     def items(self):
         return self.__items
@@ -160,7 +169,7 @@ class DB:
     def recipes(self):
         return self.__recipes
 
-    def recipes_for_product(self, product):
+    def recipes_for_product(self, product) -> list[Recipe]:
         if product not in self.__recipes_for_product:
             return []
         return self.__recipes_for_product[product]
@@ -170,17 +179,11 @@ class DB:
             return []
         return self.__recipes_for_ingredient[ingredient]
 
-    def buildable_recipes(self):
-        return self.__buildable_recipes
-
     def power_recipes(self):
         return self.__power_recipes
 
     def power_recipes_by_fuel(self):
         return self.__power_recipes_by_fuel
-
-    def resources(self):
-        return self.__resources
 
     def crafters(self):
         return self.__crafters
@@ -200,3 +203,8 @@ class DB:
 
     def generators(self):
         return self.__generators
+
+    def lookup(self, var: str) -> Entity | None:
+        if var in self.__all_entities:
+            return self.__all_entities[var]
+        return None

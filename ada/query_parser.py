@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Union
+from typing import List, Union, cast
 
 import inflect
 from pyparsing import (
@@ -21,15 +21,13 @@ from pyparsing import (
 )
 from pyparsing.results import ParseResults
 
-from ada.db.crafter import Crafter
-from ada.db.db import DB
-from ada.db.extractor import Extractor
-from ada.db.item import Item
-from ada.db.power_generator import PowerGenerator
-from ada.help import HelpQuery
-from ada.info import InfoQuery
-from ada.optimizer import OptimizationQuery
-from ada.recipe_comparer import RecipeCompareQuery
+from .db.db import DB
+from .db.entity import Entity
+from .db.item import Item
+from .help import HelpQuery
+from .info import InfoQuery
+from .optimization_query import AmountValue, AnyValue, MaximizeValue, OptimizationQuery
+from .recipe_compare_query import RecipeCompareQuery
 
 PRODUCE = CaselessKeyword("produce")
 MAKE = CaselessKeyword("make")
@@ -51,12 +49,14 @@ POWER = CaselessKeyword("power")
 TICKETS = CaselessKeyword("tickets")
 SPACE = CaselessKeyword("space")
 RESOURCES = CaselessKeyword("resources")
-UNWEIGHTED_RESOURCES = CaselessKeyword("unweighted resources")
-WEIGHTED_RESOURCES = CaselessKeyword("weighted resources")
-ALTERNATE_RECIPES = CaselessKeyword("alternate recipes")
+UNWEIGHTED_RESOURCES = CaselessKeyword("unweighted resources") | CaselessKeyword("unweighted-resources")
+WEIGHTED_RESOURCES = CaselessKeyword("weighted resources") | CaselessKeyword("weighted-resources")
+ALTERNATE_RECIPES = CaselessKeyword("alternate recipes") | CaselessKeyword("alternate-recipes")
 RECIPES = CaselessKeyword("recipes")
 RECIPE = CaselessKeyword("recipe")
 BYPRODUCTS = CaselessKeyword("byproducts")
+INGREDIENTS = CaselessKeyword("ingredients")
+PRODUCTS = CaselessKeyword("products")
 FOR = CaselessKeyword("for")
 HELP = CaselessKeyword("help")
 COMPARE = CaselessKeyword("compare")
@@ -71,10 +71,8 @@ class QueryParseException(Exception):
 
 
 class QueryParser:
-
     output_kw = PRODUCE | MAKE | CREATE | OUTPUT
-    input_kw = FROM | INPUT
-    include_kw = USING | WITH
+    input_kw = FROM | INPUT | USING | WITH
     exclude_kw = WITHOUT | EXCLUDING
 
     and_kw = AND | PLUS
@@ -90,15 +88,12 @@ class QueryParser:
     )
 
     entity_expr_end = (
-        output_kw
-        | input_kw
-        | include_kw
-        | exclude_kw
-        | and_kw
-        | or_kw
-        | RECIPE
-        | RECIPES
-        | StringEnd()
+            output_kw
+            | input_kw
+            | exclude_kw
+            | and_kw
+            | or_kw
+            | StringEnd()
     )
     entity_expr = Combine(
         OneOrMore(~entity_expr_end + Word(alphas + nums + ":.*-")),
@@ -108,16 +103,13 @@ class QueryParser:
 
     # TODO: Consider allowing all literals in grammar and then enforce it during
     # validation step.
-    output_literal = ((POWER)("power") | TICKETS)("literal")
+    output_literal = (POWER("power") | TICKETS)("literal")
     output_var = output_literal | entity_expr
 
-    input_literal = (POWER | SPACE | unweighted_resources_kw | weighted_resources_kw)(
+    input_literal = (POWER | unweighted_resources_kw | weighted_resources_kw | alternate_recipes_kw)(
         "literal"
     )
     input_var = input_literal | entity_expr
-
-    include_literal = SPACE("literal") | alternate_recipes_kw("literal")
-    include_var = include_literal | entity_expr
 
     exclude_literal = alternate_recipes_kw("literal")
     byproducts = BYPRODUCTS("byproducts")
@@ -125,28 +117,25 @@ class QueryParser:
 
     objective_value = QUESTION_MARK
     any_value = Optional(ANY | UNDERSCORE).setParseAction(replaceWith("_"))
+    no_value = NO
     num_value = pyparsing_common.integer
-    value = (objective_value | num_value | any_value)("value")
+    value = (objective_value | num_value | any_value | no_value)("value")
 
     strict = Optional(ONLY)("strict").setParseAction(lambda t: len(t) != 0)
 
     output_expr = Group(strict + value + output_var)
     input_expr = Group(strict + value + input_var)
-    # includes are always strict
-    include_expr = Group(Optional(ONLY) + include_var)
     exclude_expr = Group(exclude_var)
 
     outputs = output_expr + ZeroOrMore(Suppress(and_kw) + output_expr)
     inputs = input_expr + ZeroOrMore(Suppress(and_kw) + input_expr)
-    includes = include_expr + ZeroOrMore(Suppress(and_kw) + include_expr)
-    excludes = exclude_expr + ZeroOrMore(Suppress(or_kw) + exclude_expr)
+    excludes = exclude_expr + ZeroOrMore((Suppress(or_kw) | Suppress(and_kw)) + exclude_expr)
 
     outputs_expr = (Suppress(output_kw) + outputs)("outputs")
     inputs_expr = Optional(Suppress(input_kw) + inputs)("inputs")
-    includes_expr = Optional(Suppress(include_kw) + includes)("includes")
     excludes_expr = Optional(Suppress(exclude_kw) + excludes)("excludes")
 
-    optimization_query = (outputs_expr + inputs_expr + includes_expr + excludes_expr)(
+    optimization_query = (outputs_expr + inputs_expr + excludes_expr)(
         "optimization"
     )
 
@@ -155,11 +144,11 @@ class QueryParser:
     single_recipe_query = (Suppress(RECIPE) + entity_expr)("single-recipe")
 
     recipe_for_query = (
-        (Suppress(RECIPE + FOR) + entity_expr) | (entity_expr + Suppress(RECIPE))
+            (Suppress(RECIPE + FOR) + entity_expr) | (entity_expr + Suppress(RECIPE))
     )("recipe-for")
 
     recipes_for_query = (
-        (Suppress(RECIPES + FOR) + entity_expr) | (entity_expr + Suppress(RECIPES))
+            (Suppress(RECIPES + FOR) + entity_expr) | (entity_expr + Suppress(RECIPES))
     )("recipes-for")
 
     recipes_from_kw = FROM | USING | WITH
@@ -168,23 +157,33 @@ class QueryParser:
     )
 
     recipe_query = (
-        recipes_for_query | recipe_for_query | recipes_from_query | single_recipe_query
+            recipes_for_query | recipe_for_query | recipes_from_query | single_recipe_query
     )
+
+    ingredients_for_query = (
+            (Suppress(INGREDIENTS + FOR) + entity_expr) | (entity_expr + Suppress(INGREDIENTS))
+    )("ingredients-for")
+
+    products_for_query = (
+            (Suppress(PRODUCTS + FOR) + entity_expr) | (entity_expr + Suppress(PRODUCTS))
+    )("products-for")
 
     help_query = HELP("help")
 
     compare_recipe_query = (
-        Suppress(COMPARE + RECIPES + FOR)
-        + entity_expr
-        + Optional(WITH + ALTERNATE_RECIPES)("include-alternates")
+            Suppress(COMPARE + RECIPES + FOR)
+            + entity_expr
+            + Optional(WITH + ALTERNATE_RECIPES)("include-alternates")
     )("recipe-compare")
 
     query_grammar = (
-        help_query
-        ^ optimization_query
-        ^ recipe_query
-        ^ compare_recipe_query
-        ^ entity_query
+            help_query
+            ^ optimization_query
+            ^ recipe_query
+            ^ compare_recipe_query
+            ^ ingredients_for_query
+            ^ products_for_query
+            ^ entity_query
     )
 
     def __init__(self, db: DB) -> None:
@@ -192,8 +191,8 @@ class QueryParser:
 
     @staticmethod
     def _check_var(
-        expr: str, var: Union[Crafter, Extractor, PowerGenerator, Item]
-    ) -> bool:
+            expr: str, var: Entity
+    ) -> tuple[bool, bool]:
         # Support the following:
         # 1. singular human-readable name
         # 2. plural human-readable name
@@ -201,66 +200,66 @@ class QueryParser:
         # 4. regex on human-readable name
         # 5. regex on var name
         expr = expr.strip().lower()
-        expr_parts = list(filter(None, re.split(r"[\s\-\_:]", expr)))
+        expr_parts = list(filter(None, re.split(r"[\s\-_:]", expr)))
 
         singular = var.human_readable_name().lower()
         singular_parts = list(filter(None, re.split(r"[\s:\-]", singular)))
         if expr_parts == singular_parts:
-            return True
+            return True, False
         plural = inflect.engine().plural(singular)
         plural_parts = list(filter(None, re.split(r"[\s:\-]", plural)))
         if expr_parts == plural_parts:
-            return True
+            return True, False
         if singular.startswith("recipe: alternate: "):
             if expr_parts == singular_parts[2:]:
-                return True
+                return True, False
             if expr_parts == singular_parts[:1] + singular_parts[2:]:
-                return True
+                return True, False
             if expr_parts == plural_parts[2:]:
-                return True
+                return True, False
             if expr_parts == plural_parts[:1] + plural_parts[2:]:
-                return True
+                return True, False
         var_parts = list(filter(None, re.split(r"[:\-]", var.var())))
         if expr_parts == var_parts:
-            return True
+            return True, False
         # Don't require the user to specify the entity type.
         typeless_var = var.var().split(":", 1)[1]
         typeless_var_parts = re.split(r"[:\-]", typeless_var)
         if expr_parts == typeless_var_parts:
-            return True
+            return True, False
 
         return (
-            re.fullmatch(expr, singular)
-            or re.fullmatch(expr, plural)
-            or re.fullmatch(expr, var.var())
-            or re.fullmatch(expr, typeless_var)
-        )
+                       re.fullmatch(expr, singular) is not None
+                       or re.fullmatch(expr, plural) is not None
+                       or re.fullmatch(expr, var.var()) is not None
+                       or re.fullmatch(expr, typeless_var) is not None
+               ), True
 
     def _get_matches(
-        self, expr: str, allowed_types: List[str]
-    ) -> List[Union[Any, Item]]:
-        allowed_vars = set()
-        if "resource" in allowed_types:
-            allowed_vars.update(
-                [item for item in self._db.items().values() if item.is_resource()]
-            )
-        if "item" in allowed_types:
-            allowed_vars.update(
-                [item for item in self._db.items().values() if not item.is_resource()]
-            )
-        if "recipe" in allowed_types:
-            allowed_vars.update(self._db.recipes().values())
-        if "buildable-recipe" in allowed_types:
-            allowed_vars.update(self._db.buildable_recipes().values())
-        if "power-recipe" in allowed_types:
-            allowed_vars.update(self._db.power_recipes().values())
+            self, expr: str, allowed_types: List[str]
+    ) -> list[Entity]:
+        allowed_vars: list[Entity] = []
         if "crafter" in allowed_types:
-            allowed_vars.update(self._db.crafters().values())
+            allowed_vars.extend(self._db.crafters().values())
         if "extractor" in allowed_types:
-            allowed_vars.update(self._db.extractors().values())
+            allowed_vars.extend(self._db.extractors().values())
         if "generator" in allowed_types:
-            allowed_vars.update(self._db.generators().values())
-        return [var for var in allowed_vars if QueryParser._check_var(expr, var)]
+            allowed_vars.extend(self._db.generators().values())
+        if "item" in allowed_types:
+            allowed_vars.extend(self._db.items().values())
+        if "recipe" in allowed_types:
+            allowed_vars.extend(self._db.recipes().values())
+        if "power-recipe" in allowed_types:
+            allowed_vars.extend(self._db.power_recipes().values())
+        matches = []
+        for var in allowed_vars:
+            match, regex_match = QueryParser._check_var(expr, var)
+            if not match:
+                continue
+            if not regex_match:
+                return [var]
+            matches.append(var)
+        return matches
 
     def _parse_outputs(self, outputs: ParseResults, query: OptimizationQuery) -> None:
         if not outputs:
@@ -277,21 +276,18 @@ class QueryParser:
                     raise QueryParseException(
                         "Could not parse item expression '" + output["entity"] + "'."
                     )
+            strict = output["strict"]
             value = output["value"]
-            if value == "?":
-                if len(query.objective_coefficients) > 0:
-                    raise QueryParseException("Only one objective may be specified.")
-                query.maximize_objective = True
-                query.objective_coefficients = {var: 1 for var in output_vars}
-            elif value == "_":
-                query.ge_constraints.update({var: 0 for var in output_vars})
-            else:
-                query.eq_constraints.update({var: value for var in output_vars})
-            if output["strict"]:
-                query.strict_outputs = True
-            if "power" in output:
-                print("has power output")
-                query.has_power_output = True
+            for output_var in output_vars:
+                if value == "?":
+                    if query.has_objective():
+                        raise QueryParseException("Only one objective may be specified.")
+                    val = MaximizeValue()
+                elif value == "_":
+                    val = AnyValue()
+                else:
+                    val = AmountValue(int(value))
+                query.add_output(output_var, val, strict)
 
     def _parse_inputs(self, inputs: ParseResults, query: OptimizationQuery) -> None:
         if not inputs:
@@ -302,73 +298,37 @@ class QueryParser:
                 input_vars = [input_["literal"]]
             elif "entity" in input_:
                 input_vars.extend(
-                    [
-                        var.var()
-                        for var in self._get_matches(
-                            input_["entity"], ["resource", "item"]
-                        )
-                    ]
+                    [var.var() for var in self._get_matches(
+                        input_["entity"], [
+                            "item",
+                            "recipe",
+                            "power-recipe",
+                            "crafter",
+                            "extractor",
+                            "generator",
+                        ]
+                    )]
                 )
                 if len(input_vars) == 0:
                     raise QueryParseException(
-                        "Could not parse resource or item expression '"
+                        "Could not parse item, recipe, power recipe, crafter, or generator expression '"
                         + input_["entity"]
                         + "'."
                     )
+            strict = input_["strict"]
             value = input_["value"]
-            if value == "?":
-                if len(query.objective_coefficients) > 0:
-                    raise QueryParseException("Only one objective may be specified.")
-                query.maximize_objective = False
-                query.objective_coefficients = {var: -1 for var in input_vars}
-            elif value == "_":
-                query.le_constraints.update({var: 0 for var in input_vars})
-            else:
-                query.ge_constraints.update({var: -value for var in input_vars})
-            if input_["strict"]:
-                query.strict_inputs = True
+            for input_var in input_vars:
+                if value == "?":
+                    if query.has_objective():
+                        raise QueryParseException("Only one objective may be specified.")
+                    val = MaximizeValue()
+                elif value == "_":
+                    val = AnyValue()
+                else:
+                    val = AmountValue(int(value))
+                query.add_input(input_var, val, strict)
 
-    def _parse_includes(self, includes: None, query: OptimizationQuery) -> None:
-        if not includes:
-            return
-        for include in includes:
-            include_vars = []
-            if "literal" in include:
-                include_vars = [include["literal"]]
-            elif "entity" in include:
-                include_vars.extend(
-                    [
-                        var.var()
-                        for var in self._get_matches(
-                            include["entity"],
-                            [
-                                "recipe",
-                                "power-recipe",
-                                "crafter",
-                                "extractor",
-                                "generator",
-                            ],
-                        )
-                    ]
-                )
-                if len(include_vars) == 0:
-                    raise QueryParseException(
-                        "Could not parse recipe, power recipe, crafter, or generator expression '"
-                        + include["entity"]
-                        + "'."
-                    )
-            query.ge_constraints.update({var: 0 for var in include_vars})
-            for var in include_vars:
-                if var.startswith("recipe:"):
-                    query.strict_recipes = True
-                if var.startswith("power-recipe:"):
-                    query.strict_power_recipes = True
-                if var.startswith("crafter:"):
-                    query.strict_crafters = True
-                if var.startswith("generator:"):
-                    query.strict_generators = True
-
-    def _parse_excludes(self, excludes: None, query: OptimizationQuery) -> None:
+    def _parse_excludes(self, excludes: ParseResults, query: OptimizationQuery) -> None:
         if not excludes:
             return
         for exclude in excludes:
@@ -377,19 +337,15 @@ class QueryParser:
                 exclude_vars = [exclude["literal"]]
             elif "entity" in exclude:
                 exclude_vars.extend(
-                    [
-                        var.var()
-                        for var in self._get_matches(
-                            exclude["entity"],
-                            [
-                                "recipe",
-                                "power-recipe",
-                                "crafter",
-                                "extractor",
-                                "generator",
-                            ],
-                        )
-                    ]
+                    [var.var() for var in self._get_matches(
+                        exclude["entity"], [
+                            "recipe",
+                            "power-recipe",
+                            "crafter",
+                            "extractor",
+                            "generator",
+                        ]
+                    )]
                 )
                 if len(exclude_vars) == 0:
                     raise QueryParseException(
@@ -397,26 +353,33 @@ class QueryParser:
                         + exclude["entity"]
                         + "'."
                     )
+
             if "byproducts" in exclude:
-                query.strict_outputs = True
-            query.eq_constraints.update({var: 0 for var in exclude_vars})
+                query.set_strict_outputs(True)
+            for exclude_var in exclude_vars:
+                query.add_exclude(exclude_var)
+                query.add_output(exclude_var, AmountValue(0), False)
 
     def _parse_optimization_query(
-        self, raw_query: str, parse_results: ParseResults
+            self, raw_query: str, parse_results: ParseResults
     ) -> OptimizationQuery:
-        query = OptimizationQuery(raw_query)
+        query = OptimizationQuery()
         self._parse_outputs(parse_results.get("outputs"), query)
         self._parse_inputs(parse_results.get("inputs"), query)
-        self._parse_includes(parse_results.get("includes"), query)
         self._parse_excludes(parse_results.get("excludes"), query)
-        if not query.objective_coefficients:
-            query.maximize_objective = False
-            query.objective_coefficients = {"unweighted-resources": -1}
+        if not query.has_input_in_category("item"):
+            if not query.has_objective():
+                query.add_input("unweighted-resources", MaximizeValue(), False)
+            else:
+                query.add_input("unweighted-resources")
         return query
 
     def _parse_recipe_for_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
-        matches = self._get_matches(parse_results.get("entity"), ["item"])
+        matches = self._get_matches(
+            parse_results.get("entity"),
+            ["item", "crafter", "extractor", "generator"],
+        )
         if len(matches) == 0:
             raise QueryParseException(
                 "Could not parse item expression '" + parse_results.get("entity") + "'."
@@ -439,21 +402,23 @@ class QueryParser:
         query = InfoQuery(raw_query)
         matches = self._get_matches(
             parse_results.get("entity"),
-            ["resource", "item", "crafter", "extractor", "generator"],
+            ["item", "crafter", "extractor", "generator"],
         )
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resource, item, crafter, or generator expression '"
+                "Could not parse item, crafter, or generator expression '"
                 + parse_results.get("entity")
                 + "'."
             )
         for match in matches:
             var = match.var()
-            if var.startswith("item") or var.startswith("resource"):
+            if var.startswith("item"):
                 for recipe in self._db.recipes_for_product(var):
                     query.vars.append(recipe)
             elif var.startswith("crafter"):
                 for recipe in self._db.recipes().values():
+                    if not recipe.is_craftable_in_building():
+                        continue
                     if recipe.crafter().var() == var:
                         query.vars.append(recipe)
             elif var.startswith("generator"):
@@ -464,10 +429,10 @@ class QueryParser:
 
     def _parse_recipes_from_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
-        matches = self._get_matches(parse_results.get("entity"), ["resource", "item"])
+        matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(
-                "Could not parse resoure or item expression '"
+                "Could not parse item expression '"
                 + parse_results.get("entity")
                 + "'."
             )
@@ -479,7 +444,7 @@ class QueryParser:
     def _parse_single_recipe_query(self, raw_query, parse_results):
         query = InfoQuery(raw_query)
         matches = self._get_matches(
-            parse_results.get("entity"), ["recipe", "buildable-recipe"]
+            parse_results.get("entity"), ["recipe"]
         )
         if len(matches) == 0:
             raise QueryParseException(
@@ -491,9 +456,9 @@ class QueryParser:
         return query
 
     def _parse_recipe_compare_query(
-        self, raw_query: str, parse_results: ParseResults
+            self, raw_query: str, parse_results: ParseResults
     ) -> RecipeCompareQuery:
-        query = RecipeCompareQuery(raw_query)
+        query = RecipeCompareQuery()
         matches = self._get_matches(parse_results.get("entity"), ["item"])
         if len(matches) == 0:
             raise QueryParseException(
@@ -507,7 +472,7 @@ class QueryParser:
                 + "\n   ".join([match.human_readable_name() for match in matches])
                 + "\nPlease repeat the command with a more specific item name."
             )
-        product_item = matches[0]
+        product_item: Item = cast(Item, matches[0])
         related_recipes = list(self._db.recipes_for_product(product_item.var()))
         base_recipe = None
         if len(related_recipes) == 0:
@@ -536,20 +501,66 @@ class QueryParser:
         query.include_alternates = "include-alternates" in parse_results
         return query
 
+    def _parse_ingredients_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
+        matches = self._get_matches(
+            parse_results.get("entity"),
+            ["recipe", "power-recipe"],
+        )
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse recipe or power recipe expression '"
+                + parse_results.get("entity")
+                + "'."
+            )
+        for match in matches:
+            var = match.var()
+            if var.startswith("recipe"):
+                if var in self._db.recipes():
+                    recipe = self._db.recipes()[var]
+                    for ingredient in recipe.ingredients().values():
+                        query.vars.append(ingredient.item())
+            elif var.startswith("power-recipe"):
+                if var in self._db.power_recipes():
+                    power_recipe = self._db.power_recipes()[var]
+                    query.vars.append(power_recipe.fuel_item())
+        return query
+
+    def _parse_products_for_query(self, raw_query, parse_results):
+        query = InfoQuery(raw_query)
+        matches = self._get_matches(
+            parse_results.get("entity"),
+            ["recipe"],
+        )
+        if len(matches) == 0:
+            raise QueryParseException(
+                "Could not parse recipe expression '"
+                + parse_results.get("entity")
+                + "'."
+            )
+        for match in matches:
+            var = match.var()
+            if var.startswith("recipe"):
+                if var in self._db.recipes():
+                    recipe = self._db.recipes()[var]
+                    for product in recipe.products().values():
+                        query.vars.append(product.item())
+        return query
+
     def _parse_entity_details(
-        self, raw_query: str, parse_results: ParseResults
+            self, raw_query: str, parse_results: ParseResults
     ) -> InfoQuery:
         query = InfoQuery(raw_query)
         non_recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["resource", "item", "crafter", "extractor", "generator"],
+            ["item", "crafter", "extractor", "generator"],
         )
         if len(non_recipe_matches) > 0:
             query.vars.extend(non_recipe_matches)
             return query
         recipe_matches = self._get_matches(
             parse_results.get("entity-details"),
-            ["recipe", "buildable-recipe", "power-recipe"],
+            ["recipe", "power-recipe"],
         )
         if len(recipe_matches) == 0:
             raise QueryParseException(
@@ -561,7 +572,7 @@ class QueryParser:
         return query
 
     def parse(
-        self, raw_query: str
+            self, raw_query: str
     ) -> Union[InfoQuery, HelpQuery, RecipeCompareQuery, OptimizationQuery]:
         try:
             results = QueryParser.query_grammar.parseString(raw_query, parseAll=True)
@@ -592,6 +603,10 @@ class QueryParser:
             return self._parse_recipes_from_query(raw_query, results)
         elif "recipe-compare" in results:
             return self._parse_recipe_compare_query(raw_query, results)
+        elif "ingredients-for" in results:
+            return self._parse_ingredients_for_query(raw_query, results)
+        elif "products-for" in results:
+            return self._parse_products_for_query(raw_query, results)
         elif "entity-details" in results:
             return self._parse_entity_details(raw_query, results)
         else:

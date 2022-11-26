@@ -90,7 +90,7 @@ outputs, and adhere to any given constraints.
 
 - Regexes can be used when specifying items, recipes, and buildings.
 - Only one objective `?` can be provided in the entire query.
-- If no inputs are specified, the the optimizer will attempt to minimize
+- If no inputs are specified, the optimizer will attempt to minimize
   unweighted resources. This is equivalent to an input of `from _ unweighted resources`.
 
 #### Examples

@@ -26,7 +26,7 @@ would allow for things like "power:in" to be an alias for "power:input".
 target all items with a glob.
 
 8. Can input power and output power be combined into one var, "power"?
-It is essentially anyways since its all on the same power network. Makes
+It is essentially like this already since its all on the same power network. Makes
 matching rules a lot simpler. Also solves the problem of having to specify
 that input is 0 when you want an output, and vice versa.
 

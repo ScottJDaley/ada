@@ -1,7 +1,8 @@
-from typing import Dict
+import re
+from typing import Dict, Optional
 
-import ada.image_fetcher
-from discord import Embed
+from .entity import Entity
+from ..utils import image_fetcher
 
 STACK_SIZES = {
     "SS_HUGE": 500,
@@ -12,20 +13,25 @@ STACK_SIZES = {
 }
 
 
-class Item:
+class Item(Entity):
     def __init__(
-        self, data: Dict[str, str], native_class_name: str, is_resource: bool
+            self, data: Dict[str, str], native_class_name: str, is_resource: bool
     ) -> None:
         self.__data = data
         self.__native_class_name = native_class_name
         self.__is_resource = is_resource
 
     def slug(self) -> str:
-        return self.__data["mDisplayName"].lower().replace(" ", "-")
+        display_name = self.__data["mDisplayName"]
+        if display_name:
+            slug = self.__data["mDisplayName"].lower().replace(" ", "-")
+        else:
+            slug = self.class_name().removesuffix("_C").removeprefix("Build_").replace("_", "-")
+            slug = re.sub(r'(?<!^)(?=[A-Z])', '-', slug).lower()
+            slug = re.sub(r'\-+', '-', slug)
+        return slug
 
     def var(self) -> str:
-        if self.__is_resource:
-            return "resource:" + self.slug()
         return "item:" + self.slug()
 
     def class_name(self) -> str:
@@ -35,8 +41,6 @@ class Item:
         return self.__native_class_name
 
     def viz_name(self) -> str:
-        if self.__is_resource:
-            return "resource-" + self.slug()
         return "item-" + self.slug()
 
     def viz_label(self, amount: float) -> str:
@@ -45,11 +49,11 @@ class Item:
         out += '<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">'
         out += "<TR>"
         out += (
-            '<TD COLSPAN="2" BGCOLOR="'
-            + color
-            + '">'
-            + str(round(abs(amount), 2))
-            + "/m"
+                '<TD COLSPAN="2" BGCOLOR="'
+                + color
+                + '">'
+                + str(round(abs(amount), 2))
+                + "/m"
         )
         out += "<BR/>" + self.human_readable_name() + "</TD>"
         out += "</TR>"
@@ -57,7 +61,12 @@ class Item:
         return out
 
     def human_readable_name(self) -> str:
-        return "".join(i for i in self.__data["mDisplayName"] if ord(i) < 128)
+        display_name = self.__data["mDisplayName"]
+        if not display_name:
+            display_name = self.class_name().removesuffix("_C").removeprefix("Desc_").replace("_", " ")
+            display_name = re.sub(r'(?<!^)(?=[A-Z])', ' ', display_name)
+            display_name = re.sub(r' +', ' ', display_name)
+        return "".join(i for i in display_name if ord(i) < 128)
 
     def human_readable_underscored(self) -> str:
         return self.human_readable_name().replace(" ", "_")
@@ -74,8 +83,8 @@ class Item:
             return STACK_SIZES[self.__data["mStackSize"]]
         return -1
 
-    def sink_value(self) -> int:
-        return int(self.__data["mResourceSinkPoints"])
+    def sink_value(self) -> Optional[int]:
+        return int(self.__data["mResourceSinkPoints"]) if "mResourceSinkPoints" in self.__data else None
 
     def is_resource(self) -> bool:
         return self.__is_resource
@@ -83,29 +92,43 @@ class Item:
     def is_liquid(self) -> bool:
         return self.__data["mForm"] == "RF_LIQUID"
 
+    def description(self):
+        return self.__data["mDescription"]
+
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  stack size: " + str(self.stack_size()))
-        out.append("  sink value: " + str(self.sink_value()))
-        out.append(self.__data["mDescription"])
-        out.append("")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  stack size: " + str(self.stack_size()),
+            "  sink value: " + str(self.sink_value()),
+            self.description(),
+            ""
+        ]
         return "\n".join(out)
 
     def wiki(self) -> str:
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self) -> str:
-        print(ada.image_fetcher.fetch_first_on_page(self.wiki()))
-        return ada.image_fetcher.fetch_first_on_page(self.wiki())
+        print(image_fetcher.fetch_first_on_page(self.wiki()))
+        return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self) -> Embed:
-        embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
-        embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
-        return embed
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Stack Size", str(self.stack_size())),
+            ("Sink Value", str(self.sink_value())),
+        ]
+
+    # def embed(self) -> discord.Embed:
+    #     embed = discord.Embed(title=self.human_readable_name())
+    #     embed.description = self.__data["mDescription"]
+    #     embed.url = self.wiki()
+    #     embed.set_thumbnail(url=self.thumb())
+    #     embed.add_field(name="Stack Size", value=str(self.stack_size()), inline=True)
+    #     embed.add_field(name="Sink Value", value=str(self.sink_value()), inline=True)
+    #     return embed
+    #
+    # def view(self, dispatch: ada.Dispatch) -> discord.ui.View:
+    #     return ada.views.ItemView(dispatch)

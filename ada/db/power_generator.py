@@ -1,11 +1,11 @@
 from typing import Any, List, Union
 
-from ada import image_fetcher
-from ada.db.item import Item
-from discord import Embed
+from .entity import Entity
+from .item import Item
+from ..utils import image_fetcher
 
 
-class PowerGenerator:
+class PowerGenerator(Entity):
     def __init__(self, data, items):
         self.__data = data
         self.__fuel_items = []
@@ -29,11 +29,17 @@ class PowerGenerator:
     def var(self) -> str:
         return "generator:" + self.__data["mDisplayName"].lower().replace(" ", "-")
 
+    def class_name(self) -> str:
+        return self.__data["ClassName"]
+
     def human_readable_name(self):
         return self.__data["mDisplayName"]
 
     def human_readable_underscored(self):
         return self.human_readable_name().replace(" ", "_")
+
+    def description(self):
+        return self.__data["mDescription"]
 
     def power_production(self) -> float:
         return float(self.__data["mPowerProduction"])
@@ -41,11 +47,21 @@ class PowerGenerator:
     def fuel_items(self) -> List[Union[Any, Item]]:
         return self.__fuel_items
 
+    def requires_water(self) -> bool:
+        if "mRequiresSupplementalResource" not in self.__data:
+            return False
+        return self.__data["mRequiresSupplementalResource"] == "True"
+
+    def water_minute_rate(self) -> float:
+        return 60 * self.power_production() * float(self.__data["mSupplementalToPowerRatio"]) / 1000
+
     def details(self):
-        out = [self.human_readable_name()]
-        out.append("  var: " + self.var())
-        out.append("  power production: " + str(self.power_production()) + " MW")
-        out.append("  fuel types:")
+        out = [
+            self.human_readable_name(),
+            "  var: " + self.var(),
+            "  power production: " + str(self.power_production()) + " MW",
+            "  fuel types:"
+        ]
         for fuel_item in self.__fuel_items:
             out.append("    " + fuel_item.human_readable_name())
         out.append(self.__data["mDescription"])
@@ -54,20 +70,14 @@ class PowerGenerator:
 
     def wiki(self):
         return (
-            "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self):
         print(image_fetcher.fetch_first_on_page(self.wiki()))
         return image_fetcher.fetch_first_on_page(self.wiki())
 
-    def embed(self):
-        embed = Embed(title=self.human_readable_name())
-        embed.description = self.__data["mDescription"]
-        embed.url = self.wiki()
-        embed.set_thumbnail(url=self.thumb())
-        embed.add_field(
-            name="Power Production", value=(str(self.power_production()) + " MW")
-        )
-        # TODO
-        return embed
+    def fields(self) -> list[tuple[str, str]]:
+        return [
+            ("Power Production", f"{self.power_production()} MW"),
+        ]

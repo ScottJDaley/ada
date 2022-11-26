@@ -1,12 +1,8 @@
-from typing import List
-
-from discord import Embed
-
-from ada.breadcrumbs import Breadcrumbs
-from ada.result import Result, ResultMessage
+from .query import Query
+from .result import Result
 
 
-class HelpQuery:
+class HelpQuery(Query):
     pass
 
 
@@ -51,13 +47,3 @@ For more information and examples, see [the GitHub page](https://github.com/Scot
 
 If you have any questions or concerns, please join the [ADA Bot Support Server](https://discord.gg/UnFkv4wDYJ).
 """
-
-    def messages(self, breadcrumbs: Breadcrumbs) -> List[ResultMessage]:
-        message = ResultMessage()
-        message.embed = Embed(title="Help")
-        message.embed.description = str(self)
-        message.content = str(breadcrumbs)
-        return [message]
-
-    def handle_reaction(self, emoji, breadcrumbs):
-        return None
