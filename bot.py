@@ -1,4 +1,5 @@
 import os
+from typing import Literal, Optional
 
 import discord
 from discord.ext import commands
@@ -12,13 +13,9 @@ class Bot(commands.Bot):
     def __init__(self):
         load_dotenv()
         self.token = os.getenv("DISCORD_TOKEN")
-        cmd_prefix = os.getenv("DISCORD_PREFIX")
-        if not cmd_prefix:
-            cmd_prefix = "ada "
-        print(f"Discord Prefix: '{cmd_prefix}'")
         intents = discord.Intents.default()
         super().__init__(
-            command_prefix=commands.when_mentioned_or(cmd_prefix),
+            command_prefix=commands.when_mentioned,
             intents=intents,
         )
         self.sync = os.getenv('SYNC_COMMANDS', 'false').lower() == 'true'
@@ -56,4 +53,47 @@ class Bot(commands.Bot):
 
 
 bot = Bot()
+
+
+# @bot sync -> global sync
+# @bot sync ~ -> sync current guild
+# @bot sync * -> copies all global app commands to current guild and syncs
+# @bot sync ^ -> clears all commands from the current guild target and syncs (removes guild commands)
+# @bot sync id_1 id_2 -> syncs guilds with id 1 and 2
+@bot.command("sync")
+@commands.guild_only()
+@commands.is_owner()
+async def sync(
+        ctx: commands.Context, guilds: commands.Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None
+) -> None:
+    if not guilds:
+        if spec == "~":
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "*":
+            ctx.bot.tree.copy_global_to(guild=ctx.guild)
+            synced = await ctx.bot.tree.sync(guild=ctx.guild)
+        elif spec == "^":
+            ctx.bot.tree.clear_commands(guild=ctx.guild)
+            await ctx.bot.tree.sync(guild=ctx.guild)
+            synced = []
+        else:
+            synced = await ctx.bot.tree.sync()
+
+        await ctx.send(
+            f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+        )
+        return
+
+    ret = 0
+    for guild in guilds:
+        try:
+            await ctx.bot.tree.sync(guild=guild)
+        except discord.HTTPException:
+            pass
+        else:
+            ret += 1
+
+    await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
+
+
 bot.run()
