@@ -87,25 +87,25 @@ class OptimizationQuery(Query):
         return self.__objective is not None
 
     def add_output(self, var: str, value: AmountValue | MaximizeValue | AnyValue = AnyValue(), strict: bool = False):
-        print(f"Adding output, var={var}, amount={value}, strict={strict}")
+        # print(f"Adding output, var={var}, amount={value}, strict={strict}")
         output = Output(var, value)
         if isinstance(value, MaximizeValue):
             self.__objective = output
         _add_element(self.__outputs, var, output, strict)
 
     def remove_output(self, var: str):
-        print(f"Remove output, var={var}")
+        # print(f"Remove output, var={var}")
         _remove_element(self.__outputs, var)
 
     def add_input(self, var: str, value: AmountValue | MaximizeValue | AnyValue = AnyValue(), strict: bool = False):
-        print(f"Adding input, var={var}, amount={value}, strict={strict}")
+        # print(f"Adding input, var={var}, amount={value}, strict={strict}")
         input = Input(var, value)
         if isinstance(value, MaximizeValue):
             self.__objective = input
         _add_element(self.__inputs, var, input, strict)
 
     def remove_input(self, var: str):
-        print(f"Remove input, var={var}")
+        # print(f"Remove input, var={var}")
         _remove_element(self.__inputs, var)
 
     def inputs(self):

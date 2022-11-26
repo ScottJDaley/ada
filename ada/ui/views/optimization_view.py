@@ -89,7 +89,7 @@ class OptimizationCategoryView(OptimizationView):
         self._add_categories(active_category)
 
     def _add_categories(self, active_category: str):
-        print("Adding category buttons")
+        # print("Adding category buttons")
         for category in ["Settings", "Inputs", "Outputs", "Recipes", "Buildings"]:
             custom_id = category.lower()
             disabled = custom_id == active_category
@@ -104,7 +104,7 @@ class OptimizationCategoryView(OptimizationView):
             self.add_item(button)
 
     async def on_category(self, custom_id: str, interaction: discord.Interaction):
-        print("Category button clicked")
+        # print("Category button clicked")
         message = ResultMessage.copy_from(interaction)
         message.breadcrumbs.current_page().clear_custom_ids()
         message.breadcrumbs.current_page().add_custom_id(custom_id)
@@ -141,9 +141,9 @@ class EntityDropdown(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print("EntityDropdown callback")
+        # print("EntityDropdown callback")
         selection_option = self.values[0]
-        print("Selected option", self.values[0])
+        # print("Selected option", self.values[0])
         await self.__callback(selection_option, interaction)
 
 
@@ -208,7 +208,7 @@ class OptimizationSelectorView(OptimizationCategoryView):
 
     async def on_select(self, selected: str, interaction: discord.Interaction):
         if selected == "None":
-            print("Selected None")
+            # print("Selected None")
             await interaction.response.defer()
             return
         message = ResultMessage.copy_from(interaction)
@@ -232,7 +232,7 @@ class InfoButton(discord.ui.Button):
         self.__dispatch = dispatch
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        print("info button clicked")
+        # print("info button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         query = breadcrumbs.current_page().custom_ids()[-1]
         breadcrumbs.add_page(Breadcrumbs.Page(query))
@@ -246,7 +246,7 @@ class EditQueryButton(discord.ui.Button):
         self.__edit_query = edit_query
 
     async def callback(self, interaction: discord.Interaction) -> None:
-        print("edit query button clicked")
+        # print("edit query button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
@@ -305,7 +305,7 @@ class InputCategoryView(OptimizationSelectorView):
         )
 
     async def on_minimize(self, interaction: discord.Interaction):
-        print("minimize button clicked")
+        # print("minimize button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
@@ -364,7 +364,7 @@ class OutputsCategoryView(OptimizationSelectorView):
         )
 
     async def on_maximize(self, interaction: discord.Interaction):
-        print("maximize button clicked")
+        # print("maximize button clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
@@ -486,7 +486,7 @@ class SettingsCategoryView(OptimizationCategoryView):
         # TODO: Add button for allowing byproducts
 
     async def on_alternate_recipes(self, interaction: discord.Interaction):
-        print("alternate recipes button clicks")
+        # print("alternate recipes button clicks")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:
@@ -503,7 +503,7 @@ class SettingsCategoryView(OptimizationCategoryView):
         await self.dispatch().execute_and_replace(query, breadcrumbs, interaction)
 
     async def on_byproducts(self, interaction: discord.Interaction):
-        print("byproducts clicked")
+        # print("byproducts clicked")
         breadcrumbs = Breadcrumbs.extract(interaction.message.content)
         raw_query = breadcrumbs.current_page().query()
         try:

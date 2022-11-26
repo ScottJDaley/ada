@@ -12,7 +12,7 @@ from ...db.entity import Entity
 class EntityDropdown(discord.ui.Select):
     def __init__(self, entities: List[Entity], start_index: int, dispatch: Dispatch):
         self.__dispatch = dispatch
-        print(f"Constructing EntityDropdown with start index {start_index}")
+        # print(f"Constructing EntityDropdown with start index {start_index}")
         options = self._get_options(entities, start_index)
         super().__init__(
             placeholder="Select one",

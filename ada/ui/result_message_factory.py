@@ -71,7 +71,6 @@ class ResultMessageFactory:
 
     @multimethod
     def _from_result(result: OptimizationResult, breadcrumbs: Breadcrumbs, dispatch: Dispatch) -> ResultMessage:
-        print("_from_result: OptimizationResult")
         if len(breadcrumbs.current_page().custom_ids()) == 0:
             breadcrumbs.current_page().add_custom_id("settings")
         breadcrumbs.current_page().replace_query(str(result.query()))

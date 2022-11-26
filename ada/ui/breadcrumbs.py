@@ -61,7 +61,7 @@ class Breadcrumbs:
         if not found_end:
             raise BreadcrumbsException("Content missing breadcrumbs end:\n" + str(content_lines))
 
-        print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
+        # print(f"Breadcrumbs found {num_pages} pages in:\n" + str(content_lines))
         pages = [Breadcrumbs.Page.extract(x.strip().removeprefix("┗━").strip()) for x in content_lines[1:1 + num_pages]]
         if 2 + num_pages >= len(content_lines):
             remaining_content = ""
