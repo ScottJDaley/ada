@@ -6,9 +6,12 @@ name: Build & Deploy ADA (Test)
 clone:
   depth: 1
 
+concurrency:
+  limit: 1
+
 steps:
 
-  - name: docker build & push (test)
+  - name: docker build & push
     image: plugins/docker
     settings:
       mirror: dockerhub.nexus.diesel.net
@@ -19,21 +22,18 @@ steps:
         from_secret: nexus_pass
       repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
       tags:
-        - test-latest
+        - ${DRONE_BRANCH}-latest
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:2.13
     environment:
-      ANSIBLE_CONFIG: .ansible/ansible.cfg
-      DISCORD_PREFIX: "ada-test "
       DISCORD_TOKEN:
         from_secret: discord_token_test
     settings:
-      inventory: .ansible/inventory/test
+      inventory: .ansible/inventories/test
       galaxy: .ansible/roles/requirements.yaml
       playbook: .ansible/deploy.yaml
-      extra_vars: version=test
       private_key:
         from_secret: automation_id_rsa
 
@@ -52,9 +52,12 @@ name: Build & Deploy ADA (Production)
 clone:
   depth: 1
 
+concurrency:
+  limit: 1
+
 steps:
 
-  - name: docker build & push (production)
+  - name: docker build & push
     image: plugins/docker
     settings:
       mirror: dockerhub.nexus.diesel.net
@@ -65,22 +68,19 @@ steps:
         from_secret: nexus_pass
       repo: docker.nexus.diesel.net/${DRONE_REPO_NAME}
       tags:
-        - prod-latest
-        - prod-${DRONE_BUILD_NUMBER}
+        - production-latest
+        - ${DRONE_TAG}
 
 
   - name: deploy
-    image: plugins/ansible:3
+    image: docker.nexus.diesel.net/drone-ansible:2.13
     environment:
-      ANSIBLE_CONFIG: .ansible/ansible.cfg
-      DISCORD_PREFIX: "ada "
       DISCORD_TOKEN:
         from_secret: discord_token_prod
     settings:
-      inventory: .ansible/inventory/prod
+      inventory: .ansible/inventories/prod
       galaxy: .ansible/roles/requirements.yaml
       playbook: .ansible/deploy.yaml
-      extra_vars: version=prod
       private_key:
         from_secret: automation_id_rsa
 

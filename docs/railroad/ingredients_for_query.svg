@@ -1,0 +1,41 @@
+<svg class="railroad-diagram" height="62" viewBox="0 0 461.0 62" width="461.0" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>/* <![CDATA[ */
+	svg.railroad-diagram {
+		background-color:hsl(30,20%,95%);
+	}
+	svg.railroad-diagram path {
+		stroke-width:3;
+		stroke:black;
+		fill:rgba(0,0,0,0);
+	}
+	svg.railroad-diagram text {
+		font:bold 14px monospace;
+		text-anchor:middle;
+	}
+	svg.railroad-diagram text.label{
+		text-anchor:start;
+	}
+	svg.railroad-diagram text.comment{
+		font:italic 12px monospace;
+	}
+	svg.railroad-diagram rect{
+		stroke-width:3;
+		stroke:black;
+		fill:hsl(120,100%,90%);
+	}
+	svg.railroad-diagram rect.group-box {
+		stroke: gray;
+		stroke-dasharray: 10 5;
+		fill: none;
+	}
+
+/* ]]> */
+</style><g transform="translate(.5 .5)">
+<g>
+<path d="M20 21v20m10 -20v20m-10 -10h20" /></g><path d="M40 31h10" /><g>
+<path d="M50 31h0.0" /><path d="M411.0 31h0.0" /><g class="terminal ">
+<path d="M50.0 31h0.0" /><path d="M104.0 31h0.0" /><rect height="22" rx="10" ry="10" width="54" x="50" y="20"></rect><text x="77" y="35">/ada</text></g><path d="M104.0 31h10" /><path d="M114.0 31h10" /><g>
+<path d="M124.0 31h0.0" /><path d="M411.0 31h0.0" /><g class="terminal ">
+<path d="M124.0 31h0.0" /><path d="M237.5 31h0.0" /><rect height="22" rx="10" ry="10" width="113.5" x="124" y="20"></rect><text x="180.75" y="35">ingredients</text></g><path d="M237.5 31h10" /><path d="M247.5 31h10" /><g class="terminal ">
+<path d="M257.5 31h0.0" /><path d="M303.0 31h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="257.5" y="20"></rect><text x="280.25" y="35">for</text></g><path d="M303.0 31h10" /><path d="M313.0 31h10" /><g class="terminal ">
+<path d="M323.0 31h0.0" /><path d="M411.0 31h0.0" /><rect height="22" rx="10" ry="10" width="88" x="323" y="20"></rect><text x="367" y="35">&lt;recipe></text></g></g></g><path d="M411.0 31h10" /><path d="M 421.0 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>

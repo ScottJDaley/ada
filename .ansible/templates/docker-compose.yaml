@@ -1,0 +1,7 @@
+version: '3.8'
+services: 
+
+  bot:
+    image: {{ docker_image }}
+    environment:
+      DISCORD_TOKEN: "{{ lookup('env','DISCORD_TOKEN') }}"

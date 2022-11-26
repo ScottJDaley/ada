@@ -130,3 +130,10 @@ dmypy.json
 
 # Output files
 output/
+
+# MonkeyType database
+monkeytype.sqlite3
+
+# ansible roles
+.ansible/roles/docker
+.idea/workspace.xml

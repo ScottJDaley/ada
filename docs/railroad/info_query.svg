@@ -1,0 +1,82 @@
+<svg class="railroad-diagram" height="469" viewBox="0 0 592.5 469" width="592.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<style>/* <![CDATA[ */
+	svg.railroad-diagram {
+		background-color:hsl(30,20%,95%);
+	}
+	svg.railroad-diagram path {
+		stroke-width:3;
+		stroke:black;
+		fill:rgba(0,0,0,0);
+	}
+	svg.railroad-diagram text {
+		font:bold 14px monospace;
+		text-anchor:middle;
+	}
+	svg.railroad-diagram text.label{
+		text-anchor:start;
+	}
+	svg.railroad-diagram text.comment{
+		font:italic 12px monospace;
+	}
+	svg.railroad-diagram rect{
+		stroke-width:3;
+		stroke:black;
+		fill:hsl(120,100%,90%);
+	}
+	svg.railroad-diagram rect.group-box {
+		stroke: gray;
+		stroke-dasharray: 10 5;
+		fill: none;
+	}
+
+/* ]]> */
+</style><g transform="translate(.5 .5)">
+<g>
+<path d="M20 45v20m10 -20v20m-10 -10h20" /></g><path d="M40 55h10" /><g>
+<path d="M50 55h0.0" /><path d="M542.5 55h0.0" /><g class="terminal ">
+<path d="M50.0 55h0.0" /><path d="M104.0 55h0.0" /><rect height="22" rx="10" ry="10" width="54" x="50" y="44"></rect><text x="77" y="59">/ada</text></g><path d="M104.0 55h10" /><g>
+<path d="M114.0 55h0.0" /><path d="M542.5 55h0.0" /><path d="M114.0 55h20" /><g>
+<path d="M134.0 55h121.75" /><path d="M400.75 55h121.75" /><rect class="group-box" height="98" rx="10" ry="10" width="145" x="255.75" y="36"></rect><g>
+<path d="M255.75 55h0.0" /><path d="M400.75 55h0.0" /><path d="M255.75 55h20" /><g class="terminal ">
+<path d="M275.75 55h17.0" /><path d="M363.75 55h17.0" /><rect height="22" rx="10" ry="10" width="71" x="292.75" y="44"></rect><text x="328.25" y="59">&lt;item></text></g><path d="M380.75 55h20" /><path d="M255.75 55a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M275.75 85h8.5" /><path d="M372.25 85h8.5" /><rect height="22" rx="10" ry="10" width="88" x="284.25" y="74"></rect><text x="328.25" y="89">&lt;recipe></text></g><path d="M380.75 85a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /><path d="M255.75 55a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M275.75 115h0.0" /><path d="M380.75 115h0.0" /><rect height="22" rx="10" ry="10" width="105" x="275.75" y="104"></rect><text x="328.25" y="119">&lt;building></text></g><path d="M380.75 115a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10" /></g><g class="non-terminal ">
+<path d="M255.75 28h0.0" /><path d="M356.75 28h0.0" /><text class="comment" x="306.25" y="33">Entity Lookup</text></g></g><path d="M522.5 55h20" /><path d="M114.0 55a10 10 0 0 1 10 10v111a10 10 0 0 0 10 10" /><g>
+<path d="M134.0 186h0.0" /><path d="M522.5 186h0.0" /><rect class="group-box" height="107" rx="10" ry="10" width="388.5" x="134" y="158"></rect><g>
+<path d="M134.0 186h10.0" /><path d="M512.5 186h10.0" /><g>
+<path d="M144.0 186h0.0" /><path d="M367.5 186h0.0" /><path d="M144.0 186h20" /><g>
+<path d="M164.0 186h8.5" /><path d="M339.0 186h8.5" /><g class="terminal ">
+<path d="M172.5 186h0.0" /><path d="M243.5 186h0.0" /><rect height="22" rx="10" ry="10" width="71" x="172.5" y="175"></rect><text x="208" y="190">recipe</text></g><path d="M243.5 186h10" /><g>
+<path d="M253.5 186h0.0" /><path d="M339.0 186h0.0" /><path d="M253.5 186a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10" /><g>
+<path d="M273.5 166h45.5" /></g><path d="M319.0 166a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10" /><path d="M253.5 186h20" /><g class="terminal ">
+<path d="M273.5 186h0.0" /><path d="M319.0 186h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="273.5" y="175"></rect><text x="296.25" y="190">for</text></g><path d="M319.0 186h20" /></g></g><path d="M347.5 186h20" /><path d="M144.0 186a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g>
+<path d="M164.0 216h0.0" /><path d="M347.5 216h0.0" /><g class="terminal ">
+<path d="M164.0 216h0.0" /><path d="M243.5 216h0.0" /><rect height="22" rx="10" ry="10" width="79.5" x="164" y="205"></rect><text x="203.75" y="220">recipes</text></g><path d="M243.5 216h10" /><g>
+<path d="M253.5 216h0.0" /><path d="M347.5 216h0.0" /><path d="M253.5 216h20" /><g class="terminal ">
+<path d="M273.5 216h4.25" /><path d="M323.25 216h4.25" /><rect height="22" rx="10" ry="10" width="45.5" x="277.75" y="205"></rect><text x="300.5" y="220">for</text></g><path d="M327.5 216h20" /><path d="M253.5 216a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M273.5 246h0.0" /><path d="M327.5 246h0.0" /><rect height="22" rx="10" ry="10" width="54" x="273.5" y="235"></rect><text x="300.5" y="250">from</text></g><path d="M327.5 246a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><path d="M347.5 216a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g><g>
+<path d="M367.5 186h0.0" /><path d="M512.5 186h0.0" /><path d="M367.5 186h20" /><g class="terminal ">
+<path d="M387.5 186h17.0" /><path d="M475.5 186h17.0" /><rect height="22" rx="10" ry="10" width="71" x="404.5" y="175"></rect><text x="440" y="190">&lt;item></text></g><path d="M492.5 186h20" /><path d="M367.5 186a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M387.5 216h0.0" /><path d="M492.5 216h0.0" /><rect height="22" rx="10" ry="10" width="105" x="387.5" y="205"></rect><text x="440" y="220">&lt;building></text></g><path d="M492.5 216a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><g class="non-terminal ">
+<path d="M134.0 150h0.0" /><path d="M235.0 150h0.0" /><text class="comment" x="184.5" y="155">Recipe Lookup</text></g></g><path d="M522.5 186a10 10 0 0 0 10 -10v-111a10 10 0 0 1 10 -10" /><path d="M114.0 55a10 10 0 0 1 10 10v233a10 10 0 0 0 10 10" /><g>
+<path d="M134.0 308h1.5" /><path d="M521.0 308h1.5" /><rect class="group-box" height="68" rx="10" ry="10" width="385.5" x="135.5" y="289"></rect><g>
+<path d="M135.5 308h10.0" /><path d="M511.0 308h10.0" /><g class="terminal ">
+<path d="M145.5 308h0.0" /><path d="M225.0 308h0.0" /><rect height="22" rx="10" ry="10" width="79.5" x="145.5" y="297"></rect><text x="185.25" y="312">compare</text></g><path d="M225.0 308h10" /><g>
+<path d="M235.0 308h0.0" /><path d="M511.0 308h0.0" /><path d="M235.0 308h20" /><g>
+<path d="M255.0 308h0.0" /><path d="M491.0 308h0.0" /><g class="terminal ">
+<path d="M255.0 308h0.0" /><path d="M334.5 308h0.0" /><rect height="22" rx="10" ry="10" width="79.5" x="255" y="297"></rect><text x="294.75" y="312">recipes</text></g><path d="M334.5 308h10" /><path d="M344.5 308h10" /><g class="terminal ">
+<path d="M354.5 308h0.0" /><path d="M400.0 308h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="354.5" y="297"></rect><text x="377.25" y="312">for</text></g><path d="M400.0 308h10" /><path d="M410.0 308h10" /><g class="terminal ">
+<path d="M420.0 308h0.0" /><path d="M491.0 308h0.0" /><rect height="22" rx="10" ry="10" width="71" x="420" y="297"></rect><text x="455.5" y="312">&lt;item></text></g></g><path d="M491.0 308h20" /><path d="M235.0 308a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g class="terminal ">
+<path d="M255.0 338h74.0" /><path d="M417.0 338h74.0" /><rect height="22" rx="10" ry="10" width="88" x="329" y="327"></rect><text x="373" y="342">&lt;recipe></text></g><path d="M491.0 338a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g></g><g class="non-terminal ">
+<path d="M135.5 281h0.0" /><path d="M264.5 281h0.0" /><text class="comment" x="200" y="286">Recipe Comparison</text></g></g><path d="M522.5 308a10 10 0 0 0 10 -10v-233a10 10 0 0 1 10 -10" /><path d="M114.0 55a10 10 0 0 1 10 10v325a10 10 0 0 0 10 10" /><g>
+<path d="M134.0 400h30.75" /><path d="M491.75 400h30.75" /><rect class="group-box" height="68" rx="10" ry="10" width="327" x="164.75" y="381"></rect><g>
+<path d="M164.75 400h0.0" /><path d="M491.75 400h0.0" /><path d="M164.75 400h20" /><g>
+<path d="M184.75 400h0.0" /><path d="M471.75 400h0.0" /><g class="terminal ">
+<path d="M184.75 400h0.0" /><path d="M298.25 400h0.0" /><rect height="22" rx="10" ry="10" width="113.5" x="184.75" y="389"></rect><text x="241.5" y="404">ingredients</text></g><path d="M298.25 400h10" /><path d="M308.25 400h10" /><g class="terminal ">
+<path d="M318.25 400h0.0" /><path d="M363.75 400h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="318.25" y="389"></rect><text x="341" y="404">for</text></g><path d="M363.75 400h10" /><path d="M373.75 400h10" /><g class="terminal ">
+<path d="M383.75 400h0.0" /><path d="M471.75 400h0.0" /><rect height="22" rx="10" ry="10" width="88" x="383.75" y="389"></rect><text x="427.75" y="404">&lt;recipe></text></g></g><path d="M471.75 400h20" /><path d="M164.75 400a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10" /><g>
+<path d="M184.75 430h12.75" /><path d="M459.0 430h12.75" /><g class="terminal ">
+<path d="M197.5 430h0.0" /><path d="M285.5 430h0.0" /><rect height="22" rx="10" ry="10" width="88" x="197.5" y="419"></rect><text x="241.5" y="434">products</text></g><path d="M285.5 430h10" /><path d="M295.5 430h10" /><g class="terminal ">
+<path d="M305.5 430h0.0" /><path d="M351.0 430h0.0" /><rect height="22" rx="10" ry="10" width="45.5" x="305.5" y="419"></rect><text x="328.25" y="434">for</text></g><path d="M351.0 430h10" /><path d="M361.0 430h10" /><g class="terminal ">
+<path d="M371.0 430h0.0" /><path d="M459.0 430h0.0" /><rect height="22" rx="10" ry="10" width="88" x="371" y="419"></rect><text x="415" y="434">&lt;recipe></text></g></g><path d="M471.75 430a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10" /></g><g class="non-terminal ">
+<path d="M164.75 373h0.0" /><path d="M272.75 373h0.0" /><text class="comment" x="218.75" y="378">Recipe Details</text></g></g><path d="M522.5 400a10 10 0 0 0 10 -10v-325a10 10 0 0 1 10 -10" /></g></g><path d="M542.5 55h10" /><path d="M 552.5 55 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>

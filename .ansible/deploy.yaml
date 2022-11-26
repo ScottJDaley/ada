@@ -1,10 +1,4 @@
-# ansible-playbook deploy.yaml -i inventories/dev/hosts --vault-id ~/.tokens/master_id
-
-- hosts: all
-  strategy: free
-  roles:
-    - common
-
+- hosts: swarm_manager
   tasks:
     
     - include_role:
