@@ -73,8 +73,9 @@ outputs, and adhere to any given constraints.
 #### Examples
 
 - `/ada produce 60 iron rod`: Produces exactly 60 iron rods while minimizing the input resources (evenly weighted).
-- `/ada produce 60 iron rod from unweighted resources`: Same as above.
-- `/ada produce 60 iron rod from weighted resources`: Similar to above, but weights resources by their frequency on the
+- `/ada produce 60 iron rod from ? unweighted resources`: Same as above.
+- `/ada produce 60 iron rod from ? weighted resources`: Similar to above, but weights resources by their frequency on
+  the
   map.
 - `/ada produce 60 iron rod from ? iron ore`: Produces exactly 60 iron rods while minimizing iron ore.
 - `/ada produce 60 iron rod from only ? iron ore`: Produces exactly 60 iron rods from exclusively iron ore.
@@ -82,6 +83,8 @@ outputs, and adhere to any given constraints.
   exclusively iron ore and coal, but only minimizing iron ore. Alternate recipes are allowed.
 - `/ada produce ? iron rods from 60 iron ore`: Produce as many iron rods as possible from 60 iron ore.
 - `/ada produce ? iron rods from only 60 iron ore`: Produce as many iron rods as possible from exclusively 60 iron ore.
+- `/ada produce ? iron rods from only 60 iron ore and water and alternate-recipes`: Produce as many iron rods as
+  possible from exclusively 60 iron ore and water with alterate recipes allowed.
 - `/ada produce ? power from 240 crude oil and only fuel generators`: Produce as much power as possible from only 240
   crude oil only using fuel generators (no other generators allowed).
 - `/ada produce 60 modular frames without refineries`: Produce exactly 60 modular frames without using any refineries,
