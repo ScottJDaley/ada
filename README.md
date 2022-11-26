@@ -149,11 +149,6 @@ outputs, and adhere to any given constraints.
    py -m pip install -r requirements.txt
    ```
 
-9. Start the bot
-   ```cmd
-   py bot.py
-   ```
-
 ### MacOS Installation
 
 1. Download and install [Homebrew](https://brew.sh/)
@@ -198,11 +193,6 @@ outputs, and adhere to any given constraints.
 8. Set up Discord bot
    ```bash
    export DISCORD_TOKEN={token from discord developer portal}
-   ```
-
-9. Start the bot
-   ```bash
-   python bot.py
    ```
 
 ### Linux Installation
@@ -254,19 +244,15 @@ outputs, and adhere to any given constraints.
    export DISCORD_TOKEN={token from discord developer portal}
    ```
 
-10. Start the bot
-    ```bash
-    python3 bot.py
-    ```
+### Discord Bot Usage
 
-### Usage
+1. Run `bot.py`
+2. Ensure the bot is running and was started with a valid `DISCORD_TOKEN` as described above.
+3. Invite the bot to your server using a link generated from OAuth2 page on https://discord.com/developers/applications.
+4. The bot should be able to respond to commands in Discord after a few seconds.
+5. Press `Enter` in the terminal to shut down the bot.
 
-1. Ensure the bot is running and was started with a valid `DISCORD_TOKEN` as described above.
-2. Invite the bot to your server using a link generated from OAuth2 page on https://discord.com/developers/applications.
-3. The bot should be able to respond to commands in Discord after a few seconds.
-4. Press `Enter` in the terminal to shut down the bot.
-
-### Command line tool
+### Command Line Tool Usage
 
 1. Run `tool.py`.
 2. Type a query and press Enter.
