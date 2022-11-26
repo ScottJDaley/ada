@@ -17,30 +17,30 @@ calculate an optimal production chain. Here are
 some examples of queries that ADA supports:
 
 ```
-ada iron rod
+/ada iron rod
 ```
 ```
-ada recipes for iron rod
+/ada recipes for iron rod
 ```
 ```
-ada recipes for refineries
+/ada recipes for refineries
 ```
 
 ```
-ada produce 60 iron rods
+/ada produce 60 iron rods
 ```
 ```
-ada produce 60 iron rod from ? iron ore
+/ada produce 60 iron rod from ? iron ore
 ```
 ```
-ada produce ? iron rods from 60 iron ore
+/ada produce ? iron rods from 60 iron ore
 ```
 ```
-ada produce ? power from 240 crude oil with only
+/ada produce ? power from 240 crude oil and only
     fuel generators
 ```
 ```
-ada produce 60 modular frames without refineries
+/ada produce 60 modular frames without refineries
 ```
 
 For more information and examples, see [the GitHub page](https://github.com/ScottJDaley/ada).
