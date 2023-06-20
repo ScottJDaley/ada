@@ -3,7 +3,7 @@ all:
 
     swarm_manager:
       hosts:
-        test.diesel.net: 
+        dev.diesel.net: 
 
   vars:        
     ansible_user: automation

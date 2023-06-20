@@ -108,7 +108,7 @@ class Item(Entity):
 
     def wiki(self) -> str:
         return (
-                "https://satisfactory.fandom.com/wiki/" + self.human_readable_underscored()
+                "https://satisfactory.wiki.gg/wiki/" + self.human_readable_underscored()
         )
 
     def thumb(self) -> str:
