@@ -13,33 +13,33 @@ from .power_recipe import PowerRecipe
 from .recipe import Recipe
 
 RESOURCE_CLASSES = [
-    "Class'/Script/FactoryGame.FGResourceDescriptor'",
+    "FGResourceDescriptor",
 ]
 ITEM_CLASSES = [
-    "Class'/Script/FactoryGame.FGItemDescriptor'",
-    "Class'/Script/FactoryGame.FGEquipmentDescriptor'",
-    "Class'/Script/FactoryGame.FGItemDescriptorBiomass'",
-    "Class'/Script/FactoryGame.FGItemDescriptorNuclearFuel'",
-    "Class'/Script/FactoryGame.FGConsumableDescriptor'",
-    "Class'/Script/FactoryGame.FGBuildingDescriptor'",
-    "Class'/Script/FactoryGame.FGPoleDescriptor'",
-    "Class'/Script/FactoryGame.FGVehicleDescriptor'",
-    "Class'/Script/FactoryGame.FGAmmoTypeProjectile'",
-    "Class'/Script/FactoryGame.FGAmmoTypeInstantHit'",
+    "FGItemDescriptor",
+    "FGEquipmentDescriptor",
+    "FGItemDescriptorBiomass",
+    "FGItemDescriptorNuclearFuel",
+    "FGConsumableDescriptor",
+    "FGBuildingDescriptor",
+    "FGPoleDescriptor",
+    "FGVehicleDescriptor",
+    "FGAmmoTypeProjectile",
+    "FGAmmoTypeInstantHit",
 ]
 CRAFTER_CLASSES = [
-    "Class'/Script/FactoryGame.FGBuildableManufacturer'",
+    "FGBuildableManufacturer",
 ]
 EXTRACTOR_CLASSES = [
-    "Class'/Script/FactoryGame.FGBuildableResourceExtractor'",
+    "FGBuildableResourceExtractor",
 ]
 GENERATOR_CLASSES = [
-    "Class'/Script/FactoryGame.FGBuildableGeneratorFuel'",
-    "Class'/Script/FactoryGame.FGBuildableGeneratorNuclear'",
-    "Class'/Script/FactoryGame.FGBuildableGeneratorGeoThermal'",
+    "FGBuildableGeneratorFuel",
+    "FGBuildableGeneratorNuclear",
+    "FGBuildableGeneratorGeoThermal",
 ]
 RECIPE_CLASSES = [
-    "Class'/Script/FactoryGame.FGRecipe'",
+    "FGRecipe",
 ]
 
 
@@ -53,7 +53,8 @@ class DB:
 
         native_classes = {}
         for native_class in data:
-            native_classes[native_class["NativeClass"]] = native_class["Classes"]
+            native_class_name = native_class["NativeClass"].split(".")[-1][:-1]
+            native_classes[native_class_name] = native_class["Classes"]
 
         self.__items = {}
         self.__item_var_from_class_name = {}
@@ -61,25 +62,24 @@ class DB:
 
         # Parse resources
         for resource_class in RESOURCE_CLASSES:
-            resource_class_short = resource_class.split(".")[1][:-1]
-            self.__item_vars_from_native_class_name[resource_class_short] = []
+            self.__item_vars_from_native_class_name[resource_class] = []
             for resource_data in native_classes[resource_class]:
-                item = Item(resource_data, resource_class_short, is_resource=True)
+                item = Item(resource_data, resource_class, is_resource=True)
                 self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
-                self.__item_vars_from_native_class_name[resource_class_short].append(
+                self.__item_vars_from_native_class_name[resource_class].append(
                     item.var()
                 )
 
         # Parse items
         for item_class in ITEM_CLASSES:
-            item_class_short = item_class.split(".")[1][:-1]
-            self.__item_vars_from_native_class_name[item_class_short] = []
+
+            self.__item_vars_from_native_class_name[item_class] = []
             for item_data in native_classes[item_class]:
-                item = Item(item_data, item_class_short, is_resource=False)
+                item = Item(item_data, item_class, is_resource=False)
                 self._add_item(item)
                 self.__item_var_from_class_name[item.class_name()] = item.var()
-                self.__item_vars_from_native_class_name[item_class_short].append(
+                self.__item_vars_from_native_class_name[item_class].append(
                     item.var()
                 )
 
