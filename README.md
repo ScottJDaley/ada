@@ -250,7 +250,7 @@ outputs, and adhere to any given constraints.
 
 ## Acknowledgements
 
-- Images are taken from the [Official Satisfactory Wiki](https://satisfactory.gamepedia.com/Satisfactory_Wiki).
+- Images are taken from the [Official Satisfactory Wiki](https://satisfactory.wiki.gg/Satisfactory_Wiki).
 
 ## Contributing
 
