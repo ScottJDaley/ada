@@ -12,7 +12,7 @@ class PowerGenerator(Entity):
         if "mDefaultFuelClasses" not in data:
             return
         for fuel_class in data["mDefaultFuelClasses"][1:-1].split(","):
-            fuel_class_short = fuel_class.split(".")[1]
+            fuel_class_short = fuel_class.split(".")[-1][:-1]
             fuel_items = [
                 item for item in items if item.native_class_name() == fuel_class_short
             ]

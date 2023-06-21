@@ -18,7 +18,7 @@ def parse_recipe_item(raw: str) -> Tuple[str, int]:
     for component in components:
         key_value = component.split("=")
         component_map[key_value[0]] = key_value[1]
-    class_name = component_map["ItemClass"].split(".")[1][:-2]
+    class_name = component_map["ItemClass"].split(".")[-1][:-2]
     return class_name, int(component_map["Amount"])
 
 
@@ -51,7 +51,7 @@ class Recipe(Entity):
         for producer in producers:
             if len(producer) == 0:
                 continue
-            producer_class_name = producer.split(".")[1]
+            producer_class_name = producer.split(".")[-1][:-1]
             for crafter in crafters:
                 if crafter.class_name() == producer_class_name:
                     self.__crafter = crafter
