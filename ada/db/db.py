@@ -22,7 +22,6 @@ ITEM_CLASSES = [
     "FGItemDescriptorNuclearFuel",
     "FGConsumableDescriptor",
     "FGBuildingDescriptor",
-    "FGPoleDescriptor",
     "FGVehicleDescriptor",
     "FGAmmoTypeProjectile",
     "FGAmmoTypeInstantHit",
